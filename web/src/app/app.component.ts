@@ -3,6 +3,9 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { environment } from '../environments/environment';
+import { AuthService } from './core/auth/auth.service';
+import { LoginComponent } from './modules/auth/login.component';
+import { AccessAdminComponent } from './modules/admin/access-admin.component';
 
 interface HealthResponse {
   status: 'ok' | 'error';
@@ -12,17 +15,26 @@ interface HealthResponse {
 @Component({
   selector: 'pana-root',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule],
+  imports: [MatButtonModule, MatCardModule, LoginComponent, AccessAdminComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  readonly auth = inject(AuthService);
+  readonly sessionReady = signal(false);
+  readonly showAdmin = signal(false);
   readonly serviceStatus = signal<'checking' | 'ready' | 'error'>('checking');
   readonly databaseStatus = signal('Comprobando conexión…');
 
   ngOnInit(): void {
     this.refreshHealth();
+    this.auth.restoreSession().subscribe(() => this.sessionReady.set(true));
+  }
+
+  logout(): void {
+    this.showAdmin.set(false);
+    this.auth.logout().subscribe();
   }
 
   refreshHealth(): void {

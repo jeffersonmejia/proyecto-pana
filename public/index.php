@@ -1,24 +1,29 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/config/bootstrap.php';
+use App\Exceptions\ApiException;
+
+require dirname(__DIR__) . '/src/config/bootstrap.php';
 
 $allowedOrigin = env_value('FRONTEND_URL', 'http://localhost:4200');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+header('Content-Type: application/json; charset=utf-8');
 
-if ($requestOrigin !== '' && hash_equals($allowedOrigin, $requestOrigin)) {
+if ($requestOrigin !== '' && !hash_equals($allowedOrigin, $requestOrigin)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'origin_not_allowed']);
+    exit;
+}
+
+if ($requestOrigin !== '') {
     header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-    if ($requestOrigin !== '' && !hash_equals($allowedOrigin, $requestOrigin)) {
-        http_response_code(403);
-        exit;
-    }
-
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type');
     http_response_code(204);
     exit;
 }
@@ -31,10 +36,8 @@ if ($basePath !== '' && strpos($requestPath, $basePath) === 0) {
 }
 
 $routeKey = ($_SERVER['REQUEST_METHOD'] ?? 'GET') . ' ' . '/' . trim($requestPath, '/');
-$routes = require dirname(__DIR__) . '/routes/api.php';
+$routes = require dirname(__DIR__) . '/src/routes/api.php';
 $handler = $routes[$routeKey] ?? null;
-
-header('Content-Type: application/json; charset=utf-8');
 
 if ($handler === null) {
     http_response_code(404);
@@ -42,4 +45,13 @@ if ($handler === null) {
     exit;
 }
 
-$handler();
+try {
+    $handler();
+} catch (ApiException $exception) {
+    http_response_code($exception->status);
+    echo json_encode(['error' => $exception->errorCode]);
+} catch (Throwable $exception) {
+    error_log('API error: ' . get_class($exception));
+    http_response_code(500);
+    echo json_encode(['error' => 'internal_error']);
+}

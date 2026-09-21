@@ -1,0 +1,79 @@
+<section class="admin-page" aria-labelledby="admin-title">
+  <header class="admin-header">
+    <h1 id="admin-title">Usuarios y permisos</h1>
+    <button type="button" class="quiet-button" (click)="close.emit()">Volver al inicio</button>
+  </header>
+  @if (message()) { <p class="notice" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+  @if (auth.hasPermission('users.manage')) {
+    <section class="admin-section" aria-labelledby="users-title">
+      <h2 id="users-title">Cuentas</h2>
+      <form (ngSubmit)="saveUser()" class="edit-form">
+        <label>Correo<input name="email" type="email" [(ngModel)]="userForm.email" required maxlength="254"></label>
+        <label>Contraseña<input name="password" type="password" [(ngModel)]="userForm.password"
+          [required]="!userForm.id" minlength="12" autocomplete="new-password"></label>
+        @if (roles().length) {
+          <fieldset><legend>Roles</legend>
+            @for (role of roles(); track role.id) {
+              <label class="check"><input type="checkbox" [checked]="userForm.roles.includes(role.code)"
+                (change)="toggleUserRole($event, role.code)">{{ role.name }}</label>
+            }
+          </fieldset>
+        }
+        @if (userForm.id) {
+          <label class="check"><input type="checkbox" name="active" [(ngModel)]="userForm.is_active">Cuenta activa</label>
+        }
+        <div class="actions">
+          <button type="submit" [disabled]="busy()">{{ userForm.id ? 'Guardar cambios' : 'Crear usuario' }}</button>
+          <button type="button" class="quiet-button" (click)="resetUser()">Limpiar</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage')) {
+    <section class="admin-section" aria-label="Lista de usuarios">
+      @for (user of users(); track user.id) {
+        <article class="list-row">
+          <div><strong>{{ user.email }}</strong><p>{{ user.roles.join(', ') || 'Sin roles' }} · {{ user.is_active ? 'Activa' : 'Inactiva' }}</p></div>
+          @if (auth.hasPermission('users.manage')) {
+            <div class="actions">
+              <button type="button" class="quiet-button" (click)="editUser(user)">Editar</button>
+              <button type="button" class="danger-button" (click)="removeUser(user.id)">Eliminar</button>
+            </div>
+          }
+        </article>
+      } @empty { <p>No hay cuentas registradas.</p> }
+    </section>
+  }
+
+  @if (auth.hasPermission('roles.manage')) {
+    <section class="admin-section" aria-labelledby="roles-title">
+      <h2 id="roles-title">Roles</h2>
+      <form (ngSubmit)="saveRole()" class="edit-form">
+        <label>Código<input name="code" [(ngModel)]="roleForm.code" required maxlength="80" pattern="[a-z0-9_-]+"></label>
+        <label>Nombre<input name="name" [(ngModel)]="roleForm.name" required maxlength="120"></label>
+        <fieldset><legend>Permisos</legend>
+          @for (permission of permissions(); track permission.code) {
+            <label class="check"><input type="checkbox" [checked]="roleForm.permissions.includes(permission.code)"
+              (change)="togglePermission($event, permission.code)">{{ permission.name }}</label>
+          }
+        </fieldset>
+        <div class="actions">
+          <button type="submit" [disabled]="busy()">{{ roleForm.id ? 'Guardar rol' : 'Crear rol' }}</button>
+          <button type="button" class="quiet-button" (click)="resetRole()">Limpiar</button>
+        </div>
+      </form>
+      @for (role of roles(); track role.id) {
+        <article class="list-row">
+          <div><strong>{{ role.name }}</strong><p>{{ role.code }} · {{ role.permissions.join(', ') || 'Sin permisos' }}</p></div>
+          <div class="actions">
+            <button type="button" class="quiet-button" (click)="editRole(role)">Editar</button>
+            <button type="button" class="danger-button" (click)="removeRole(role.id)">Eliminar</button>
+          </div>
+        </article>
+      } @empty { <p>No hay roles configurados.</p> }
+    </section>
+  }
+</section>

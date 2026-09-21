@@ -1,31 +1,41 @@
-<main class="page-shell">
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="PANA, inicio">
-      <span class="brand-mark" aria-hidden="true">P</span>
-      <span>PANA</span>
-    </a>
-    <span class="topbar-caption">Plataforma de gestión</span>
-  </header>
+@if (sessionReady() && !auth.user()) {
+  <pana-login (authenticated)="refreshHealth()" />
+} @else {
+  <main class="page-shell">
+    <header class="topbar">
+      <span class="topbar-caption">Plataforma de gestión</span>
+    </header>
 
-  <section class="welcome" aria-labelledby="welcome-title">
-    <div class="welcome-copy">
-      <p class="eyebrow">PROYECTO PANA</p>
-      <h1 id="welcome-title">Un espacio para hacer crecer cada iniciativa.</h1>
-      <p class="intro">Organiza actividades, acompaña a las personas y consulta el avance del proyecto desde un solo lugar.</p>
-    </div>
+  @if (!sessionReady()) {
+    <p class="session-loading" role="status">Comprobando tu sesión…</p>
+  } @else if (auth.user(); as user) {
+    @if (showAdmin()) {
+      <pana-access-admin (close)="showAdmin.set(false)" />
+    } @else {
+      <section class="welcome" aria-labelledby="welcome-title">
+        <div class="welcome-copy">
+          <h1 id="welcome-title">Hola, {{ user.email }}</h1>
+          <p class="intro">Tu espacio para organizar actividades y acompañar cada iniciativa.</p>
+          <p class="role-summary">Roles asignados: {{ user.roles.length ? user.roles.join(', ') : 'sin roles' }}</p>
+          @if (auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
+            <button mat-button type="button" (click)="showAdmin.set(true)">Gestionar accesos</button>
+          }
+        </div>
 
-    <mat-card class="status-card" appearance="outlined" aria-live="polite">
-      <div class="status-icon" [class.is-ready]="serviceStatus() === 'ready'" [class.is-error]="serviceStatus() === 'error'">
-        <span aria-hidden="true">{{ serviceStatus() === 'ready' ? '✓' : serviceStatus() === 'error' ? '!' : '…' }}</span>
-      </div>
-      <div class="status-copy">
-        <p class="status-label">Estado del sistema</p>
-        <h2>{{ serviceStatus() === 'ready' ? 'Todo listo' : serviceStatus() === 'error' ? 'Revisa la conexión' : 'Conectando…' }}</h2>
-        <p>{{ databaseStatus() }}</p>
-      </div>
-      <button mat-button type="button" (click)="refreshHealth()">Volver a comprobar</button>
-    </mat-card>
-  </section>
+        <mat-card class="status-card" appearance="outlined" aria-live="polite">
+          <div class="status-icon" [class.is-ready]="serviceStatus() === 'ready'" [class.is-error]="serviceStatus() === 'error'">
+            <span aria-hidden="true">{{ serviceStatus() === 'ready' ? '✓' : serviceStatus() === 'error' ? '!' : '…' }}</span>
+          </div>
+          <div class="status-copy">
+            <h2>{{ serviceStatus() === 'ready' ? 'Todo listo' : serviceStatus() === 'error' ? 'Revisa la conexión' : 'Conectando…' }}</h2>
+            <p>{{ databaseStatus() }}</p>
+          </div>
+          <button mat-button type="button" (click)="refreshHealth()">Volver a comprobar</button>
+          <button mat-button type="button" (click)="logout()">Cerrar sesión</button>
+        </mat-card>
+      </section>
+    }
+  }
 
-  <footer class="page-footer">PANA <span>•</span> Gestión clara, impacto compartido.</footer>
-</main>
+  </main>
+}

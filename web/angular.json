@@ -19,7 +19,9 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "styles": ["src/styles/theme/_theme.scss"],
-            "assets": []
+            "assets": [
+              { "glob": "**/*", "input": "src/assets", "output": "assets" }
+            ]
           },
           "configurations": {
             "production": {
@@ -51,5 +53,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

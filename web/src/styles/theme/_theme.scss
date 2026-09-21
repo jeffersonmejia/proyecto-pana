@@ -36,14 +36,14 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: radial-gradient(ellipse at 88% 15%, #f0edff 0, transparent 32%), #f8f8fc;
+  background: #f8f8fc;
   color: var(--pana-ink);
   font-family: 'Inter', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 button, a { -webkit-tap-highlight-color: transparent; }
-button, a, .status-card { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+button, a, .status-card { transition: background-color 180ms ease, color 180ms ease, transform 180ms ease; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

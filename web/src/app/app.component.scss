@@ -21,30 +21,22 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
-  color: var(--pana-ink);
-  font-size: 1rem;
-  font-weight: 750;
-  letter-spacing: .12em;
   text-decoration: none;
 }
 
-.brand-mark,
+.brand img {
+  display: block;
+  width: 172px;
+  height: auto;
+}
+
 .status-icon {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: var(--pana-lavender);
-  color: var(--pana-violet);
 }
 
-.brand-mark {
-  width: 38px;
-  height: 38px;
-}
-
-.topbar-caption,
-.page-footer {
+.topbar-caption {
   color: var(--pana-muted);
   font-size: .9rem;
 }
@@ -62,17 +54,13 @@
   max-width: 620px;
 }
 
-.eyebrow,
-.status-label {
-  color: var(--pana-violet);
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+.session-loading,
+.role-summary {
+  color: var(--pana-muted);
 }
 
 h1 {
-  margin: 20px 0;
+  margin: 0 0 20px;
   color: var(--pana-ink);
   font-size: clamp(2.6rem, 5vw, 4.6rem);
   font-weight: 600;
@@ -94,8 +82,7 @@ h1 {
   padding: 28px;
   border: 1px solid var(--pana-outline);
   border-radius: 28px;
-  background: rgba(255, 255, 255, .84);
-  box-shadow: 0 20px 55px rgba(63, 54, 103, .08);
+  background: #fff;
 }
 
 .status-icon {
@@ -108,13 +95,9 @@ h1 {
 .status-icon.is-ready { background: var(--pana-mint); color: #17634b; }
 .status-icon.is-error { background: var(--pana-peach); color: #874338; }
 .status-copy p, .status-copy h2 { margin: 0; }
-.status-label { margin-bottom: 6px !important; font-size: .7rem; }
 .status-copy h2 { color: var(--pana-ink); font-size: 1.35rem; font-weight: 600; }
 .status-copy p:last-child { margin-top: 7px; color: var(--pana-muted); }
 .status-card button { margin-left: -10px; }
-.page-footer { padding: 0 0 28px; }
-.page-footer span { padding: 0 6px; color: var(--pana-violet); }
-
 @media (max-width: 760px) {
   .welcome { grid-template-columns: 1fr; gap: 36px; padding: 54px 0 72px; }
   .status-card { max-width: 440px; }

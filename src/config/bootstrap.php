@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$projectRoot = dirname(__DIR__);
+$projectRoot = dirname(__DIR__, 2);
 $environmentFile = $projectRoot . '/.env';
 
 if (is_file($environmentFile)) {
@@ -35,6 +35,11 @@ function env_value(string $name, ?string $default = null): ?string
 
 date_default_timezone_set(env_value('APP_TIMEZONE', 'UTC') ?? 'UTC');
 
+$composerAutoloader = $projectRoot . '/vendor/autoload.php';
+if (is_file($composerAutoloader)) {
+    require_once $composerAutoloader;
+}
+
 spl_autoload_register(static function (string $class): void {
     $prefix = 'App\\';
     if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
@@ -47,3 +52,5 @@ spl_autoload_register(static function (string $class): void {
         require $file;
     }
 });
+
+require_once __DIR__ . '/database.php';

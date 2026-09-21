@@ -5,6 +5,7 @@
 
 # Seguimiento de trabajo local.
 /harness/
+/users.txt
 
 # Dependencias instaladas.
 /vendor/
@@ -21,8 +22,8 @@ node_modules/
 /.php-cs-fixer.cache
 
 # Archivos generados en ejecución; se conserva el marcador de estructura.
-/storage/*
-!/storage/.gitkeep
+/src/storage/*
+!/src/storage/.gitkeep
 
 # Registros y volcados locales.
 *.log
@@ -51,3 +52,4 @@ Desktop.ini
 
 # Instrucciones locales del agente.
 /AGENTS.md
+web/.angular

@@ -1,0 +1,69 @@
+:host { display: block; min-height: 100vh; }
+
+.login-layout {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+  overflow: auto;
+  background: #fff;
+}
+
+.login-art { min-width: 0; height: 100vh; margin: 0; overflow: hidden; }
+.login-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
+.login-side {
+  display: flex;
+  min-width: 0;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(28px, 4vw, 64px);
+}
+
+.login-panel {
+  display: flex;
+  width: min(100%, 440px);
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+}
+.login-brand { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+h1 { flex: 0 0 120px; margin: 0; }
+h1 img { display: block; width: 120px; max-height: 100px; object-fit: contain; }
+.intro { margin: 0; color: var(--pana-muted); line-height: 1.5; }
+form { display: grid; gap: 7px; }
+label { margin-top: 5px; color: var(--pana-ink); font-size: .9rem; font-weight: 600; }
+
+input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 24px;
+  background: #f3f3f8;
+  color: var(--pana-ink);
+  font: inherit;
+}
+
+input:focus-visible { outline: 2px solid var(--pana-violet); outline-offset: 2px; background: #fff; }
+.form-error { margin: 3px 0; color: #874338; font-size: .9rem; }
+button.mat-mdc-unelevated-button { justify-self: stretch; min-height: 44px; margin-top: 7px; border-radius: 24px; }
+.login-footer { width: min(100%, 410px); margin-top: auto; color: var(--pana-muted); font-size: .85rem; text-align: center; }
+
+@media (max-width: 760px) {
+  .login-layout { grid-template-columns: 1fr; grid-template-rows: minmax(220px, 34vh) auto; }
+  .login-art { height: 34vh; min-height: 220px; }
+  .login-side { min-height: 66vh; padding: 26px 22px 20px; }
+  .login-panel { margin: 0 auto 32px; }
+  .login-footer { margin-top: auto; }
+}
+
+@media (max-width: 420px) {
+  .login-brand { gap: 12px; }
+  h1 { flex-basis: 96px; }
+  h1 img { width: 96px; max-height: 82px; }
+  .intro { font-size: .9rem; }
+}

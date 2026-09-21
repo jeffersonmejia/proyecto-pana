@@ -1,0 +1,30 @@
+<main class="login-layout" aria-label="Acceso a PANA">
+  <figure class="login-art">
+    <img src="assets/login-pana.png" alt="Personas trabajando juntas para impulsar la inclusion social">
+  </figure>
+
+  <section class="login-side" aria-labelledby="login-title">
+    <div class="login-panel">
+      <header class="login-brand">
+        <h1 id="login-title" aria-label="Acceso a PANA">
+          <img src="assets/logo-santo-domingo.svg" alt="Patronato Municipal de Santo Domingo">
+        </h1>
+        <p class="intro">Inicia sesi&#243;n en PANA con las credenciales asignadas a tu cuenta.</p>
+      </header>
+
+      <form (ngSubmit)="submit()">
+        <label for="email">Correo electr&#243;nico</label>
+        <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
+
+        <label for="password">Contrase&#241;a</label>
+        <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>
+
+        <p class="form-error" role="alert" [hidden]="!errorMessage()">{{ errorMessage() }}</p>
+        <button mat-flat-button type="submit" [disabled]="busy() || !email || !password">
+          {{ busy() ? 'Validando...' : 'Iniciar sesión' }}
+        </button>
+      </form>
+    </div>
+    <footer class="login-footer">Patronato Municipal de Santo Domingo 2026</footer>
+  </section>
+</main>

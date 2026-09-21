@@ -1,0 +1,14 @@
+{
+  "name": "pana/system-backend",
+  "description": "API backend para la gestión del Proyecto PANA",
+  "type": "project",
+  "require": {
+    "php": "^8.0",
+    "firebase/php-jwt": "^7.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/app/"
+    }
+  }
+}
