@@ -17,6 +17,8 @@
       <pana-activities (close)="showActivities.set(false)" />
     } @else if (showEvaluations()) {
       <pana-evaluations (close)="showEvaluations.set(false)" />
+    } @else if (showReports()) {
+      <pana-reports (close)="showReports.set(false)" />
     } @else if (showAdmin()) {
       <pana-access-admin (close)="showAdmin.set(false)" />
     } @else {
@@ -39,6 +41,9 @@
           }
           @if (auth.hasPermission('evaluations.read') || auth.hasPermission('evaluations.manage')) {
             <button mat-button type="button" (click)="showEvaluations.set(true)">Evaluaciones y satisfacción</button>
+          }
+          @if (auth.hasPermission('reports.read') || auth.hasPermission('documents.read') || auth.hasPermission('documents.manage')) {
+            <button mat-button type="button" (click)="showReports.set(true)">Reportes y documentos</button>
           }
         </div>
 

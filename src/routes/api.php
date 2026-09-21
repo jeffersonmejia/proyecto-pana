@@ -126,5 +126,7 @@ return array_merge(
     (require __DIR__ . '/people.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/attendance.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/activities.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
-    (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
+    (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/reports.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/documents.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
 );

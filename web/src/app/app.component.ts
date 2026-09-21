@@ -10,6 +10,7 @@ import { PeopleComponent } from './modules/people/people.component';
 import { AttendanceComponent } from './modules/attendance/attendance.component';
 import { ActivitiesComponent } from './modules/activities/activities.component';
 import { EvaluationsComponent } from './modules/evaluations/evaluations.component';
+import { ReportsComponent } from './modules/reports/reports.component';
 
 interface HealthResponse {
   status: 'ok' | 'error';
@@ -19,7 +20,7 @@ interface HealthResponse {
 @Component({
   selector: 'pana-root',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, LoginComponent, AccessAdminComponent, PeopleComponent, AttendanceComponent, ActivitiesComponent, EvaluationsComponent],
+  imports: [MatButtonModule, MatCardModule, LoginComponent, AccessAdminComponent, PeopleComponent, AttendanceComponent, ActivitiesComponent, EvaluationsComponent, ReportsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -32,6 +33,7 @@ export class AppComponent implements OnInit {
   readonly showAttendance = signal(false);
   readonly showActivities = signal(false);
   readonly showEvaluations = signal(false);
+  readonly showReports = signal(false);
   readonly serviceStatus = signal<'checking' | 'ready' | 'error'>('checking');
   readonly databaseStatus = signal('Comprobando conexión…');
 
@@ -46,6 +48,7 @@ export class AppComponent implements OnInit {
     this.showAttendance.set(false);
     this.showActivities.set(false);
     this.showEvaluations.set(false);
+    this.showReports.set(false);
     this.auth.logout().subscribe();
   }
 

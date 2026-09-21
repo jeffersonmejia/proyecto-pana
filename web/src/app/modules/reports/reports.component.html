@@ -1,0 +1,62 @@
+<main class="reports-page">
+  <header class="heading"><div><h1>Reportes y documentos</h1><p>Consulta indicadores, resultados y archivos vinculados.</p></div>
+    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <nav class="tabs">
+    @if (auth.hasPermission('reports.read')) {
+      <button mat-button type="button" [class.active]="tab === 'dashboard'" (click)="setTab('dashboard')">Dashboard</button>
+      <button mat-button type="button" [class.active]="tab === 'reports'" (click)="setTab('reports')">Reportes</button>
+    }
+    @if (canReadDocuments()) { <button mat-button type="button" [class.active]="tab === 'documents'" (click)="setTab('documents')">Documentos</button> }
+  </nav>
+  @if (tab === 'dashboard' && dashboard(); as stats) {
+    <section class="cards">
+      <article><span>Participantes</span><strong>{{ stats.participants }}</strong></article>
+      <article><span>Beneficiarios</span><strong>{{ stats.beneficiaries }}</strong></article>
+      <article><span>Actividades</span><strong>{{ stats.activities }}</strong><small>{{ stats.activities_in_progress }} en curso</small></article>
+      <article><span>Horas registradas</span><strong>{{ stats.attendance_hours }}</strong></article>
+      <article><span>Evaluaciones</span><strong>{{ stats.participant_evaluations }}</strong></article>
+      <article><span>Satisfacción promedio</span><strong>{{ stats.satisfaction_average }}/5</strong></article>
+      <article><span>Documentos</span><strong>{{ stats.documents }}</strong></article>
+    </section>
+  }
+  @if (tab === 'reports') {
+    <section class="report-controls">
+      <label>Reporte<select [(ngModel)]="reportType" (change)="loadReport()"><option value="attendance">Asistencia</option>
+        <option value="activities">Actividades</option><option value="evaluations">Evaluaciones</option></select></label>
+      <label>Persona<select [(ngModel)]="personId" (change)="loadReport()"><option value="">Todas</option>
+        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+      </select></label>
+      <label>Desde<input type="date" [(ngModel)]="from" (change)="loadReport()"></label>
+      <label>Hasta<input type="date" [(ngModel)]="to" (change)="loadReport()"></label>
+      <button mat-button type="button" (click)="exportCsv()" [disabled]="!rows().length">Exportar CSV</button>
+    </section>
+    <div class="table-wrap"><table><thead><tr>@for (column of columns(); track column) { <th>{{ column }}</th> }</tr></thead>
+      <tbody>@for (row of rows(); track $index) { <tr>@for (column of columns(); track column) { <td>{{ row[column] }}</td> }</tr> }
+        @empty { <tr><td>No hay datos para estos filtros.</td></tr> }</tbody></table></div>
+  }
+  @if (tab === 'documents') {
+    <section class="document-controls">
+      <label>Vincular a<select [(ngModel)]="docType" (change)="changeDocumentType()"><option value="person">Persona</option>
+        <option value="activity">Actividad</option><option value="evaluation">Evaluación</option></select></label>
+      <label>Buscar registro<input [(ngModel)]="entityQuery" (input)="loadEntities()" placeholder="Nombre o descripción"></label>
+      <label>Registro<select [(ngModel)]="entityId" (change)="loadDocuments()"><option value="">Todos</option>
+        @for (entity of entities(); track entity.id) { <option [ngValue]="entity.id">{{ entity.label }}</option> }
+      </select></label>
+    </section>
+    @if (canManageDocuments()) {
+      <section class="upload">
+        <label>Archivo (PDF, PNG, JPG o TXT; máximo 8 MB)<input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,application/pdf,image/png,image/jpeg,text/plain" (change)="onFile($event)"></label>
+        <button mat-button type="button" (click)="upload()" [disabled]="uploading || !file || !entityId">Subir documento</button>
+      </section>
+    }
+    <section class="document-list">
+      @for (item of documents(); track item.id) {
+        <article><div><strong>{{ item.original_name }}</strong><span>{{ item.file_size / 1048576 | number:'1.2-2' }} MB · {{ item.created_at }} · {{ item.uploader || 'Usuario eliminado' }}</span></div>
+          <button mat-button type="button" (click)="download(item)">Descargar</button>
+          @if (canManageDocuments()) { <button mat-button type="button" (click)="remove(item)">Eliminar</button> }
+        </article>
+      } @empty { <p class="empty">No hay documentos para este registro.</p> }
+    </section>
+  }
+</main>
