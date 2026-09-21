@@ -1,0 +1,55 @@
+<main class="activities-page">
+  <header class="heading"><div><h1>Cronogramas y bitácoras</h1><p>Planifica actividades y registra su seguimiento.</p></div>
+    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <section class="filters">
+    <label>Participante<input [(ngModel)]="participantQuery" (input)="loadPeople()" placeholder="Buscar nombre">
+      <select [(ngModel)]="participantId" (change)="load()"><option value="">Todos</option>
+        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+      </select></label>
+    <label>Desde<input type="date" [(ngModel)]="from" (change)="load()"></label>
+    <label>Hasta<input type="date" [(ngModel)]="to" (change)="load()"></label>
+    <label>Estado<select [(ngModel)]="filterStatus" (change)="load()"><option value="all">Todos</option>
+      <option value="planned">Planificada</option><option value="in_progress">En curso</option>
+      <option value="completed">Completada</option><option value="cancelled">Cancelada</option></select></label>
+  </section>
+  <section class="layout">
+    <div class="list"><button mat-button type="button" (click)="edit()">Nueva actividad</button>
+      @for (activity of activities(); track activity.id) {
+        <button class="activity-row" type="button" (click)="edit(activity)">
+          <strong>{{ activity.title }}</strong><span>{{ activity.start_at }} · {{ activity.status }}</span>
+          <span>Responsable: {{ activity.responsible }}</span><span>{{ activity.participant_names || 'Sin participantes' }}</span>
+        </button>
+      } @empty { <p class="empty">No hay actividades con estos filtros.</p> }
+    </div>
+    <form class="editor" (ngSubmit)="save()">
+      <h2>{{ selected() ? 'Editar actividad' : 'Planificar actividad' }}</h2>
+      <label>Nombre<input name="title" [(ngModel)]="form.title" required maxlength="150"></label>
+      <label>Descripción<textarea name="description" [(ngModel)]="form.description" maxlength="1500"></textarea></label>
+      <label>Responsable<input name="responsible" [(ngModel)]="form.responsible" required maxlength="120"></label>
+      <div class="times"><label>Inicio<input name="start" type="datetime-local" [(ngModel)]="form.start_at" required></label>
+        <label>Fin<input name="end" type="datetime-local" [(ngModel)]="form.end_at" required></label></div>
+      <label>Estado<select name="status" [(ngModel)]="form.status"><option value="planned">Planificada</option>
+        <option value="in_progress">En curso</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option></select></label>
+      <fieldset><legend>Participantes asignados</legend>
+        @for (person of people(); track person.id) { <label class="choice"><input type="checkbox" [checked]="form.participant_ids.includes(person.id)"
+          (change)="toggleParticipant(person.id, $any($event.target).checked)">{{ person.first_name }} {{ person.last_name }}</label> }
+        @if (!people().length) { <p class="empty">No hay participantes activos para asignar.</p> }
+      </fieldset>
+      <button mat-button type="submit" [disabled]="saving() || !form.title.trim() || !form.responsible.trim() || !form.participant_ids.length || !form.start_at || !form.end_at || form.end_at <= form.start_at">Guardar actividad</button>
+      @if (selected()) {
+        <section class="log-section"><h3>Bitácora y observaciones</h3>
+          @for (entry of logs(); track entry.id) { <p><strong>{{ entry.event_type === 'observation' ? 'Observación' : entry.event_type === 'created' ? 'Creación' : 'Actualización' }}</strong>
+            {{ entry.first_name ? ' · ' + entry.first_name + ' ' + entry.last_name : '' }} · {{ entry.details }}
+            <small>{{ entry.created_at }}{{ entry.actor_email ? ' · ' + entry.actor_email : '' }}</small></p> }
+          <label>Vincular a participante (opcional)<select name="logParticipant" [(ngModel)]="logParticipant"><option value="">Actividad general</option>
+            @for (person of people(); track person.id) { @if (selected()?.participant_ids?.includes(person.id)) {
+              <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> } }
+          </select></label>
+          <label>Observación<textarea name="logDetails" [(ngModel)]="logDetails" maxlength="1000"></textarea></label>
+          <button mat-button type="button" (click)="addLog()" [disabled]="!logDetails.trim()">Guardar observación</button>
+        </section>
+      }
+    </form>
+  </section>
+</main>

@@ -1,0 +1,80 @@
+<main class="evaluation-page">
+  <header class="heading"><div><h1>Evaluaciones y satisfacción</h1><p>Registra resultados y revisa su evolución.</p></div>
+    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <nav class="tabs" aria-label="Tipo de registro">
+    <button mat-button type="button" [class.active]="type === 'participant'" (click)="setType('participant')">Evaluación de participantes</button>
+    <button mat-button type="button" [class.active]="type === 'satisfaction'" (click)="setType('satisfaction')">Satisfacción de beneficiarios</button>
+  </nav>
+  @if (canManage()) {
+    <section class="criteria-panel"><h2>Criterios de evaluación</h2>
+      <div class="criteria-form"><label>Nombre<input [(ngModel)]="criterionName" maxlength="100"></label>
+        <label>Descripción<input [(ngModel)]="criterionDescription" maxlength="300"></label>
+        <button mat-button type="button" (click)="addCriterion()" [disabled]="!criterionName.trim()">Agregar criterio</button>
+      </div>
+      <div class="criteria-list">@for (item of criteria(); track item.id) {
+        <span>{{ item.name }} <small>{{ item.is_active ? 'Activo' : 'Inactivo' }}</small>
+          <button mat-button type="button" (click)="toggleCriterion(item)">{{ item.is_active ? 'Desactivar' : 'Activar' }}</button></span>
+      }</div>
+    </section>
+  }
+  <section class="filters">
+    <label>{{ type === 'participant' ? 'Participante' : 'Beneficiario' }}
+      <input [(ngModel)]="query" (input)="loadPeople()" placeholder="Buscar por nombre">
+      <select [(ngModel)]="personId" (change)="load()"><option value="">Todos</option>
+        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+      </select>
+    </label>
+    <label>Desde<input type="date" [(ngModel)]="from" (change)="load()"></label>
+    <label>Hasta<input type="date" [(ngModel)]="to" (change)="load()"></label>
+  </section>
+  <section class="layout">
+    <div class="records">
+      @if (canManage()) { <button mat-button type="button" (click)="edit()">{{ type === 'participant' ? 'Nueva evaluación' : 'Registrar satisfacción' }}</button> }
+      @for (record of records(); track record.id) {
+        <button class="record" type="button" (click)="edit(record)">
+          <strong>{{ record.first_name }} {{ record.last_name }}</strong>
+          <span>{{ record.evaluated_on }} · {{ record.average_score ?? 'Sin puntuación' }}/5</span>
+          <span>{{ record.observations || (type === 'participant' ? record.criterion_count + ' criterios' : 'Satisfacción registrada') }}</span>
+        </button>
+      } @empty { <p class="empty">No hay resultados para estos filtros.</p> }
+    </div>
+    @if (canManage()) {
+      <form class="editor" (ngSubmit)="save()">
+        <h2>{{ selected() ? 'Editar registro' : type === 'participant' ? 'Evaluar participante' : 'Registrar satisfacción' }}</h2>
+        <label>{{ type === 'participant' ? 'Participante' : 'Beneficiario' }}<select name="person" [(ngModel)]="form.person_id" required>
+          <option [ngValue]="0" disabled>Selecciona una persona</option>
+          @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+        </select></label>
+        <label>Fecha<input name="date" type="date" [(ngModel)]="form.evaluated_on" required></label>
+        @if (type === 'satisfaction') {
+          <label>Calificación<select name="satisfaction" [(ngModel)]="form.satisfaction_score" required>
+            <option [ngValue]="null" disabled>Selecciona de 1 a 5</option>
+            @for (score of [1,2,3,4,5]; track score) { <option [ngValue]="score">{{ score }} de 5</option> }
+          </select></label>
+        } @else {
+          <fieldset><legend>Puntuación por criterio</legend>
+            @for (criterion of activeCriteria(); track criterion.id) {
+              <label>{{ criterion.name }}<select [ngModel]="answerScore(criterion.id)"
+                (ngModelChange)="setScore(criterion.id, $event)" [name]="'criterion-' + criterion.id">
+                @for (score of [1,2,3,4,5]; track score) { <option [ngValue]="score">{{ score }} de 5</option> }
+              </select></label>
+            } @empty { <p class="empty">Agrega un criterio para registrar evaluaciones.</p> }
+          </fieldset>
+        }
+        <label>Observaciones<textarea name="observations" [(ngModel)]="form.observations" maxlength="1000"></textarea></label>
+        <button mat-button type="submit" [disabled]="saving() || !form.person_id || !form.evaluated_on || (type === 'satisfaction' && !form.satisfaction_score) || (type === 'participant' && !form.answers.length)">Guardar</button>
+      </form>
+    } @else if (selected(); as selection) {
+      <section class="editor"><h2>Resultado de {{ selection.first_name }} {{ selection.last_name }}</h2>
+        @if (detail(); as result) {
+          <p>Fecha: {{ result.evaluated_on }}</p><p>Puntaje: {{ result.average_score ?? 'Sin puntuación' }}/5</p>
+          <p>{{ result.observations || 'Sin observaciones.' }}</p>
+          @for (answer of result.answers ?? []; track answer.criterion_id) {
+            <p>{{ answer.criterion_name }}: <strong>{{ answer.score }}/5</strong>{{ answer.note ? ' · ' + answer.note : '' }}</p>
+          }
+        } @else { <p>Cargando resultado…</p> }
+      </section>
+    }
+  </section>
+</main>

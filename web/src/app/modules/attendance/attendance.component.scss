@@ -1,0 +1,23 @@
+:host { display: block; }
+.attendance-page { max-width: 1200px; margin: 0 auto; padding: 28px; color: #20243a; }
+.heading, .filters, .layout, .times { display: flex; gap: 16px; }
+.heading { justify-content: space-between; align-items: center; margin-bottom: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 26px; }
+.heading p, .record span, .history small, .empty { color: #60677b; }
+label { display: grid; flex: 1; gap: 6px; font-size: 14px; }
+input, select, textarea { width: 100%; min-height: 40px; box-sizing: border-box; border: 1px solid #c8cada; border-radius: 8px; padding: 8px 10px; background: #fff; color: inherit; font: inherit; }
+textarea { min-height: 64px; resize: vertical; }
+.filters { align-items: end; margin: 14px 0 20px; }
+.layout { align-items: flex-start; }
+.records { flex: 1 1 55%; min-width: 0; }
+.summary { margin: 12px 0; padding: 12px; border-radius: 10px; background: #e9f4ef; color: #285e4c; }
+.editor { flex: 1 1 38%; min-width: 260px; display: grid; gap: 12px; padding: 16px; border: 1px solid #e0e2ed; border-radius: 14px; }
+.record { display: grid; gap: 5px; width: 100%; padding: 14px; border: 0; border-bottom: 1px solid #e0e2ed; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.times { gap: 10px; }
+.history { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid #e0e2ed; }
+.history p { padding: 8px 0; border-bottom: 1px solid #ececf2; }
+.history small { display: block; margin-top: 4px; }
+.error { margin: 10px 0; color: #9c3046; }
+.empty { padding: 18px 0; }
+@media (max-width: 760px) { .attendance-page { padding: 18px; } .filters, .layout { flex-direction: column; } .editor { width: 100%; box-sizing: border-box; } }

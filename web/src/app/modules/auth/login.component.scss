@@ -35,12 +35,14 @@ h1 img { display: block; width: 120px; max-height: 100px; object-fit: contain; }
 .intro { margin: 0; color: var(--pana-muted); line-height: 1.5; }
 form { display: grid; gap: 7px; }
 label { margin-top: 5px; color: var(--pana-ink); font-size: .9rem; font-weight: 600; }
+.input-shell { position: relative; display: flex; align-items: center; }
+.input-shell svg { position: absolute; left: 14px; color: var(--pana-muted); pointer-events: none; }
 
 input {
   box-sizing: border-box;
   width: 100%;
   min-height: 46px;
-  padding: 9px 12px;
+  padding: 9px 12px 9px 42px;
   border: 0;
   border-radius: 24px;
   background: #f3f3f8;

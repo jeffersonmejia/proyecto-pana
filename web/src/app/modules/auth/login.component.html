@@ -14,10 +14,16 @@
 
       <form (ngSubmit)="submit()">
         <label for="email">Correo electr&#243;nico</label>
-        <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
+        <span class="input-shell">
+          <svg lucideMail [size]="18" aria-hidden="true"></svg>
+          <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
+        </span>
 
         <label for="password">Contrase&#241;a</label>
-        <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>
+        <span class="input-shell">
+          <svg lucideLockKeyhole [size]="18" aria-hidden="true"></svg>
+          <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>
+        </span>
 
         <p class="form-error" role="alert" [hidden]="!errorMessage()">{{ errorMessage() }}</p>
         <button mat-flat-button type="submit" [disabled]="busy() || !email || !password">

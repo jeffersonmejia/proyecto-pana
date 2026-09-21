@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
+import { LucideLockKeyhole, LucideMail } from '@lucide/angular';
 
 @Component({
   selector: 'pana-login',
   standalone: true,
-  imports: [FormsModule, MatButtonModule],
+  imports: [FormsModule, MatButtonModule, LucideLockKeyhole, LucideMail],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })

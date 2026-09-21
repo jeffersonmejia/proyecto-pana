@@ -1,0 +1,47 @@
+<main class="attendance-page">
+  <header class="heading"><div><h1>Asistencia y horas</h1><p>Registra jornadas y consulta las horas acumuladas.</p></div>
+    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <section class="filters">
+    <label>Participante
+      <input [(ngModel)]="participantSearch" (input)="loadPeople()" placeholder="Buscar participante">
+      <select [(ngModel)]="participantId" (change)="load()"><option value="">Todos</option>
+        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+      </select>
+    </label>
+    <label>Desde<input type="date" [(ngModel)]="from" (change)="load()"></label>
+    <label>Hasta<input type="date" [(ngModel)]="to" (change)="load()"></label>
+    <label>Estado<select [(ngModel)]="status" (change)="load()"><option value="all">Todos</option>
+      <option value="present">Presente</option><option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
+  </section>
+  <section class="layout">
+    <div class="records"><button mat-button type="button" (click)="edit()">Registrar asistencia</button>
+      <p class="summary">Horas acumuladas en los resultados: <strong>{{ totalHours() }}</strong></p>
+      @for (record of records(); track record.id) {
+        <button class="record" type="button" (click)="edit(record)">
+          <strong>{{ record.first_name }} {{ record.last_name }}</strong>
+          <span>{{ record.attendance_date }} · {{ record.status === 'present' ? 'Presente' : record.status === 'absent' ? 'Ausente' : 'Justificado' }}</span>
+          <span>{{ record.hours === null ? 'Horas sin marcar' : record.hours + ' horas' }}</span>
+        </button>
+      } @empty { <p class="empty">No hay registros para esos filtros.</p> }
+    </div>
+    <form class="editor" (ngSubmit)="save()">
+      <h2>{{ selected() ? 'Corregir asistencia' : 'Nuevo registro' }}</h2>
+      <label>Participante<select name="participant" [(ngModel)]="form.participant_id" required>
+        <option [ngValue]="0" disabled>Selecciona un participante</option>
+        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+      </select></label>
+      <label>Fecha<input name="date" type="date" [(ngModel)]="form.attendance_date" required></label>
+      <label>Estado<select name="status" [(ngModel)]="form.status"><option value="present">Presente</option>
+        <option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
+      <div class="times"><label>Entrada<input name="in" type="time" [(ngModel)]="form.check_in"></label>
+        <label>Salida<input name="out" type="time" [(ngModel)]="form.check_out"></label></div>
+      <label>Observación<textarea name="note" maxlength="500" [(ngModel)]="form.note"></textarea></label>
+      @if (selected()) { <label>Motivo de la corrección<textarea name="reason" required minlength="3" maxlength="500" [(ngModel)]="form.correction_reason"></textarea></label> }
+      <button mat-button type="submit" [disabled]="saving() || !form.participant_id || (!!form.check_in && !!form.check_out && form.check_out <= form.check_in) || (form.status !== 'present' && (!!form.check_in || !!form.check_out)) || (!!selected() && !form.correction_reason?.trim())">Guardar</button>
+      @if (selected()) { <section class="history"><h3>Historial de cambios</h3>
+        @for (event of history(); track event.id) { <p>{{ event.event_type === 'created' ? 'Registro creado' : 'Corrección' }}{{ event.correction_reason ? ': ' + event.correction_reason : '' }}<small>{{ event.created_at }}{{ event.actor_email ? ' · ' + event.actor_email : '' }}</small></p> }
+      </section> }
+    </form>
+  </section>
+</main>

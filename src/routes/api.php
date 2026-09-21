@@ -85,7 +85,7 @@ $authorizeAny = static function (array $components, array $permissions): array {
     throw new ApiException(403, 'permission_denied');
 };
 
-return array_merge([
+$routes = array_merge([
     'GET /api/health' => static function (): void {
         $controller = new HealthController(new HealthService(
             new \App\Repositories\HealthRepository(database_connection())
@@ -120,3 +120,11 @@ return array_merge([
         echo json_encode(['allowed' => true]);
     },
 ], (require __DIR__ . '/admin.php')($buildAdmin, $authorize, $authorizeAny, $readJsonBody));
+
+return array_merge(
+    $routes,
+    (require __DIR__ . '/people.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/attendance.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/activities.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
+);
