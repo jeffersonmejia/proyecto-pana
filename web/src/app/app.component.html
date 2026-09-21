@@ -1,0 +1,31 @@
+<main class="page-shell">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="PANA, inicio">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>PANA</span>
+    </a>
+    <span class="topbar-caption">Plataforma de gestión</span>
+  </header>
+
+  <section class="welcome" aria-labelledby="welcome-title">
+    <div class="welcome-copy">
+      <p class="eyebrow">PROYECTO PANA</p>
+      <h1 id="welcome-title">Un espacio para hacer crecer cada iniciativa.</h1>
+      <p class="intro">Organiza actividades, acompaña a las personas y consulta el avance del proyecto desde un solo lugar.</p>
+    </div>
+
+    <mat-card class="status-card" appearance="outlined" aria-live="polite">
+      <div class="status-icon" [class.is-ready]="serviceStatus() === 'ready'" [class.is-error]="serviceStatus() === 'error'">
+        <span aria-hidden="true">{{ serviceStatus() === 'ready' ? '✓' : serviceStatus() === 'error' ? '!' : '…' }}</span>
+      </div>
+      <div class="status-copy">
+        <p class="status-label">Estado del sistema</p>
+        <h2>{{ serviceStatus() === 'ready' ? 'Todo listo' : serviceStatus() === 'error' ? 'Revisa la conexión' : 'Conectando…' }}</h2>
+        <p>{{ databaseStatus() }}</p>
+      </div>
+      <button mat-button type="button" (click)="refreshHealth()">Volver a comprobar</button>
+    </mat-card>
+  </section>
+
+  <footer class="page-footer">PANA <span>•</span> Gestión clara, impacto compartido.</footer>
+</main>

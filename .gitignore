@@ -1,0 +1,53 @@
+# Variables y configuración local; conservar solo la plantilla compartible.
+/.env
+/.env.*
+!/.env.example
+
+# Seguimiento de trabajo local.
+/harness/
+
+# Dependencias instaladas.
+/vendor/
+node_modules/
+
+# Salidas generadas por Angular y herramientas PHP.
+/web/dist/
+/web/.angular/
+/web/coverage/
+/coverage/
+/build/
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+
+# Archivos generados en ejecución; se conserva el marcador de estructura.
+/storage/*
+!/storage/.gitkeep
+
+# Registros y volcados locales.
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+php_error_log
+xampp-control.log
+
+# Temporales y respaldos de editores.
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Configuración local de IDE y archivos del sistema operativo.
+/.vscode/
+/.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Instrucciones locales del agente.
+/AGENTS.md

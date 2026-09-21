@@ -1,0 +1,50 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$pana-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$violet-palette,
+  ),
+  typography: (
+    brand-family: 'Inter, Arial, sans-serif',
+    plain-family: 'Inter, Arial, sans-serif',
+  ),
+  density: (scale: 0),
+));
+
+html {
+  @include mat.all-component-themes($pana-theme);
+  color-scheme: light;
+}
+
+:root {
+  --pana-ink: #252337;
+  --pana-muted: #666579;
+  --pana-violet: #6252a5;
+  --pana-lavender: #eeeafb;
+  --pana-mint: #dff4e8;
+  --pana-peach: #fff0e5;
+  --pana-outline: #e6e3ef;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: radial-gradient(ellipse at 88% 15%, #f0edff 0, transparent 32%), #f8f8fc;
+  color: var(--pana-ink);
+  font-family: 'Inter', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, a { -webkit-tap-highlight-color: transparent; }
+button, a, .status-card { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

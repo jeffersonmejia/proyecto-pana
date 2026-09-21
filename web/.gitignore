@@ -1,0 +1,19 @@
+# Dependencias instaladas y archivos generados por Angular.
+/node_modules/
+/dist/
+/.angular/
+/coverage/
+
+# Configuración local.
+/.env
+/.env.*
+!/.env.example
+
+# Registros, temporales y archivos del sistema.
+*.log
+*.tmp
+*.temp
+*.bak
+.DS_Store
+Thumbs.db
+Desktop.ini
