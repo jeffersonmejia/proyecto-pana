@@ -14,6 +14,7 @@ export interface EvaluationInput {
   evaluation_type: EvaluationType; person_id: number; evaluated_on: string; satisfaction_score: number | null;
   observations: string; answers: EvaluationAnswer[];
 }
+export interface EvaluationPage { page: number; page_size: number; total: number; pages: number; }
 
 @Injectable({ providedIn: 'root' })
 export class EvaluationsApiService {
@@ -26,10 +27,10 @@ export class EvaluationsApiService {
   criteria() { return this.http.get<{ criteria: Criterion[] }>(`${this.url}/criteria`); }
   createCriterion(data: { name: string; description: string }) { return this.http.post(`${this.url}/criteria`, data); }
   updateCriterion(data: Criterion) { return this.http.put(`${this.url}/criteria`, data); }
-  list(type: EvaluationType, person_id: number | '', from: string, to: string) {
+  list(type: EvaluationType, person_id: number | '', from: string, to: string, page = 1) {
     let params = new HttpParams().set('type', type).set('from', from).set('to', to);
     if (person_id) params = params.set('person_id', person_id);
-    return this.http.get<{ evaluations: EvaluationRecord[] }>(this.url, { params });
+    return this.http.get<{ evaluations: EvaluationRecord[]; pagination: EvaluationPage }>(this.url, { params: params.set('page', page) });
   }
   one(id: number) { return this.http.get<{ evaluation: EvaluationRecord }>(this.url, { params: { id } }); }
   create(data: EvaluationInput) { return this.http.post<{ id: number }>(this.url, data); }

@@ -14,6 +14,7 @@ export interface AttendanceInput {
 export interface AttendanceEvent {
   id: number; event_type: string; correction_reason: string | null; created_at: string; actor_email: string | null;
 }
+export interface PageInfo { page: number; page_size: number; total: number; pages: number; }
 
 @Injectable({ providedIn: 'root' })
 export class AttendanceApiService {
@@ -25,13 +26,16 @@ export class AttendanceApiService {
       `${this.url}/participants`, { params: { q } });
   }
 
-  list(filters: { participant_id: number | ''; from: string; to: string; status: string }) {
+  list(filters: { participant_id: number | ''; from: string; to: string; status: string; page: number }) {
     let params = new HttpParams().set('from', filters.from).set('to', filters.to).set('status', filters.status);
     if (filters.participant_id) params = params.set('participant_id', filters.participant_id);
-    return this.http.get<{ records: AttendanceRecord[] }>(this.url, { params });
+    return this.http.get<{ records: AttendanceRecord[]; pagination: PageInfo }>(this.url, { params: params.set('page', filters.page) });
   }
 
   create(record: AttendanceInput) { return this.http.post<{ id: number }>(this.url, record); }
+  checkout(record: { participant_id: number; attendance_date: string; check_out: string }) {
+    return this.http.post<{ status: string }>(`${this.url}/check-out`, record);
+  }
   correct(record: AttendanceInput & { id: number }) { return this.http.put(this.url, record); }
   history(id: number) {
     return this.http.get<{ history: AttendanceEvent[] }>(`${this.url}/history`, { params: { id } });

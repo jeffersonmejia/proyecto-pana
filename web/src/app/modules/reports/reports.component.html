@@ -1,6 +1,5 @@
 <main class="reports-page">
-  <header class="heading"><div><h1>Reportes y documentos</h1><p>Consulta indicadores, resultados y archivos vinculados.</p></div>
-    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+  <header class="heading"><div><h1>Reportes y documentos</h1><p>Consulta indicadores, resultados y archivos vinculados.</p></div></header>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   <nav class="tabs">
     @if (auth.hasPermission('reports.read')) {
@@ -45,18 +44,23 @@
       </select></label>
     </section>
     @if (canManageDocuments()) {
-      <section class="upload">
-        <label>Archivo (PDF, PNG, JPG o TXT; máximo 8 MB)<input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,application/pdf,image/png,image/jpeg,text/plain" (change)="onFile($event)"></label>
-        <button mat-button type="button" (click)="upload()" [disabled]="uploading || !file || !entityId">Subir documento</button>
-      </section>
+      <button class="primary-button" type="button" (click)="openUpload()"><svg lucidePlus [size]="18"></svg>Subir documento</button>
     }
-    <section class="document-list">
-      @for (item of documents(); track item.id) {
-        <article><div><strong>{{ item.original_name }}</strong><span>{{ item.file_size / 1048576 | number:'1.2-2' }} MB · {{ item.created_at }} · {{ item.uploader || 'Usuario eliminado' }}</span></div>
-          <button mat-button type="button" (click)="download(item)">Descargar</button>
-          @if (canManageDocuments()) { <button mat-button type="button" (click)="remove(item)">Eliminar</button> }
-        </article>
-      } @empty { <p class="empty">No hay documentos para este registro.</p> }
-    </section>
+    <div class="table-wrap"><table><thead><tr><th>Archivo</th><th>Vinculado a</th><th>Tamaño</th><th>Fecha</th><th>Subido por</th><th>Acciones</th></tr></thead>
+      <tbody>@for (item of documents(); track item.id) { <tr><td><strong>{{ item.original_name }}</strong></td>
+        <td>{{ item.entity_type }}</td><td>{{ item.file_size / 1048576 | number:'1.2-2' }} MB</td><td>{{ item.created_at }}</td><td>{{ item.uploader || 'Usuario eliminado' }}</td>
+        <td class="actions"><button class="icon-button" type="button" aria-label="Descargar archivo" (click)="download(item)"><svg lucideDownload [size]="18"></svg></button>
+          @if (canManageDocuments()) { <button class="icon-button danger" type="button" aria-label="Eliminar archivo" (click)="remove(item)"><svg lucideTrash [size]="18"></svg></button> }</td></tr>
+      } @empty { <tr><td colspan="6" class="empty">No hay documentos para este registro.</td></tr> }</tbody>
+    </table></div>
+    <pana-paginator [page]="docPage().page" [total]="docPage().total" [pageSize]="docPage().page_size" (pageChange)="changeDocumentPage($event)" />
+    @if (uploadOpen()) { <pana-step-dialog title="Subir documento" [steps]="['Vincular archivo']" [saving]="uploading" [canSave]="!!file && !!entityId" (close)="uploadOpen.set(false)" (save)="upload()">
+      <div class="upload-form"><label>Vincular a<select [(ngModel)]="docType" (change)="changeDocumentType()"><option value="person">Persona</option><option value="activity">Actividad</option><option value="evaluation">Evaluación</option></select></label>
+        <label>Registro<select [(ngModel)]="entityId" (change)="changeDocumentEntity()"><option value="">Selecciona un registro</option>
+          @for (entity of entities(); track entity.id) { <option [ngValue]="entity.id">{{ entity.label }}</option> }
+        </select></label>
+        <label>Archivo (PDF, PNG, JPG o TXT; máximo 8 MB)<input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,application/pdf,image/png,image/jpeg,text/plain" (change)="onFile($event)"></label>
+      </div>
+    </pana-step-dialog> }
   }
 </main>

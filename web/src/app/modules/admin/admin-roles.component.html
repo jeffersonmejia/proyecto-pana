@@ -1,0 +1,25 @@
+<section class="roles-page" aria-labelledby="roles-title">
+  <header class="roles-heading"><div><h2 id="roles-title">Roles y permisos</h2><p>Define qué funciones puede usar cada rol.</p></div>
+    <button class="primary-button" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg>Crear rol</button>
+  </header>
+  @if (message()) { <p class="notice" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <pana-paginator [page]="page().page" [total]="page().total" [pageSize]="page().page_size" (pageChange)="changePage($event)" />
+  <div class="table-wrap"><table><thead><tr><th>Rol</th><th>Código</th><th>Descripción</th><th>Permisos</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>@for (role of roles(); track role.id) { <tr><td><strong>{{ role.name }}</strong>@if (role.code==='admin') { <span class="role-kind">Administrador</span> }</td><td>{{ role.code }}</td><td>{{ role.description||'—' }}</td>
+      <td><div class="permission-list">@for (code of role.permissions; track code) { <span class="permission-chip">{{ permissionName(code) }}</span> } @empty { <span class="muted">Sin permisos asignados</span> }</div></td>
+      <td><span class="state" [class.inactive]="!role.is_active">{{ role.is_active?'Activo':'Inactivo' }}</span></td><td class="actions">
+        <button class="icon-button" type="button" aria-label="Editar rol" (click)="edit(role)"><svg lucidePencil [size]="18"></svg></button>
+        <button class="icon-button danger" type="button" aria-label="Eliminar rol" (click)="remove(role.id)"><svg lucideTrash [size]="18"></svg></button>
+      </td></tr> } @empty { <tr><td colspan="6" class="empty">No hay roles configurados.</td></tr> }</tbody>
+  </table></div>
+  <pana-paginator [page]="page().page" [total]="page().total" [pageSize]="page().page_size" (pageChange)="changePage($event)" />
+  @if (dialog()) { <pana-step-dialog [title]="form.id?'Editar rol':'Crear rol'" [steps]="['Información del rol','Permisos']" [step]="step()" [saving]="busy()"
+    [canContinue]="canContinue()" [canSave]="true" (close)="dialog.set(false)" (previous)="step.set(0)" (next)="next()" (save)="save()">
+    <div class="form-step" [hidden]="step()!==0"><label>Código<input name="code" [(ngModel)]="form.code" required maxlength="80" pattern="[a-z0-9_-]+"></label>
+      <label>Nombre<input name="name" [(ngModel)]="form.name" required maxlength="120"></label><label>Descripción<input name="description" [(ngModel)]="form.description" maxlength="255"></label>
+      <label class="check"><input type="checkbox" name="active" [(ngModel)]="form.is_active">Rol activo</label></div>
+    <div class="form-step" [hidden]="step()!==1"><fieldset><legend>Permisos disponibles</legend>@for (permission of permissions(); track permission.code) {
+      <label class="check"><input type="checkbox" [checked]="form.permissions.includes(permission.code)" (change)="toggle($event,permission.code)">{{ permission.name }}</label> }</fieldset></div>
+  </pana-step-dialog> }
+</section>

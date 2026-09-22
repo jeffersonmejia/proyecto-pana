@@ -53,7 +53,8 @@ final class ActivityInputValidator
             throw new ApiException(422, 'invalid_activity_status');
         }
         return ['participant_id' => $participant === '' ? null : (int) $participant,
-            'from' => $from, 'to' => $to, 'status' => $status];
+            'from' => $from, 'to' => $to, 'status' => $status,
+            'page' => \App\Support\Pagination::page($filters['page'] ?? 1)];
     }
 
     public function id(mixed $value): int

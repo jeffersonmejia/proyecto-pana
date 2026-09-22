@@ -1,0 +1,12 @@
+<section class="administration" aria-label="Administración">
+  <nav class="admin-tabs" role="tablist" aria-label="Secciones de administración">
+    @if (canUsers()) { <button type="button" role="tab" [class.active]="active()==='users'" [attr.aria-selected]="active()==='users'" (click)="select('users')"><svg lucideUsersRound [size]="18"></svg>Usuarios</button> }
+    @if (canPeople()) { <button type="button" role="tab" [class.active]="active()==='people'" [attr.aria-selected]="active()==='people'" (click)="select('people')"><svg lucideUsersRound [size]="18"></svg>Personas</button> }
+    @if (canRoles()) { <button type="button" role="tab" [class.active]="active()==='roles'" [attr.aria-selected]="active()==='roles'" (click)="select('roles')"><svg lucideClipboardCheck [size]="18"></svg>Roles y permisos</button> }
+    @if (canBackups()) { <button type="button" role="tab" [class.active]="active()==='backups'" [attr.aria-selected]="active()==='backups'" (click)="select('backups')"><svg lucideDownload [size]="18"></svg>Respaldos</button> }
+  </nav>
+  @if (active()==='users'&&canUsers()) { <pana-admin-users /> }
+  @if (active()==='people'&&canPeople()) { <pana-people (close)="close.emit()" /> }
+  @if (active()==='roles'&&canRoles()) { <pana-admin-roles /> }
+  @if (active()==='backups'&&canBackups()) { <pana-backups /> }
+</section>

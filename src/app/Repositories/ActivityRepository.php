@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use App\Support\Pagination;
 use RuntimeException;
 use Throwable;
 
@@ -13,9 +14,10 @@ final class ActivityRepository
     {
     }
 
-    public function participants(string $query): array
+    public function participants(string $query, array $actor = []): array
     {
-        $sql = "SELECT p.id,p.first_name,p.last_name FROM people p JOIN participants t ON t.person_id=p.id WHERE p.status='active'";
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
+        $sql = "SELECT p.id,p.first_name,p.last_name FROM people p JOIN participants t ON t.person_id=p.id WHERE p.status='active' AND t.is_active=1 AND {$scope['sql']}";
         $params = [];
         if ($query !== '') { $sql .= ' AND (p.first_name LIKE ? OR p.last_name LIKE ?)'; $params = ['%' . $query . '%', '%' . $query . '%']; }
         $statement = $this->connection->prepare($sql . ' ORDER BY p.last_name,p.first_name LIMIT 100');
@@ -23,9 +25,11 @@ final class ActivityRepository
         return $statement->fetchAll();
     }
 
-    public function isParticipant(int $id): bool
+    public function isParticipant(int $id, array $actor = []): bool
     {
-        $query = $this->connection->prepare('SELECT 1 FROM participants WHERE person_id=?');
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
+        $query = $this->connection->prepare('SELECT 1 FROM participants t JOIN people p ON p.id=t.person_id '
+            . "WHERE t.person_id=? AND t.is_active=1 AND {$scope['sql']}");
         $query->execute([$id]);
         return (bool) $query->fetchColumn();
     }
@@ -34,20 +38,27 @@ final class ActivityRepository
     {
         $where = [];
         $params = [];
+        $actor = $filters['_scope'] ?? [];
+        $where[] = \App\Support\AccessScope::activity('a.id', $actor)['sql'];
         if ($filters['participant_id']) { $where[] = 'ap.participant_id=?'; $params[] = $filters['participant_id']; }
         if ($filters['from']) { $where[] = 'a.start_at>=?'; $params[] = $filters['from']; }
         if ($filters['to']) { $where[] = 'a.start_at<DATE_ADD(?, INTERVAL 1 DAY)'; $params[] = $filters['to']; }
         if ($filters['status'] !== 'all') { $where[] = 'a.status=?'; $params[] = $filters['status']; }
-        $sql = $this->selectSql() . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
-            . ' GROUP BY a.id ORDER BY a.start_at DESC LIMIT 500';
-        $query = $this->connection->prepare($sql);
-        $query->execute($params);
-        return array_map([$this, 'mapActivity'], $query->fetchAll());
+        $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+        $page = Pagination::page($filters['page'] ?? 1);
+        $result = Pagination::fetch($this->connection,
+            $this->selectSql($actor) . $condition . ' GROUP BY a.id ORDER BY a.start_at DESC',
+            'SELECT COUNT(DISTINCT a.id) FROM activities a LEFT JOIN activity_participants ap ON ap.activity_id=a.id AND '
+                . \App\Support\AccessScope::person('ap.participant_id', $actor)['sql'] . $condition,
+            $params, $page);
+        $result['items'] = array_map([$this, 'mapActivity'], $result['items']);
+        return $result;
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, array $actor = []): ?array
     {
-        $query = $this->connection->prepare($this->selectSql() . ' WHERE a.id=? GROUP BY a.id');
+        $scope = \App\Support\AccessScope::activity('a.id', $actor);
+        $query = $this->connection->prepare($this->selectSql($actor) . " WHERE a.id=? AND {$scope['sql']} GROUP BY a.id");
         $query->execute([$id]);
         $activity = $query->fetch();
         return $activity ? $this->mapActivity($activity) : null;
@@ -67,10 +78,11 @@ final class ActivityRepository
         });
     }
 
-    public function update(int $id, array $data, int $actor): void
+    public function update(int $id, array $data, int $actor, array $scopeActor = []): void
     {
-        $this->transaction(function () use ($id, $data, $actor): void {
-            if (!$this->find($id)) throw new RuntimeException('activity_not_found');
+        $this->transaction(function () use ($id, $data, $actor, $scopeActor): void {
+            if (!$this->find($id, $scopeActor)) throw new RuntimeException('activity_not_found');
+            if (!$this->allParticipantsInScope($id, $scopeActor)) throw new RuntimeException('activity_has_out_of_scope_participants');
             $query = $this->connection->prepare('UPDATE activities SET title=?,description=?,responsible=?,start_at=?,end_at=?,status=? WHERE id=?');
             $query->execute([$data['title'], $data['description'] ?: null, $data['responsible'], $data['start_at'], $data['end_at'], $data['status'], $id]);
             $this->syncParticipants($id, $data['participant_ids']);
@@ -78,11 +90,13 @@ final class ActivityRepository
         });
     }
 
-    public function logs(int $id): array
+    public function logs(int $id, array $actor = []): array
     {
+        $scope = \App\Support\AccessScope::person('l.participant_id', $actor);
         $query = $this->connection->prepare('SELECT l.id,l.event_type,l.details,l.created_at,u.email actor_email,'
             . 'p.first_name,p.last_name FROM activity_logs l LEFT JOIN users u ON u.id=l.actor_user_id '
-            . 'LEFT JOIN people p ON p.id=l.participant_id WHERE l.activity_id=? ORDER BY l.id DESC');
+            . 'LEFT JOIN people p ON p.id=l.participant_id WHERE l.activity_id=? AND (l.participant_id IS NULL OR '
+            . $scope['sql'] . ') ORDER BY l.id DESC');
         $query->execute([$id]);
         return $query->fetchAll();
     }
@@ -99,11 +113,22 @@ final class ActivityRepository
         return (bool) $query->fetchColumn();
     }
 
-    private function selectSql(): string
+    public function allParticipantsInScope(int $activity, array $actor): bool
     {
+        $scope = \App\Support\AccessScope::person('ap.participant_id', $actor);
+        $query = $this->connection->prepare('SELECT COUNT(*) total, SUM(CASE WHEN ' . $scope['sql']
+            . ' THEN 1 ELSE 0 END) allowed FROM activity_participants ap WHERE ap.activity_id=?');
+        $query->execute([$activity]);
+        $counts = $query->fetch();
+        return (int) $counts['total'] === (int) $counts['allowed'];
+    }
+
+    private function selectSql(array $actor): string
+    {
+        $scope = \App\Support\AccessScope::person('ap.participant_id', $actor);
         return "SELECT a.*,GROUP_CONCAT(DISTINCT CONCAT(p.first_name,' ',p.last_name) ORDER BY p.last_name SEPARATOR ', ') participant_names, "
             . 'GROUP_CONCAT(DISTINCT ap.participant_id) participant_ids_csv '
-            . 'FROM activities a LEFT JOIN activity_participants ap ON ap.activity_id=a.id '
+            . 'FROM activities a LEFT JOIN activity_participants ap ON ap.activity_id=a.id AND ' . $scope['sql'] . ' '
             . 'LEFT JOIN people p ON p.id=ap.participant_id';
     }
 

@@ -15,39 +15,44 @@ final class EvaluationService
     {
     }
 
-    public function people(mixed $type, mixed $query): array
+    public function people(mixed $type, mixed $query, array $actor = []): array
     {
         if (!in_array($type, ['participant', 'beneficiary'], true) || !is_string($query) || strlen($query) > 100) {
             throw new ApiException(422, 'invalid_person_search');
         }
-        return $this->evaluations->people($type, trim($query));
+        return $this->evaluations->people($type, trim($query), $actor);
     }
 
     public function criteria(): array { return $this->evaluations->criteria(); }
-    public function all(array $filters): array { return $this->evaluations->all($this->validator->filters($filters)); }
-
-    public function one(int $id): array
+    public function all(array $filters): array
     {
-        return $this->evaluations->find($id) ?? throw new ApiException(404, 'evaluation_not_found');
+        $validated = $this->validator->filters($filters);
+        $validated['_scope'] = $filters['_scope'] ?? [];
+        return $this->evaluations->all($validated);
     }
 
-    public function create(array $input, int $actor): array
+    public function one(int $id, array $scope = []): array
+    {
+        return $this->evaluations->find($id, $scope) ?? throw new ApiException(404, 'evaluation_not_found');
+    }
+
+    public function create(array $input, array $actor): array
     {
         $data = $this->validator->record($input);
-        $this->assertRole($data['person_id'], $data['type']);
+        $this->assertRole($data['person_id'], $data['type'], $actor);
         $this->assertActiveCriteria($data['answers']);
-        return ['id' => $this->evaluations->create($data, $actor)];
+        return ['id' => $this->evaluations->create($data, (int) $actor['id'])];
     }
 
-    public function update(array $input): void
+    public function update(array $input, array $actor): void
     {
         $id = $this->validator->id($input['id'] ?? null);
-        $old = $this->one($id);
+        $old = $this->one($id, $actor);
         $data = $this->validator->record($input);
         if ($old['evaluation_type'] !== $data['type']) throw new ApiException(422, 'evaluation_type_immutable');
-        $this->assertRole($data['person_id'], $data['type']);
+        $this->assertRole($data['person_id'], $data['type'], $actor);
         $this->assertActiveCriteria($data['answers']);
-        $this->evaluations->update($id, $data);
+        $this->evaluations->update($id, $data, $actor);
     }
 
     public function createCriterion(array $input): array
@@ -75,9 +80,11 @@ final class EvaluationService
         }
     }
 
-    private function assertRole(int $id, string $type): void
+    private function assertRole(int $id, string $type, array $actor): void
     {
-        if (!$this->evaluations->hasRole($id, $type)) throw new ApiException(422, 'person_not_in_evaluation_type');
+        if (!$this->evaluations->hasRole($id, $type) || !$this->evaluations->personInScope($id, $actor)) {
+            throw new ApiException(404, 'person_not_in_evaluation_type');
+        }
     }
 
     private function assertActiveCriteria(array $answers): void

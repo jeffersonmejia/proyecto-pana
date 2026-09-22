@@ -13,12 +13,13 @@ final class PeopleController
 
     public function index(array $filters): void
     {
-        echo json_encode(['people' => $this->people->all($filters)]);
+        $result = $this->people->all($filters);
+        echo json_encode(['people' => $result['items'], 'pagination' => $result['pagination']]);
     }
 
-    public function show(int $id): void
+    public function show(int $id, array $actor): void
     {
-        echo json_encode(['person' => $this->people->one($id)]);
+        echo json_encode(['person' => $this->people->one($id, $actor)]);
     }
 
     public function create(array $input, int $actorId): void
@@ -39,14 +40,14 @@ final class PeopleController
         echo json_encode(['status' => 'deleted']);
     }
 
-    public function history(int $id): void
+    public function history(int $id, array $actor): void
     {
-        echo json_encode(['history' => $this->people->history($id)]);
+        echo json_encode(['history' => $this->people->history($id, $actor)]);
     }
 
-    public function addNote(int $id, mixed $note, int $actorId): void
+    public function addNote(int $id, mixed $note, int $actorId, array $actor): void
     {
-        $this->people->addNote($id, $note, $actorId);
+        $this->people->addNote($id, $note, $actorId, $actor);
         echo json_encode(['status' => 'added']);
     }
 }

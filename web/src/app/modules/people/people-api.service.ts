@@ -4,10 +4,15 @@ import { environment } from '../../../environments/environment';
 
 export interface PersonRecord {
   id: number;
+  ci: string | null;
   first_name: string;
   last_name: string;
   email: string | null;
   phone: string | null;
+  birth_date: string | null;
+  address: string | null;
+  observations: string | null;
+  has_account: boolean;
   status: 'active' | 'inactive';
   types: string[];
 }
@@ -19,25 +24,26 @@ export interface PersonEvent {
   created_at: string;
   actor_email: string | null;
 }
+export interface PeoplePage { page: number; page_size: number; total: number; pages: number; }
 
-export type PersonInput = Omit<PersonRecord, 'id'>;
+export type PersonInput = Omit<PersonRecord, 'id' | 'has_account'>;
 
 @Injectable({ providedIn: 'root' })
 export class PeopleApiService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/people`;
 
-  list(filters: { q: string; type: string; status: string }) {
+  list(filters: { q: string; type: string; status: string; page: number }) {
     const params = new HttpParams()
-      .set('q', filters.q).set('type', filters.type).set('status', filters.status);
-    return this.http.get<{ people: PersonRecord[] }>(this.url, { params });
+      .set('q', filters.q).set('type', filters.type).set('status', filters.status).set('page', filters.page);
+    return this.http.get<{ people: PersonRecord[]; pagination: PeoplePage }>(this.url, { params });
   }
 
   create(person: PersonInput) {
     return this.http.post<{ id: number }>(this.url, person);
   }
 
-  update(person: PersonRecord) {
+  update(person: PersonInput & { id: number }) {
     return this.http.put(this.url, person);
   }
 

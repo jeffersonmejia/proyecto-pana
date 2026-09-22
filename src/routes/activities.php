@@ -20,35 +20,35 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         if ($value === false || $value < 1) throw new ApiException(400, 'invalid_id');
         return (int) $value;
     };
-    $read = static function (array $components) use ($authorizeAny): void {
-        $authorizeAny($components, ['activities.read', 'activities.manage']);
+    $read = static function (array $components) use ($authorizeAny): array {
+        return $authorizeAny($components, ['activities.read', 'activities.manage']);
     };
 
     return [
         'GET /api/activities/participants' => static function () use ($build, $read): void {
-            $components = $build(); $read($components);
-            $components['activities']->participants($_GET['q'] ?? '');
+            $components = $build(); $actor = $read($components);
+            $components['activities']->participants($_GET['q'] ?? '', $actor);
         },
         'GET /api/activities/logs' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            $components['activities']->logs($id());
+            $components = $build(); $actor = $read($components);
+            $components['activities']->logs($id(), $actor);
         },
         'POST /api/activities/logs' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'activities.manage');
-            $components['activities']->addObservation($readJsonBody(), (int) $actor['id']);
+            $components['activities']->addObservation($readJsonBody(), $actor);
         },
         'GET /api/activities' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            if (isset($_GET['id'])) $components['activities']->show($id());
-            else $components['activities']->index($_GET);
+            $components = $build(); $actor = $read($components);
+            if (isset($_GET['id'])) $components['activities']->show($id(), $actor);
+            else $components['activities']->index(array_merge($_GET, ['_scope' => $actor]));
         },
         'POST /api/activities' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'activities.manage');
-            $components['activities']->create($readJsonBody(), (int) $actor['id']);
+            $components['activities']->create($readJsonBody(), $actor);
         },
         'PUT /api/activities' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'activities.manage');
-            $components['activities']->update($readJsonBody(), (int) $actor['id']);
+            $components['activities']->update($readJsonBody(), $actor);
         },
     ];
 };

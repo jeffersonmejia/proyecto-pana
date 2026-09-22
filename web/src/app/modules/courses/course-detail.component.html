@@ -1,0 +1,102 @@
+<section class="course-detail" aria-label="Detalle del curso">
+  <div class="course-navigation"><button class="back-button" type="button" (click)="back.emit()"><svg lucideBookOpen [size]="18"></svg><span>Cursos</span></button>
+    <nav class="course-tabs" role="tablist" aria-label="Secciones del curso">
+      @for (tab of tabs; track tab.id) { <button type="button" role="tab" [attr.aria-selected]="active() === tab.id" [class.active]="active() === tab.id" (click)="select(tab.id)">
+        @if (tab.id === 'overview') { <svg lucideChartNoAxesCombined [size]="18"></svg> }
+        @if (tab.id === 'participants') { <svg lucideUsersRound [size]="18"></svg> }
+        @if (tab.id === 'attendance') { <svg lucideClock3 [size]="18"></svg> }
+        @if (tab.id === 'activities') { <svg lucideBookOpen [size]="18"></svg> }
+        @if (tab.id === 'evaluations') { <svg lucideClipboardCheck [size]="18"></svg> }<span>{{ tab.label }}</span>
+      </button> }
+    </nav>
+  </div>
+  @if (loading()) { <p class="feedback" role="status">Cargando información del curso…</p> }
+  @if (error()) { <p class="feedback error" role="alert">{{ error() }}</p> }
+  @if (data(); as courseData) {
+    @if (attendanceError()) { <p class="feedback error" role="alert">{{ attendanceError() }}</p> }
+    @switch (active()) {
+      @case ('overview') {
+        <section class="section-content course-overview"><header class="overview-heading"><h1>{{ course().name }}</h1><p>{{ course().description }}</p></header>
+          <div class="summary-heading"><h2>Resumen del curso</h2><p>Información y actividad de las personas inscritas.</p></div>
+          <div class="metric-grid"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Participantes</span><strong>{{ course().participant_count }}</strong></article>
+            <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Horas registradas</span><strong>{{ attendanceHours() }}</strong></article>
+            <article><span class="summary-label"><svg lucideBookOpen [size]="16"></svg>Actividades</span><strong>{{ courseData.activities.length }}</strong></article>
+            <article><span class="summary-label"><svg lucideClipboardCheck [size]="16"></svg>Evaluaciones</span><strong>{{ courseData.evaluations.length }}</strong></article></div>
+          <div class="info-grid"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Tutor</span><strong>{{ course().tutor_name }}</strong></article>
+            <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de inicio</span><strong>{{ course().start_date }}</strong></article>
+            <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de finalización</span><strong>{{ course().end_date }}</strong></article>
+            <article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Cupo</span><strong>{{ course().participant_count }} de {{ course().max_participants }}</strong></article></div>
+        </section>
+      }
+      @case ('participants') {
+        <section class="section-content"><header class="section-heading"><div><h2>Participantes</h2><p>{{ participantRows().length }} participantes encontrados</p></div>
+          <input class="participant-search" [ngModel]="participantQuery()" (ngModelChange)="setParticipantQuery($event)" placeholder="Buscar participante" aria-label="Buscar participante"></header>
+          <div class="letter-filters"><label>Filtrar por nombre</label><div><button type="button" [class.selected]="!firstInitial()" (click)="clearFirstInitial()">Todos</button>@for (letter of alphabet; track letter) { <button type="button" [class.selected]="firstInitial()===letter" (click)="setFirstInitial(letter)">{{ letter }}</button> }</div>
+            <label>Filtrar por apellido</label><div><button type="button" [class.selected]="!lastInitial()" (click)="clearLastInitial()">Todos</button>@for (letter of alphabet; track letter) { <button type="button" [class.selected]="lastInitial()===letter" (click)="setLastInitial(letter)">{{ letter }}</button> }</div></div>
+          <pana-paginator [page]="participantPage()" [pageSize]="participantPageSize" [total]="participantRows().length" (pageChange)="changeParticipantPage($event)" />
+          <div class="participant-table-scroll"><table class="participant-table"><thead><tr><th>No.</th><th>Nombre</th><th>Apellido</th><th>Perfil</th><th>Asistencias</th><th>Horas</th><th>Actividades</th><th>Evaluaciones</th></tr></thead><tbody>
+          @for (person of participantPageRows(); track person.id; let i = $index) { <tr><td>{{ (participantPage()-1)*participantPageSize+i+1 }}</td><td>{{ person.first_name }}</td><td>{{ person.last_name }}</td><td><span class="profile-chip">{{ person.profile }}</span></td><td><div class="attendance-summary"><strong>{{ person.attendance_count }}</strong><small>{{ person.last_attendance || 'Sin registros' }}</small></div></td><td>{{ (person.attendance_minutes / 60).toFixed(1) }}</td><td>{{ person.task_count }}</td><td>{{ person.evaluation_count }}</td></tr> }
+          @empty { <tr><td colspan="8" class="empty">No hay participantes que coincidan con los filtros.</td></tr> }</tbody></table></div>
+          <pana-paginator [page]="participantPage()" [pageSize]="participantPageSize" [total]="participantRows().length" (pageChange)="changeParticipantPage($event)" /></section>
+      }
+      @case ('attendance') {
+        <section class="section-content"><header class="section-heading"><div><h2>Asistencia</h2><p>La entrada es a las 8:00 a. m.; después de esa hora se marca atraso.</p></div>
+          <label class="attendance-date">Fecha<input type="date" [max]="maxAttendanceDate" [ngModel]="attendanceDate()" (ngModelChange)="setAttendanceDate($event)"></label></header>
+          <pana-paginator [page]="attendancePage()" [pageSize]="attendancePageSize" [total]="courseData.participants.length" (pageChange)="changeAttendancePage($event)" />
+          <div class="attendance-table-scroll"><table class="attendance-table"><thead><tr><th>No.</th><th>Participante</th><th>Entrada prevista</th><th>Hora de llegada</th><th>Hora de salida</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
+            @for (person of attendancePageRows(); track person.id; let i = $index) { <tr><td>{{ (attendancePage()-1)*attendancePageSize+i+1 }}</td><td>{{ person.name }}</td><td>08:00</td><td>{{ person.selected_check_in?.slice(0,5) || '—' }}</td><td>{{ person.selected_check_out?.slice(0,5) || '—' }}</td>
+              <td><span class="attendance-status" [class.absent]="person.selected_attendance_status==='absent'" [class.excused]="person.selected_attendance_status==='excused'" [class.late]="person.selected_attendance_status==='present' && isLate(person.selected_check_in)" [class.unmarked]="!person.selected_attendance_status">{{ attendanceDisplayStatus(person) }}</span></td>
+              <td>@if (canMarkAttendance() && !person.selected_attendance_status) { <button class="mark-attendance" type="button" (click)="markAttendance(person)" [disabled]="markingAttendance()!==null">{{ markingAttendance()===person.id ? 'Guardando…' : 'Marcar entrada' }}</button> }
+                @else if (canMarkAttendance() && person.selected_attendance_status==='present' && !person.selected_check_out) { <button class="mark-attendance" type="button" (click)="markAttendance(person)" [disabled]="markingAttendance()!==null">{{ markingAttendance()===person.id ? 'Guardando…' : 'Marcar salida' }}</button> }</td></tr> }
+            @empty { <tr><td colspan="7" class="empty">No hay participantes inscritos en este curso.</td></tr> }</tbody></table></div>
+          <pana-paginator [page]="attendancePage()" [pageSize]="attendancePageSize" [total]="courseData.participants.length" (pageChange)="changeAttendancePage($event)" />
+        </section>
+      }
+      @case ('activities') {
+        <section class="section-content activity-content"><div class="activities-overview"><header class="section-heading"><div><h2>Actividades</h2><p>Asigna tareas, revisa reportes de avance y evidencias PDF.</p></div></header>
+          <div class="metric-grid activity-metrics"><article><span>Tareas</span><strong>{{ courseData.activities.length }}</strong></article><article><span>Evidencias subidas</span><strong>{{ evidenceCount() }}</strong></article><article><span>Completadas</span><strong>{{ completedTasks() }}</strong></article>
+            @if (canManageTasks()) { <button class="primary-action create-task-button" type="button" (click)="openTaskDialog()"><svg lucidePlus [size]="18"></svg>Crear tarea</button> }
+          </div></div>
+          @if (taskError()) { <p class="feedback error" role="alert">{{ taskError() }}</p> }
+          <div class="task-list">@for (row of courseData.activities; track row.id) { <article class="task-card" [class.expanded]="expandedTask()===row.id">
+            <header><button class="task-summary-button" type="button" [attr.aria-expanded]="expandedTask()===row.id" (click)="toggleTaskDetails(row.id)"><span class="task-card-summary"><strong>{{ row.title }}</strong><span>{{ taskSummary(row.description) }}</span></span>
+              <span class="task-deadline" [class.overdue]="timeRemaining(row.end_at,row.status)==='Entrega vencida'">{{ timeRemaining(row.end_at,row.status) }}</span></button></header>
+            @if (expandedTask()===row.id) { <section class="task-details"><p class="task-description">{{ row.description || 'Sin descripción.' }}</p>
+              <dl><div><dt>Estado</dt><dd>{{ taskStatus(row.status) }}</dd></div><div><dt>Fechas</dt><dd>{{ row.start_at }} – {{ row.end_at }}</dd></div><div><dt>Responsable</dt><dd>{{ row.responsible }}</dd></div><div><dt>Asignados</dt><dd>{{ row.participants || '—' }}</dd></div></dl>
+              <div class="evidence-list"><strong>Evidencias</strong>@for (file of documentsForTask(row.id); track file.id) { <button class="file-link" type="button" (click)="downloadDocument(file.id,file.original_name)"><svg lucideFileText [size]="17"></svg>{{ file.original_name }} · {{ file.uploader || 'Participante' }}</button> } @empty { <span class="muted">Aún no hay archivos.</span> }</div>
+              @if (canSubmitEvidence()) { <label class="evidence-dropzone" [class.dragging]="draggingTask()===row.id" (dragover)="onTaskDragOver(row.id,$event)" (dragleave)="onTaskDragLeave(row.id)" (drop)="onTaskDrop(row.id,$event)">
+                <svg class="pdf-icon" lucideFileText [size]="27"></svg><span><strong>Arrastra tu evidencia PDF aquí</strong><small>PDF de hasta 8 MB o elige un archivo</small></span>
+                <span class="upload-action"><svg lucideUpload [size]="17"></svg>Elegir PDF</span><input class="file-picker" type="file" accept="application/pdf,.pdf" aria-label="Elegir evidencia PDF" (change)="uploadEvidence(row.id,$event)" [disabled]="uploadingTask()===row.id">
+              </label> }
+            </section> }
+          </article> } @empty { <p class="empty task-empty">Todavía no hay tareas asignadas en este curso.</p> }</div>
+        </section>
+        @if (canManageTasks() && taskDialog()) { <pana-step-dialog title="Crear tarea" [steps]="['Datos de la tarea','Fechas y participantes']" [step]="taskStep()" [saving]="taskSaving()" [canContinue]="canContinueTask()" [canSave]="canSaveTask(courseData.participants)" (close)="closeTaskDialog()" (previous)="previousTaskStep()" (next)="nextTaskStep()" (save)="createTask(courseData)">
+          <div class="task-step" [hidden]="taskStep()!==0"><div class="task-fields">
+            <label class="wide-field">Nombre de la tarea<input name="task-title" [(ngModel)]="taskForm.title" required maxlength="150"></label>
+            <label class="wide-field">Descripción<textarea name="task-description" [(ngModel)]="taskForm.description" maxlength="1500"></textarea></label></div>
+          </div>
+          <div class="task-step" [hidden]="taskStep()!==1"><div class="task-fields">
+            <label>Responsable<input name="task-responsible" [(ngModel)]="taskForm.responsible" required maxlength="120"></label>
+            <label>Inicio<input name="task-start" type="datetime-local" [(ngModel)]="taskForm.start_at" required></label>
+            <label>Fin<input name="task-end" type="datetime-local" [(ngModel)]="taskForm.end_at" required></label></div>
+            <fieldset class="task-assignees"><legend>Asignar a participantes del curso</legend>
+              <label class="select-all"><input type="checkbox" [checked]="allTaskParticipantsSelected(courseData.participants)" (change)="toggleAllTaskParticipants($any($event.target).checked,courseData.participants)">Seleccionar todos</label>
+              <div class="assignee-list">@for (person of courseData.participants; track person.id) { <label><input type="checkbox" [checked]="taskForm.participant_ids.includes(person.id)" (change)="toggleTaskParticipant(person.id,$any($event.target).checked)">{{ person.name }}</label> }</div>
+            </fieldset>
+          </div>
+          @if (taskError()) { <p class="feedback error" role="alert">{{ taskError() }}</p> }
+        </pana-step-dialog> }
+        @if (courseData.activity_logs.length) { <section class="section-content log-content"><h2>Bitácora</h2><div class="log-list">
+          @for (entry of courseData.activity_logs; track entry.id) { <article><div><strong>{{ entry.activity_title }}</strong><span>{{ entry.event_type }} · {{ entry.created_at }}</span></div>
+            <p>{{ entry.details }}</p><small>{{ entry.participant_name || 'Actividad general' }}{{ entry.actor_email ? ' · ' + entry.actor_email : '' }}</small></article> }
+        </div></section> }
+      }
+      @case ('evaluations') {
+        <section class="section-content"><h2>Evaluaciones</h2><div class="table-scroll"><table><thead><tr><th>Participante</th><th>Fecha</th><th>Tipo</th><th>Resultado</th><th>Observaciones</th></tr></thead><tbody>
+          @for (row of courseData.evaluations; track row.id) { <tr><td>{{ row.first_name }} {{ row.last_name }}</td><td>{{ row.evaluated_on }}</td><td>{{ row.evaluation_type }}</td><td>{{ row.average_score ?? row.satisfaction_score ?? '—' }}</td><td>{{ row.observations || '—' }}</td></tr> }
+          @empty { <tr><td colspan="5" class="empty">Todavía no hay evaluaciones para las personas inscritas.</td></tr> }</tbody></table></div></section>
+      }
+    }
+  }
+</section>

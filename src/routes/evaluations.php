@@ -20,38 +20,38 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         if ($value === false || $value < 1) throw new ApiException(400, 'invalid_id');
         return (int) $value;
     };
-    $read = static function (array $components) use ($authorizeAny): void {
-        $authorizeAny($components, ['evaluations.read', 'evaluations.manage']);
+    $read = static function (array $components) use ($authorizeAny): array {
+        return $authorizeAny($components, ['evaluations.read', 'evaluations.manage']);
     };
 
     return [
         'GET /api/evaluations/people' => static function () use ($build, $read): void {
-            $components = $build(); $read($components);
-            $components['evaluations']->people($_GET['type'] ?? '', $_GET['q'] ?? '');
+            $components = $build(); $actor = $read($components);
+            $components['evaluations']->people($_GET['type'] ?? '', $_GET['q'] ?? '', $actor);
         },
         'GET /api/evaluations/criteria' => static function () use ($build, $read): void {
             $components = $build(); $read($components); $components['evaluations']->criteria();
         },
         'POST /api/evaluations/criteria' => static function () use ($build, $authorize, $readJsonBody): void {
-            $components = $build(); $authorize($components, 'evaluations.manage');
+            $components = $build(); $authorize($components, 'evaluations.criteria.manage');
             $components['evaluations']->createCriterion($readJsonBody());
         },
         'PUT /api/evaluations/criteria' => static function () use ($build, $authorize, $readJsonBody): void {
-            $components = $build(); $authorize($components, 'evaluations.manage');
+            $components = $build(); $authorize($components, 'evaluations.criteria.manage');
             $components['evaluations']->updateCriterion($readJsonBody());
         },
         'GET /api/evaluations' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            if (isset($_GET['id'])) $components['evaluations']->show($id());
-            else $components['evaluations']->index($_GET);
+            $components = $build(); $actor = $read($components);
+            if (isset($_GET['id'])) $components['evaluations']->show($id(), $actor);
+            else $components['evaluations']->index(array_merge($_GET, ['_scope' => $actor]));
         },
         'POST /api/evaluations' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'evaluations.manage');
-            $components['evaluations']->create($readJsonBody(), (int) $actor['id']);
+            $components['evaluations']->create($readJsonBody(), $actor);
         },
         'PUT /api/evaluations' => static function () use ($build, $authorize, $readJsonBody): void {
-            $components = $build(); $authorize($components, 'evaluations.manage');
-            $components['evaluations']->update($readJsonBody());
+            $components = $build(); $actor = $authorize($components, 'evaluations.manage');
+            $components['evaluations']->update($readJsonBody(), $actor);
         },
     ];
 };

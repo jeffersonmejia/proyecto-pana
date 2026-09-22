@@ -17,19 +17,21 @@ final class AttendanceService
 
     public function all(array $filters): array
     {
-        return $this->attendance->all($this->validator->filters($filters));
+        $validated = $this->validator->filters($filters);
+        $validated['_scope'] = $filters['_scope'] ?? [];
+        return $this->attendance->all($validated);
     }
 
-    public function participants(mixed $query): array
+    public function participants(mixed $query, array $actor = []): array
     {
         if (!is_string($query) || strlen($query) > 100) throw new ApiException(422, 'invalid_search');
-        return $this->attendance->participants(trim($query));
+        return $this->attendance->participants(trim($query), $actor);
     }
 
-    public function create(array $input, int $actor): array
+    public function create(array $input, int $actor, array $scope = []): array
     {
         $record = $this->validator->record($input);
-        $this->assertParticipant($record['participant_id']);
+        $this->assertParticipant($record['participant_id'], $scope);
         try { return ['id' => $this->attendance->create($record, $actor)]; }
         catch (PDOException $error) {
             if ($error->getCode() === '23000') throw new ApiException(409, 'attendance_already_exists');
@@ -37,12 +39,23 @@ final class AttendanceService
         }
     }
 
-    public function update(array $input, int $actor): void
+    public function checkout(array $input,int $actor,array $scope=[]): void
+    {
+        $record=$this->validator->checkout($input); $this->assertParticipant($record['participant_id'],$scope);
+        try { $this->attendance->checkOut($record['participant_id'],$record['attendance_date'],$record['check_out'],$actor); }
+        catch(RuntimeException $error) {
+            $status=match($error->getMessage()) {'attendance_entry_required'=>409,'attendance_exit_exists'=>409,'invalid_attendance_range'=>422,default=>500};
+            if($status===500) throw $error;
+            throw new ApiException($status,$error->getMessage());
+        }
+    }
+
+    public function update(array $input, int $actor, array $scope = []): void
     {
         $id = $this->validator->id($input['id'] ?? null);
         $record = $this->validator->record($input, true);
-        $this->assertParticipant($record['participant_id']);
-        try { $this->attendance->update($id, $record, $actor); }
+        $this->assertParticipant($record['participant_id'], $scope);
+        try { $this->attendance->update($id, $record, $actor, $scope); }
         catch (PDOException $error) {
             if ($error->getCode() === '23000') throw new ApiException(409, 'attendance_already_exists');
             throw $error;
@@ -52,19 +65,19 @@ final class AttendanceService
         }
     }
 
-    public function one(int $id): array
+    public function one(int $id, array $scope = []): array
     {
-        return $this->attendance->find($id) ?? throw new ApiException(404, 'attendance_not_found');
+        return $this->attendance->find($id, $scope) ?? throw new ApiException(404, 'attendance_not_found');
     }
 
-    public function history(int $id): array
+    public function history(int $id, array $scope = []): array
     {
-        $this->one($id);
+        $this->one($id, $scope);
         return $this->attendance->history($id);
     }
 
-    private function assertParticipant(int $id): void
+    private function assertParticipant(int $id, array $scope): void
     {
-        if (!$this->attendance->isParticipant($id)) throw new ApiException(422, 'participant_not_found');
+        if (!$this->attendance->isParticipant($id, $scope)) throw new ApiException(404, 'participant_not_found');
     }
 }

@@ -1,0 +1,9 @@
+:host { display: block; color: #202124; }
+.administration { max-width: 1400px; margin: 0 auto; }
+.admin-tabs { display: flex; gap: 10px; max-width: 100%; overflow-x: auto; border-bottom: 1px solid #d7e2f2; scrollbar-width: thin; }
+.admin-tabs button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 0 12px; border: 0; border-bottom: 3px solid transparent; border-radius: 14px 14px 0 0; background: transparent; color: #52657c; font: inherit; font-size: .8rem; cursor: pointer; transition: color 140ms ease, background-color 140ms ease; }
+.admin-tabs button:hover { background: #f4f8ff; color: #174ea6; }
+.admin-tabs button.active { border-bottom-color: #1a73e8; color: #174ea6; font-weight: 600; }
+.administration > pana-admin-users, .administration > pana-admin-roles, .administration > pana-people, .administration > pana-backups { display: block; margin-top: 18px; }
+@media (max-width: 720px) { .admin-tabs button { min-height: 44px; padding: 0 9px; font-size: .74rem; } }
+@media (prefers-reduced-motion: reduce) { .admin-tabs button { transition: none; } }

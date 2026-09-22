@@ -11,7 +11,7 @@ final class ReportController
     {
     }
 
-    public function dashboard(): void { echo json_encode(['dashboard' => $this->reports->dashboard()]); }
-    public function people(mixed $query): void { echo json_encode(['people' => $this->reports->people($query)]); }
-    public function report(array $filters): void { echo json_encode(['rows' => $this->reports->report($filters)]); }
+    public function dashboard(array $actor): void { echo json_encode(['dashboard' => $this->reports->dashboard($actor)]); }
+    public function people(mixed $query, array $actor): void { echo json_encode(['people' => $this->reports->people($query, $actor)]); }
+    public function report(array $filters, array $actor): void { echo json_encode(['rows' => $this->reports->report($filters, $actor)]); }
 }

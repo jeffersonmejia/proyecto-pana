@@ -11,24 +11,28 @@ final class EvaluationController
     {
     }
 
-    public function people(mixed $type, mixed $query): void
+    public function people(mixed $type, mixed $query, array $actor): void
     {
-        echo json_encode(['people' => $this->evaluations->people($type, $query)]);
+        echo json_encode(['people' => $this->evaluations->people($type, $query, $actor)]);
     }
 
     public function criteria(): void { echo json_encode(['criteria' => $this->evaluations->criteria()]); }
-    public function index(array $filters): void { echo json_encode(['evaluations' => $this->evaluations->all($filters)]); }
-    public function show(int $id): void { echo json_encode(['evaluation' => $this->evaluations->one($id)]); }
+    public function index(array $filters): void
+    {
+        $result = $this->evaluations->all($filters);
+        echo json_encode(['evaluations' => $result['items'], 'pagination' => $result['pagination']]);
+    }
+    public function show(int $id, array $actor): void { echo json_encode(['evaluation' => $this->evaluations->one($id, $actor)]); }
 
-    public function create(array $input, int $actor): void
+    public function create(array $input, array $actor): void
     {
         http_response_code(201);
         echo json_encode($this->evaluations->create($input, $actor));
     }
 
-    public function update(array $input): void
+    public function update(array $input, array $actor): void
     {
-        $this->evaluations->update($input);
+        $this->evaluations->update($input, $actor);
         echo json_encode(['status' => 'updated']);
     }
 

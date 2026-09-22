@@ -26,9 +26,9 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
     return [
         'GET /api/people' => static function () use ($build, $authorizeAny, $id): void {
             $components = $build();
-            $authorizeAny($components, ['people.read', 'people.manage']);
-            if (isset($_GET['id'])) $components['people']->show($id());
-            else $components['people']->index($_GET);
+            $actor = $authorizeAny($components, ['people.read', 'people.manage']);
+            if (isset($_GET['id'])) $components['people']->show($id(), $actor);
+            else $components['people']->index(array_merge($_GET, ['_scope' => $actor]));
         },
         'POST /api/people' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build();
@@ -47,14 +47,14 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         },
         'GET /api/people/history' => static function () use ($build, $authorizeAny, $id): void {
             $components = $build();
-            $authorizeAny($components, ['people.read', 'people.manage']);
-            $components['people']->history($id());
+            $actor = $authorizeAny($components, ['people.read', 'people.manage']);
+            $components['people']->history($id(), $actor);
         },
         'POST /api/people/history' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build();
             $actor = $authorize($components, 'people.manage');
             $input = $readJsonBody();
-            $components['people']->addNote((int) ($input['person_id'] ?? 0), $input['details'] ?? null, (int) $actor['id']);
+            $components['people']->addNote((int) ($input['person_id'] ?? 0), $input['details'] ?? null, (int) $actor['id'], $actor);
         },
     ];
 };

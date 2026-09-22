@@ -56,7 +56,8 @@ final class EvaluationInputValidator
         $from = $this->filterDate($input['from'] ?? '');
         $to = $this->filterDate($input['to'] ?? '');
         if ($from && $to && $from > $to) throw new ApiException(422, 'invalid_date_range');
-        return ['type' => $type, 'person_id' => $person === '' ? null : (int) $person, 'from' => $from, 'to' => $to];
+        return ['type' => $type, 'person_id' => $person === '' ? null : (int) $person,
+            'from' => $from, 'to' => $to, 'page' => \App\Support\Pagination::page($input['page'] ?? 1)];
     }
 
     public function criterion(array $input): array

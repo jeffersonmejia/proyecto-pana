@@ -20,31 +20,35 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         if ($value === false || $value < 1) throw new ApiException(400, 'invalid_id');
         return (int) $value;
     };
-    $read = static function (array $components) use ($authorizeAny): void {
-        $authorizeAny($components, ['attendance.read', 'attendance.manage']);
+    $read = static function (array $components) use ($authorizeAny): array {
+        return $authorizeAny($components, ['attendance.read', 'attendance.manage']);
     };
 
     return [
         'GET /api/attendance/participants' => static function () use ($build, $read): void {
-            $components = $build(); $read($components);
-            $components['attendance']->participants($_GET['q'] ?? '');
+            $components = $build(); $actor = $read($components);
+            $components['attendance']->participants($_GET['q'] ?? '', $actor);
         },
         'GET /api/attendance/history' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            $components['attendance']->history($id());
+            $components = $build(); $actor = $read($components);
+            $components['attendance']->history($id(), $actor);
         },
         'GET /api/attendance' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            if (isset($_GET['id'])) $components['attendance']->show($id());
-            else $components['attendance']->index($_GET);
+            $components = $build(); $actor = $read($components);
+            if (isset($_GET['id'])) $components['attendance']->show($id(), $actor);
+            else $components['attendance']->index(array_merge($_GET, ['_scope' => $actor]));
         },
         'POST /api/attendance' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'attendance.manage');
-            $components['attendance']->create($readJsonBody(), (int) $actor['id']);
+            $components['attendance']->create($readJsonBody(), $actor);
+        },
+        'POST /api/attendance/check-out' => static function () use ($build, $authorize, $readJsonBody): void {
+            $components = $build(); $actor = $authorize($components, 'attendance.manage');
+            $components['attendance']->checkout($readJsonBody(), $actor);
         },
         'PUT /api/attendance' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build(); $actor = $authorize($components, 'attendance.manage');
-            $components['attendance']->update($readJsonBody(), (int) $actor['id']);
+            $components['attendance']->update($readJsonBody(), $actor);
         },
     ];
 };

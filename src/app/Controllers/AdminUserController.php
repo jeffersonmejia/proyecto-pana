@@ -8,13 +8,29 @@ use App\Services\AdminUserService;
 
 final class AdminUserController
 {
-    public function __construct(private AdminUserService $users)
+    public function __construct(private AdminUserService $users, private \App\Repositories\StudentLookupRepository $students)
     {
     }
 
-    public function index(): void
+    public function index(mixed $page): void
     {
-        echo json_encode(['users' => $this->users->all()]);
+        $result = $this->users->all($page);
+        echo json_encode(['users' => $result['items'], 'pagination' => $result['pagination']]);
+    }
+
+    public function beneficiaries(mixed $query, mixed $personId): void
+    {
+        echo json_encode(['people' => $this->users->beneficiaryPeople($query, $personId)]);
+    }
+
+    public function students(mixed $query, mixed $userId): void
+    {
+        $id = $userId === null || $userId === '' ? null : filter_var($userId, FILTER_VALIDATE_INT);
+        if (!is_string($query) || strlen(trim($query)) > 100 || (strlen(trim($query)) < 2 && $id === null)
+            || $id === false || ($id !== null && $id < 1)) {
+            throw new ApiException(422, 'student_search_too_short');
+        }
+        echo json_encode(['students' => $this->students->search(trim($query), $id === null ? null : (int) $id)]);
     }
 
     public function create(array $input): void

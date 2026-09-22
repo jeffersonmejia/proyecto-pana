@@ -45,6 +45,7 @@ final class AuthService
         }
 
         $this->attempts->clear($identityHash, $ipHash);
+        $this->users->recordLogin((int) $user['id']);
         return $this->issueSession((int) $user['id']);
     }
 

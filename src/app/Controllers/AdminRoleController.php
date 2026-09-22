@@ -12,14 +12,20 @@ final class AdminRoleController
     {
     }
 
-    public function index(): void
+    public function index(mixed $page): void
     {
-        echo json_encode(['roles' => $this->roles->all()]);
+        $result = $this->roles->all($page);
+        echo json_encode(['roles' => $result['items'], 'pagination' => $result['pagination']]);
     }
 
     public function permissions(): void
     {
         echo json_encode(['permissions' => $this->roles->permissions()]);
+    }
+
+    public function options(): void
+    {
+        echo json_encode(['roles' => $this->roles->options()]);
     }
 
     public function save(array $input): void

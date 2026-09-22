@@ -14,6 +14,7 @@ export interface ActivityLog {
   id: number; event_type: string; details: string; created_at: string; actor_email: string | null;
   first_name: string | null; last_name: string | null;
 }
+export interface ActivitiesPage { page: number; page_size: number; total: number; pages: number; }
 
 @Injectable({ providedIn: 'root' })
 export class ActivitiesApiService {
@@ -23,10 +24,10 @@ export class ActivitiesApiService {
     return this.http.get<{ participants: { id: number; first_name: string; last_name: string }[] }>(
       `${this.url}/participants`, { params: { q } });
   }
-  list(filters: { participant_id: number | ''; from: string; to: string; status: string }) {
+  list(filters: { participant_id: number | ''; from: string; to: string; status: string; page: number }) {
     let params = new HttpParams().set('from', filters.from).set('to', filters.to).set('status', filters.status);
     if (filters.participant_id) params = params.set('participant_id', filters.participant_id);
-    return this.http.get<{ activities: ActivityRecord[] }>(this.url, { params });
+    return this.http.get<{ activities: ActivityRecord[]; pagination: ActivitiesPage }>(this.url, { params: params.set('page', filters.page) });
   }
   create(activity: ActivityInput) { return this.http.post<{ id: number }>(this.url, activity); }
   update(activity: ActivityInput & { id: number }) { return this.http.put(this.url, activity); }

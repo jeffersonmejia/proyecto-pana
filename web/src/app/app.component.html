@@ -1,66 +1,68 @@
 @if (sessionReady() && !auth.user()) {
-  <pana-login (authenticated)="refreshHealth()" />
-} @else {
-  <main class="page-shell">
-    <header class="topbar">
-      <span class="topbar-caption">Plataforma de gestión</span>
-    </header>
-
-  @if (!sessionReady()) {
-    <p class="session-loading" role="status">Comprobando tu sesión…</p>
-  } @else if (auth.user(); as user) {
-    @if (showPeople()) {
-      <pana-people (close)="showPeople.set(false)" />
-    } @else if (showAttendance()) {
-      <pana-attendance (close)="showAttendance.set(false)" />
-    } @else if (showActivities()) {
-      <pana-activities (close)="showActivities.set(false)" />
-    } @else if (showEvaluations()) {
-      <pana-evaluations (close)="showEvaluations.set(false)" />
-    } @else if (showReports()) {
-      <pana-reports (close)="showReports.set(false)" />
-    } @else if (showAdmin()) {
-      <pana-access-admin (close)="showAdmin.set(false)" />
-    } @else {
-      <section class="welcome" aria-labelledby="welcome-title">
-        <div class="welcome-copy">
-          <h1 id="welcome-title">Hola, {{ user.email }}</h1>
-          <p class="intro">Tu espacio para organizar actividades y acompañar cada iniciativa.</p>
-          <p class="role-summary">Roles asignados: {{ user.roles.length ? user.roles.join(', ') : 'sin roles' }}</p>
-          @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
-            <button mat-button type="button" (click)="showAdmin.set(true)">{{ auth.hasPermission('users.manage') || auth.hasPermission('roles.manage') ? 'Gestionar accesos' : 'Ver usuarios' }}</button>
-          }
-          @if (auth.hasPermission('people.read') || auth.hasPermission('people.manage')) {
-            <button mat-button type="button" (click)="showPeople.set(true)">Participantes y beneficiarios</button>
-          }
-          @if (auth.hasPermission('attendance.read') || auth.hasPermission('attendance.manage')) {
-            <button mat-button type="button" (click)="showAttendance.set(true)">Asistencia y horas</button>
-          }
-          @if (auth.hasPermission('activities.read') || auth.hasPermission('activities.manage')) {
-            <button mat-button type="button" (click)="showActivities.set(true)">Cronogramas y bitácoras</button>
-          }
-          @if (auth.hasPermission('evaluations.read') || auth.hasPermission('evaluations.manage')) {
-            <button mat-button type="button" (click)="showEvaluations.set(true)">Evaluaciones y satisfacción</button>
-          }
-          @if (auth.hasPermission('reports.read') || auth.hasPermission('documents.read') || auth.hasPermission('documents.manage')) {
-            <button mat-button type="button" (click)="showReports.set(true)">Reportes y documentos</button>
+  <pana-login />
+} @else if (!sessionReady()) {
+  <main class="session-loading" role="status">Cargando tu espacio…</main>
+} @else if (auth.user()) {
+  <div class="workspace">
+    <header class="topbar" aria-label="Navegación principal">
+      <a class="brand" href="#inicio" aria-label="PANA, ir al inicio" (click)="$event.preventDefault(); open('home')">
+        <img src="assets/pana-logo.svg" alt="Municipalidad de Santo Domingo · PANA" />
+      </a>
+      <nav class="topbar-actions" aria-label="Acciones de cuenta">
+        <button class="topbar-link courses-link" type="button" [class.active]="activeModule() === 'home'" (click)="open('home')">
+          <span>Cursos</span>
+        </button>
+        @if (auth.user()?.roles.includes('admin') || auth.isPreview()) {
+          <div class="preview-menu" #previewMenu (document:click)="closePreviewMenu($event, previewMenu)" (keydown.escape)="previewMenuOpen.set(false)">
+            <button class="topbar-link preview-link" type="button" aria-haspopup="dialog" [class.active]="auth.isPreview()" [attr.aria-expanded]="previewMenuOpen()" (click)="previewMenuOpen.update(open => !open)">
+              <svg lucideEye [size]="17"></svg><span>Ver como</span>
+            </button>
+            @if (previewMenuOpen()) {
+              <section class="preview-popover" role="dialog" aria-label="Vista previa por rol">
+                <h2>Vista previa</h2><p>Elige un rol para cambiar al instante a su vista de solo lectura.</p>
+                <label>Rol<select [value]="previewSelection()" (change)="choosePreviewRole($event)"><option value="" disabled>Selecciona un rol</option>@for (role of previewRoles; track role.code) { <option [value]="role.code">{{ role.label }}</option> }</select></label>
+                @if (auth.isPreview()) { <button class="preview-stop" type="button" (click)="stopPreview()">Volver a mi vista</button> }
+              </section>
+            }
+          </div>
+        }
+        @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
+          <button class="topbar-link admin-link" type="button" [class.active]="activeModule() === 'admin'" (click)="open('admin')">
+            <svg lucideUsersRound [size]="19"></svg><span>Administración</span>
+          </button>
+        }
+        <div class="account-menu" #accountMenu (document:click)="closeAccountMenu($event, accountMenu)" (keydown.escape)="accountMenuOpen.set(false)">
+          <button class="topbar-link account-trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="accountMenuOpen()" (click)="accountMenuOpen.update(open => !open)">
+            Mi cuenta
+          </button>
+          @if (accountMenuOpen()) {
+            <section class="account-popover" role="menu" aria-label="Mi cuenta">
+              <strong>{{ displayShortName() }}</strong>
+              <span class="account-role">{{ displayRole() }}</span>
+              <button class="popover-logout" type="button" role="menuitem" (click)="logout()">Cerrar sesión</button>
+            </section>
           }
         </div>
+      </nav>
+    </header>
 
-        <mat-card class="status-card" appearance="outlined" aria-live="polite">
-          <div class="status-icon" [class.is-ready]="serviceStatus() === 'ready'" [class.is-error]="serviceStatus() === 'error'">
-            <span aria-hidden="true">{{ serviceStatus() === 'ready' ? '✓' : serviceStatus() === 'error' ? '!' : '…' }}</span>
-          </div>
-          <div class="status-copy">
-            <h2>{{ serviceStatus() === 'ready' ? 'Todo listo' : serviceStatus() === 'error' ? 'Revisa la conexión' : 'Conectando…' }}</h2>
-            <p>{{ databaseStatus() }}</p>
-          </div>
-          <button mat-button type="button" (click)="refreshHealth()">Volver a comprobar</button>
-          <button mat-button type="button" (click)="logout()">Cerrar sesión</button>
-        </mat-card>
-      </section>
-    }
-  }
-
-  </main>
+    <main class="main-content" [class.course-open]="courseDetailOpen()">
+      @if (auth.isPreview()) { <div class="preview-banner" role="status"><span>Vista previa de {{ displayRole() }} · Solo lectura</span><button type="button" (click)="stopPreview()">Salir</button></div> }
+      @if (activeModule() === 'home') {
+        <pana-courses-home (detailChange)="courseDetailOpen.set($event)" />
+      } @else if (activeModule() === 'admin') {
+        <pana-access-admin (close)="open('home')" />
+      } @else if (activeModule() === 'people') {
+        <pana-people (close)="open('home')" />
+      } @else if (activeModule() === 'attendance') {
+        <pana-attendance (close)="open('home')" />
+      } @else if (activeModule() === 'activities') {
+        <pana-activities (close)="open('home')" />
+      } @else if (activeModule() === 'evaluations') {
+        <pana-evaluations (close)="open('home')" />
+      } @else if (activeModule() === 'reports') {
+        <pana-reports (close)="open('home')" />
+      }
+    </main>
+  </div>
 }

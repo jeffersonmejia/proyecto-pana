@@ -11,25 +11,32 @@ final class DocumentController
     {
     }
 
-    public function entities(mixed $type, mixed $query): void
+    public function entities(mixed $type, mixed $query, array $actor): void
     {
-        echo json_encode(['entities' => $this->documents->entities($type, $query)]);
+        echo json_encode(['entities' => $this->documents->entities($type, $query, $actor)]);
     }
 
-    public function index(mixed $type, mixed $id): void
+    public function index(mixed $type, mixed $id, mixed $page, array $actor): void
     {
-        echo json_encode(['documents' => $this->documents->all($type, $id)]);
+        $result = $this->documents->all($type, $id, $page, $actor);
+        echo json_encode(['documents' => $result['items'], 'pagination' => $result['pagination']]);
     }
 
-    public function upload(array $input, mixed $file, int $actor): void
+    public function upload(array $input, mixed $file, array $actor): void
     {
         http_response_code(201);
-        echo json_encode($this->documents->upload($input, $file, $actor));
+        echo json_encode($this->documents->upload($input, $file, (int) $actor['id'], $actor));
     }
 
-    public function download(int $id): void
+    public function uploadEvidence(array $input,mixed $file,array $actor): void
     {
-        $file = $this->documents->download($id);
+        http_response_code(201);
+        echo json_encode($this->documents->uploadEvidence($input,$file,(int)$actor['id'],$actor));
+    }
+
+    public function download(int $id, array $actor): void
+    {
+        $file = $this->documents->download($id, $actor);
         $document = $file['document'];
         header('Content-Type: ' . $document['mime_type']);
         header('Content-Length: ' . filesize($file['path']));
@@ -38,9 +45,9 @@ final class DocumentController
         readfile($file['path']);
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, array $actor): void
     {
-        $this->documents->delete($id);
+        $this->documents->delete($id, $actor);
         echo json_encode(['status' => 'deleted']);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use App\Support\Pagination;
 use RuntimeException;
 use Throwable;
 
@@ -13,9 +14,12 @@ final class AdminRoleRepository
     {
     }
 
-    public function all(): array
+    public function all(int $page = 1): array
     {
-        $roles = $this->connection->query('SELECT id, code, name FROM roles ORDER BY name')->fetchAll();
+        $result = Pagination::fetch($this->connection,
+            'SELECT id,code,name,description,is_active FROM roles ORDER BY name',
+            'SELECT COUNT(*) FROM roles', [], $page);
+        $roles = $result['items'];
         foreach ($roles as &$role) {
             $query = $this->connection->prepare(
                 'SELECT p.code FROM permissions p INNER JOIN role_permissions rp '
@@ -24,8 +28,10 @@ final class AdminRoleRepository
             $query->execute(['id' => $role['id']]);
             $role['permissions'] = array_column($query->fetchAll(), 'code');
             $role['id'] = (int) $role['id'];
+            $role['is_active'] = (bool) $role['is_active'];
         }
-        return $roles;
+        $result['items'] = $roles;
+        return $result;
     }
 
     public function permissions(): array
@@ -33,15 +39,39 @@ final class AdminRoleRepository
         return $this->connection->query('SELECT code, name FROM permissions ORDER BY code')->fetchAll();
     }
 
-    public function save(?int $id, string $code, string $name, array $permissions): int
+    public function activeOptions(): array
     {
-        return $this->transaction(function () use ($id, $code, $name, $permissions): int {
-            if ($id === null) {
-                $query = $this->connection->prepare('INSERT INTO roles (code, name) VALUES (:code, :name)');
-            } else {
-                $query = $this->connection->prepare('UPDATE roles SET code = :code, name = :name WHERE id = :id');
+        $options = $this->connection->query(
+            'SELECT id,code,name,is_active FROM roles WHERE is_active=1 ORDER BY name'
+        )->fetchAll();
+        foreach ($options as &$role) {
+            $role['id'] = (int) $role['id'];
+            $role['is_active'] = (bool) $role['is_active'];
+        }
+        unset($role);
+        return $options;
+    }
+
+    public function save(?int $id, string $code, string $name, ?string $description,
+        bool $active, array $permissions): int
+    {
+        return $this->transaction(function () use ($id, $code, $name, $description, $active, $permissions): int {
+            if ($id !== null && !$active) {
+                $assigned = $this->connection->prepare('SELECT COUNT(*) FROM users WHERE role_id=?');
+                $assigned->execute([$id]);
+                if ((int) $assigned->fetchColumn() > 0) throw new RuntimeException('role_in_use');
             }
-            $params = ['code' => $code, 'name' => $name];
+            if ($id === null) {
+                $query = $this->connection->prepare(
+                    'INSERT INTO roles (code,name,description,is_active) VALUES (:code,:name,:description,:active)'
+                );
+            } else {
+                $query = $this->connection->prepare(
+                    'UPDATE roles SET code=:code,name=:name,description=:description,is_active=:active WHERE id=:id'
+                );
+            }
+            $params = ['code' => $code, 'name' => $name, 'description' => $description,
+                'active' => (int) $active];
             if ($id !== null) $params['id'] = $id;
             $query->execute($params);
             $roleId = $id ?? (int) $this->connection->lastInsertId();
@@ -53,7 +83,7 @@ final class AdminRoleRepository
 
     public function delete(int $id): void
     {
-        $count = $this->connection->prepare('SELECT COUNT(*) FROM user_roles WHERE role_id = :id');
+        $count = $this->connection->prepare('SELECT COUNT(*) FROM users WHERE role_id = :id');
         $count->execute(['id' => $id]);
         if ((int) $count->fetchColumn() > 0) throw new RuntimeException('role_in_use');
         $delete = $this->connection->prepare('DELETE FROM roles WHERE id = :id');

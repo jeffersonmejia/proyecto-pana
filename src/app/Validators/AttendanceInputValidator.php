@@ -31,6 +31,18 @@ final class AttendanceInputValidator
             'check_in' => $in, 'check_out' => $out, 'note' => trim($note), 'correction_reason' => trim($reason)];
     }
 
+    public function checkout(array $input): array
+    {
+        $participant=filter_var($input['participant_id']??null,FILTER_VALIDATE_INT);
+        $date=$input['attendance_date']??null;
+        $parsed=is_string($date)?DateTimeImmutable::createFromFormat('!Y-m-d',$date):false;
+        $time=$this->time($input['check_out']??null,'invalid_check_out');
+        if($participant===false||$participant<1) throw new ApiException(422,'invalid_participant');
+        if(!$parsed||$parsed->format('Y-m-d')!==$date) throw new ApiException(422,'invalid_date');
+        if($time===null) throw new ApiException(422,'invalid_check_out');
+        return ['participant_id'=>(int)$participant,'attendance_date'=>$date,'check_out'=>$time];
+    }
+
     public function filters(array $filters): array
     {
         $id = $filters['participant_id'] ?? '';
@@ -42,7 +54,8 @@ final class AttendanceInputValidator
         if ($from && $to && $from > $to) throw new ApiException(422, 'invalid_date_range');
         $status = $filters['status'] ?? 'all';
         if (!in_array($status, ['all', 'present', 'absent', 'excused'], true)) throw new ApiException(422, 'invalid_status');
-        return ['participant_id' => $id === '' ? null : (int) $id, 'from' => $from, 'to' => $to, 'status' => $status];
+        return ['participant_id' => $id === '' ? null : (int) $id, 'from' => $from, 'to' => $to,
+            'status' => $status, 'page' => \App\Support\Pagination::page($filters['page'] ?? 1)];
     }
 
     public function id(mixed $value): int

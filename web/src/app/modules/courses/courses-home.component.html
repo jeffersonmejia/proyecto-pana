@@ -1,0 +1,73 @@
+<section class="courses-home" [class.detail-mode]="selected() && !dialog()" aria-label="Cursos">
+  @if (selected() && !dialog()) { <pana-course-detail [course]="selected()!" (back)="closeView()" /> }
+  @else {
+  <header class="heading"><div><h2 id="courses-title">Hola, {{ greetingName() }}</h2><p>Explora cursos de voluntariado en el Patronato Municipal de Santo Domingo.</p></div>
+    <div class="heading-actions">@if (!pendingMode()) { <div class="course-filter" role="group" aria-label="Filtrar cursos">
+      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')">Activos</button>
+      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')">Inactivos</button>
+      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')">Todos</button>
+    </div> }
+      @if (canCreate()) { <button class="primary" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg> Crear curso</button> }
+      <button class="pending-toggle" type="button" [class.active]="pendingMode()" (click)="togglePending()"><svg lucideClock3 [size]="17"></svg>{{ pendingMode()?'Ver cursos':'Ver pendientes' }}</button></div>
+  </header>
+  @if (pendingMode()) {
+    @if (pendingError()) { <p class="error" role="alert">{{ pendingError() }}</p> }
+    @if (pendingLoading()) { <p class="empty">Cargando tareas pendientes…</p> }
+    @else if (pendingTasks().length) { <section class="pending-timeline" aria-label="Tareas pendientes"><ol>
+      @for (task of pendingTasks(); track task.id) { <li><article class="pending-task"><span class="timeline-marker"><svg lucideFileText [size]="18"></svg></span>
+        <div class="pending-task-main"><span class="pending-course">{{ task.course_name }}</span><h3>{{ task.title }}</h3><p>{{ task.description || 'Sin descripción.' }}</p><div class="pending-meta"><span><svg lucideClock3 [size]="15"></svg>Entrega {{ remaining(task.end_at) }}</span><time>{{ task.end_at }}</time></div></div>
+        @if (canSubmitEvidence()) { <label class="pending-submit"><svg lucideFileText [size]="17"></svg>{{ uploadingTask()===task.id?'Subiendo…':'Agregar entrega' }}<input type="file" accept="application/pdf,.pdf" aria-label="Agregar entrega PDF" (change)="submitPending(task,$event)" [disabled]="uploadingTask()!==null"></label> }
+      </article></li> }
+    </ol></section> }
+    @else { <div class="empty"><span class="course-icon"><svg lucideClock3 [size]="23"></svg></span><p>No tienes tareas pendientes.</p></div> }
+  } @else {
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (visibleCourses().length) {
+    <div class="grid">@for (course of visibleCourses(); track course.id) {
+      <article class="course-card" role="link" tabindex="0" [attr.aria-label]="'Abrir curso ' + course.name" (click)="view(course)" (keydown.enter)="view(course)">
+        <div class="card-top"><span class="course-icon"><svg lucideBookOpen [size]="21"></svg></span><div class="card-controls">
+          @if (canManage(course)) { <button class="course-toggle" type="button" role="switch" [attr.aria-checked]="course.status==='active'" [attr.aria-label]="course.status==='active'?'Desactivar curso':'Activar curso'" [disabled]="togglingCourse()!==null" (click)="$event.stopPropagation(); toggleStatus(course)" (keydown.enter)="$event.stopPropagation()">
+            <span class="toggle-track" [class.on]="course.status==='active'"><span></span></span><span class="toggle-label">{{ course.status==='active'?'Activo':'Inactivo' }}</span></button> }
+          @else { <span class="status" [class.inactive]="course.status === 'inactive'">{{ course.status === 'active' ? 'Activo' : 'Inactivo' }}</span> }
+          @if (canManage(course)) { <button class="icon-action" type="button" aria-label="Editar curso" title="Editar" (click)="$event.stopPropagation(); edit(course)" (keydown.enter)="$event.stopPropagation()"><svg lucidePencil [size]="17"></svg></button>
+            @if (course.status === 'active') { <button class="icon-action danger" type="button" aria-label="Eliminar curso" title="Eliminar" (click)="$event.stopPropagation(); remove(course)" (keydown.enter)="$event.stopPropagation()"><svg lucideTrash [size]="17"></svg></button> } }
+        </div></div>
+        <h3>{{ course.name }}</h3>
+        <div class="details"><span><span class="tutor-name">{{ course.tutor_name }}</span></span>
+          <span><strong>Inicio</strong>{{ course.start_date }}</span><span><strong>Fin</strong>{{ course.end_date }}</span>
+          <span><strong>Participantes</strong><svg lucideUsersRound [size]="15"></svg> {{ course.participant_count }}{{ course.max_participants ? ' / ' + course.max_participants : '' }}</span></div>
+      </article>
+    }</div>
+  } @else if (courses().length) { <div class="empty"><span class="course-icon"><svg lucideBookOpen [size]="23"></svg></span><p>No hay cursos para este filtro.</p></div>
+  } @else { <div class="empty"><span class="course-icon"><svg lucideBookOpen [size]="23"></svg></span><p>No hay cursos disponibles.</p>
+    @if (canCreate()) { <span>Crea el primer curso para comenzar.</span> }</div> }
+  }
+  }
+  @if (dialog()) { <pana-step-dialog [title]="selected() ? 'Editar curso' : 'Crear curso'" [steps]="['Información del curso','Fechas y asignación']"
+    [step]="step()" [saving]="saving()" [canContinue]="canContinue()" [canSave]="valid()" (close)="closeDialog()"
+    (previous)="previous()" (next)="continue()" (save)="save()">
+    <div class="form-step" [hidden]="step() !== 0"><label>Nombre<input name="name" [(ngModel)]="form.name" required maxlength="150"></label>
+      <label>Descripción<textarea name="description" [(ngModel)]="form.description" required maxlength="1000"></textarea></label>
+      <label>Cupo máximo<select name="capacity" [(ngModel)]="form.max_participants" required><option [ngValue]="null" disabled>Selecciona un límite</option>@for (capacity of capacities; track capacity) { <option [ngValue]="capacity">{{ capacity }}</option> }</select></label></div>
+    <div class="form-step" [hidden]="step() !== 1"><div class="dates"><label>Fecha de inicio<input name="start" type="date" [(ngModel)]="form.start_date" required></label>
+      <label>Fecha de finalización<input name="end" type="date" [(ngModel)]="form.end_date" required></label></div>
+      <label>Tutor<select name="tutor" [(ngModel)]="form.tutor_user_id" required><option [ngValue]="null" disabled>Selecciona un tutor</option>@for (tutor of tutors(); track tutor.id) { <option [ngValue]="tutor.id">{{ tutor.name }}</option> }</select></label>
+      @if (!tutors().length) { <p class="form-hint">No hay tutores activos disponibles.</p> }
+      <div class="student-picker"><label for="student-search">Buscar estudiantes</label>
+        <input id="student-search" name="student-search" [(ngModel)]="participantQuery" autocomplete="off" placeholder="Escribe al menos dos letras">
+        @if (studentResults().length) { <div class="student-results" role="listbox" aria-label="Estudiantes disponibles">
+          @for (student of studentResults(); track student.id) { <button type="button" role="option" class="student-result" (click)="addStudent(student.id)">
+            <span>{{ student.name }}</span><small>Agregar</small></button> }
+        </div> }
+        @if (!hasStudents()) { <p class="form-hint">No hay estudiantes activos disponibles.</p> }
+        <div class="student-table-scroll" role="region" aria-label="Estudiantes seleccionados" tabindex="0">
+          <table class="student-table"><thead><tr><th>Estudiante</th><th>Perfil</th><th><span class="visually-hidden">Acción</span></th></tr></thead>
+            <tbody>@for (student of selectedStudents(); track student.id) { <tr><td>{{ student.name }}</td><td>{{ student.profile }}</td>
+              <td><button class="remove-student" type="button" [attr.aria-label]="'Quitar a ' + student.name" (click)="removeStudent(student.id)"><svg lucideX [size]="17"></svg></button></td></tr>
+            } @empty { <tr><td class="no-students" colspan="3">Busca y agrega al menos un estudiante.</td></tr> }</tbody>
+          </table>
+        </div>
+        <p class="selection-count">{{ form.participant_ids.length }} de {{ form.max_participants || 30 }} estudiantes</p>
+      </div></div>
+  </pana-step-dialog> }
+</section>

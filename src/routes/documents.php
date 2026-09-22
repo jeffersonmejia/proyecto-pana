@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Controllers\DocumentController;
 use App\Exceptions\ApiException;
 use App\Repositories\DocumentRepository;
+use App\Repositories\CourseRepository;
 use App\Services\DocumentService;
 
 return static function (callable $buildAuth, callable $authorize, callable $authorizeAny, callable $readJsonBody): array {
@@ -17,27 +18,35 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         if ($value === false || $value < 1) throw new ApiException(400, 'invalid_id');
         return (int) $value;
     };
-    $read = static function (array $components) use ($authorizeAny): void {
-        $authorizeAny($components, ['documents.read', 'documents.manage']);
+    $read = static function (array $components) use ($authorizeAny): array {
+        return $authorizeAny($components, ['documents.read', 'documents.manage']);
     };
 
     return [
         'GET /api/documents/entities' => static function () use ($build, $read): void {
-            $components = $build(); $read($components);
-            $components['documents']->entities($_GET['type'] ?? '', $_GET['q'] ?? '');
+            $components = $build(); $actor = $read($components);
+            $components['documents']->entities($_GET['type'] ?? '', $_GET['q'] ?? '', $actor);
         },
         'GET /api/documents' => static function () use ($build, $read, $id): void {
-            $components = $build(); $read($components);
-            if (isset($_GET['id'])) $components['documents']->download($id());
-            else $components['documents']->index($_GET['type'] ?? '', $_GET['entity_id'] ?? null);
+            $components = $build(); $actor = $read($components);
+            if (isset($_GET['id'])) $components['documents']->download($id(), $actor);
+            else $components['documents']->index($_GET['type'] ?? '', $_GET['entity_id'] ?? null, $_GET['page'] ?? 1, $actor);
         },
         'POST /api/documents' => static function () use ($build, $authorize): void {
             $components = $build(); $actor = $authorize($components, 'documents.manage');
-            $components['documents']->upload($_POST, $_FILES['file'] ?? null, (int) $actor['id']);
+            $components['documents']->upload($_POST, $_FILES['file'] ?? null, $actor);
+        },
+        'POST /api/courses/evidence' => static function () use ($build,$authorizeAny): void {
+            $components=$build(); $actor=$authorizeAny($components,['documents.manage','activities.submit_evidence']);
+            $course=filter_var($_POST['course_id']??null,FILTER_VALIDATE_INT); $activity=filter_var($_POST['entity_id']??null,FILTER_VALIDATE_INT);
+            if(!$course||$course<1||!$activity||$activity<1) throw new ApiException(400,'invalid_id');
+            $courses=new CourseRepository(database_connection());
+            if(!$courses->find((int)$course,$actor)||!$courses->activityBelongsTo((int)$course,(int)$activity)) throw new ApiException(404,'course_activity_not_found');
+            $components['documents']->uploadEvidence($_POST,$_FILES['file']??null,$actor);
         },
         'DELETE /api/documents' => static function () use ($build, $authorize, $id): void {
-            $components = $build(); $authorize($components, 'documents.manage');
-            $components['documents']->delete($id());
+            $components = $build(); $actor = $authorize($components, 'documents.manage');
+            $components['documents']->delete($id(), $actor);
         },
     ];
 };

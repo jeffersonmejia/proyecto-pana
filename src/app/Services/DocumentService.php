@@ -16,35 +16,47 @@ final class DocumentService
         $this->directory = dirname(__DIR__, 3) . '/src/storage/documents';
     }
 
-    public function entities(mixed $type, mixed $query): array
+    public function entities(mixed $type, mixed $query, array $actor): array
     {
         if (!in_array($type, ['person', 'activity', 'evaluation'], true) || !is_string($query) || strlen($query) > 100) {
             throw new ApiException(422, 'invalid_document_entity');
         }
-        return $this->documents->entities($type, trim($query));
+        return $this->documents->entities($type, trim($query), $actor);
     }
 
-    public function all(mixed $type, mixed $entityId): array
+    public function all(mixed $type, mixed $entityId, mixed $page, array $actor): array
     {
         if (!in_array($type, ['person', 'activity', 'evaluation'], true)) throw new ApiException(422, 'invalid_document_entity');
         $id = $entityId === null || $entityId === '' ? null : filter_var($entityId, FILTER_VALIDATE_INT);
         if ($id === false || ($id !== null && $id < 1)) throw new ApiException(422, 'invalid_id');
-        return $this->documents->all($type, $id === null ? null : (int) $id);
+        return $this->documents->all($type, $id === null ? null : (int) $id,
+            \App\Support\Pagination::page($page), $actor);
     }
 
-    public function upload(array $input, mixed $file, int $actor): array
+    public function upload(array $input, mixed $file, int $actor, array $scope): array
+    {
+        return $this->store($input,$file,$actor,$scope,false);
+    }
+
+    public function uploadEvidence(array $input,mixed $file,int $actor,array $scope): array
+    {
+        if(($input['entity_type']??null)!=='activity') throw new ApiException(422,'evidence_must_belong_to_activity');
+        return $this->store($input,$file,$actor,$scope,true);
+    }
+
+    private function store(array $input,mixed $file,int $actor,array $scope,bool $evidence): array
     {
         $type = $input['entity_type'] ?? null;
         $id = filter_var($input['entity_id'] ?? null, FILTER_VALIDATE_INT);
         if (!in_array($type, ['person', 'activity', 'evaluation'], true) || $id === false || $id < 1) {
             throw new ApiException(422, 'invalid_document_entity');
         }
-        if (!$this->documents->entityExists($type, (int) $id)) throw new ApiException(404, 'document_entity_not_found');
+        if (!$this->documents->entityExists($type, (int) $id, $scope)) throw new ApiException(404, 'document_entity_not_found');
         if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
             || !is_uploaded_file($file['tmp_name'] ?? '')) throw new ApiException(422, 'invalid_upload');
         if ($file['size'] > 8 * 1024 * 1024) throw new ApiException(413, 'file_too_large');
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-        if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime])) throw new ApiException(415, 'unsupported_file_type');
+        if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime]) || ($evidence && $mime!=='application/pdf')) throw new ApiException(415, 'unsupported_file_type');
         $name = $this->safeName($file['name'] ?? '');
         if ($name === '') throw new ApiException(422, 'invalid_file_name');
         if (!is_dir($this->directory) && !mkdir($this->directory, 0750, true) && !is_dir($this->directory)) {
@@ -60,17 +72,17 @@ final class DocumentService
         } catch (\Throwable $error) { unlink($path); throw $error; }
     }
 
-    public function download(int $id): array
+    public function download(int $id, array $actor): array
     {
-        $document = $this->documents->find($id) ?? throw new ApiException(404, 'document_not_found');
+        $document = $this->documents->find($id, $actor) ?? throw new ApiException(404, 'document_not_found');
         $path = $this->directory . '/' . basename($document['stored_name']);
         if (!is_file($path)) throw new ApiException(404, 'document_file_not_found');
         return ['document' => $document, 'path' => $path];
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, array $actor): void
     {
-        $file = $this->download($id);
+        $file = $this->download($id, $actor);
         $this->documents->delete($id);
         if (is_file($file['path'])) unlink($file['path']);
     }

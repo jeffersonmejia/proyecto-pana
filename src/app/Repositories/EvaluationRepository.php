@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use App\Support\Pagination;
 use RuntimeException;
 use Throwable;
 
@@ -13,10 +14,11 @@ final class EvaluationRepository
     {
     }
 
-    public function people(string $type, string $query): array
+    public function people(string $type, string $query, array $actor = []): array
     {
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
         $table = $type === 'participant' ? 'participants' : 'beneficiaries';
-        $sql = "SELECT p.id,p.first_name,p.last_name FROM people p JOIN {$table} x ON x.person_id=p.id WHERE p.status='active'";
+        $sql = "SELECT p.id,p.first_name,p.last_name FROM people p JOIN {$table} x ON x.person_id=p.id WHERE p.status='active' AND x.is_active=1 AND {$scope['sql']}";
         $params = [];
         if ($query !== '') { $sql .= ' AND (p.first_name LIKE ? OR p.last_name LIKE ?)'; $params = ['%' . $query . '%', '%' . $query . '%']; }
         $statement = $this->connection->prepare($sql . ' ORDER BY p.last_name,p.first_name LIMIT 100');
@@ -27,7 +29,7 @@ final class EvaluationRepository
     public function hasRole(int $id, string $type): bool
     {
         $table = $type === 'participant' ? 'participants' : 'beneficiaries';
-        $query = $this->connection->prepare("SELECT 1 FROM {$table} WHERE person_id=?");
+        $query = $this->connection->prepare("SELECT 1 FROM {$table} WHERE person_id=? AND is_active=1");
         $query->execute([$id]);
         return (bool) $query->fetchColumn();
     }
@@ -60,18 +62,29 @@ final class EvaluationRepository
     public function all(array $filters): array
     {
         $where = ['e.evaluation_type=?']; $params = [$filters['type']];
+        $scope = \App\Support\AccessScope::person('e.person_id', $filters['_scope'] ?? []);
+        $where[] = $scope['sql'];
+        $role = ($filters['_scope']['roles'][0] ?? '');
+        if ($role === 'beneficiary') $where[] = "e.evaluation_type='satisfaction'";
+        if (in_array($role, ['student', 'tutor'], true)) $where[] = "e.evaluation_type='participant'";
         if ($filters['person_id']) { $where[] = 'e.person_id=?'; $params[] = $filters['person_id']; }
         if ($filters['from']) { $where[] = 'e.evaluated_on>=?'; $params[] = $filters['from']; }
         if ($filters['to']) { $where[] = 'e.evaluated_on<=?'; $params[] = $filters['to']; }
-        $sql = $this->selectSql() . ' WHERE ' . implode(' AND ', $where)
-            . ' GROUP BY e.id ORDER BY e.evaluated_on DESC LIMIT 500';
-        $query = $this->connection->prepare($sql); $query->execute($params);
-        return array_map([$this, 'mapRecord'], $query->fetchAll());
+        $condition = ' WHERE ' . implode(' AND ', $where);
+        $result = Pagination::fetch($this->connection,
+            $this->selectSql() . $condition . ' GROUP BY e.id ORDER BY e.evaluated_on DESC',
+            'SELECT COUNT(*) FROM evaluation_records e' . $condition, $params,
+            Pagination::page($filters['page'] ?? 1));
+        $result['items'] = array_map([$this, 'mapRecord'], $result['items']);
+        return $result;
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, array $actor = []): ?array
     {
-        $query = $this->connection->prepare($this->selectSql() . ' WHERE e.id=? GROUP BY e.id');
+        $scope = \App\Support\AccessScope::person('e.person_id', $actor);
+        $type = ($actor['roles'][0] ?? '') === 'beneficiary' ? " AND e.evaluation_type='satisfaction'" : '';
+        if (in_array($actor['roles'][0] ?? '', ['student', 'tutor'], true)) $type = " AND e.evaluation_type='participant'";
+        $query = $this->connection->prepare($this->selectSql() . " WHERE e.id=? AND {$scope['sql']}{$type} GROUP BY e.id");
         $query->execute([$id]); $row = $query->fetch();
         if (!$row) return null;
         $record = $this->mapRecord($row);
@@ -96,10 +109,10 @@ final class EvaluationRepository
         });
     }
 
-    public function update(int $id, array $data): void
+    public function update(int $id, array $data, array $actor): void
     {
-        $this->transaction(function () use ($id, $data): void {
-            $old = $this->find($id);
+        $this->transaction(function () use ($id, $data, $actor): void {
+            $old = $this->find($id, $actor);
             if (!$old) throw new RuntimeException('evaluation_not_found');
             $query = $this->connection->prepare('UPDATE evaluation_records SET person_id=?,evaluated_on=?,satisfaction_score=?,observations=? WHERE id=?');
             $query->execute([$data['person_id'], $data['evaluated_on'], $data['satisfaction_score'], $data['observations'] ?: null, $id]);
@@ -128,6 +141,14 @@ final class EvaluationRepository
         $delete = $this->connection->prepare('DELETE FROM evaluation_answers WHERE evaluation_id=?'); $delete->execute([$id]);
         $insert = $this->connection->prepare('INSERT INTO evaluation_answers (evaluation_id,criterion_id,score,note) VALUES (?,?,?,?)');
         foreach ($answers as $answer) $insert->execute([$id, $answer['criterion_id'], $answer['score'], $answer['note'] ?? null]);
+    }
+
+    public function personInScope(int $id, array $actor): bool
+    {
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
+        $query = $this->connection->prepare('SELECT 1 FROM people p WHERE p.id=? AND ' . $scope['sql']);
+        $query->execute([$id]);
+        return (bool) $query->fetchColumn();
     }
 
     private function criterionExists(int $id): bool

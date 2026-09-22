@@ -6,7 +6,7 @@ $pana-theme: mat.define-theme((
   color: (
     theme-type: light,
     primary: mat.$azure-palette,
-    tertiary: mat.$violet-palette,
+    tertiary: mat.$azure-palette,
   ),
   typography: (
     brand-family: 'Inter, Arial, sans-serif',
@@ -21,13 +21,16 @@ html {
 }
 
 :root {
-  --pana-ink: #252337;
-  --pana-muted: #666579;
-  --pana-violet: #6252a5;
-  --pana-lavender: #eeeafb;
-  --pana-mint: #dff4e8;
-  --pana-peach: #fff0e5;
-  --pana-outline: #e6e3ef;
+  --pana-ink: #202124;
+  --pana-muted: #5f6f84;
+  --pana-blue: #1a73e8;
+  --pana-blue-dark: #174ea6;
+  --pana-blue-soft: #e8f0fe;
+  --pana-violet: var(--pana-blue);
+  --pana-lavender: var(--pana-blue-soft);
+  --pana-mint: #e8f3ee;
+  --pana-peach: #fcefe9;
+  --pana-outline: #d7e2f2;
 }
 
 * { box-sizing: border-box; }
@@ -36,7 +39,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #f8f8fc;
+  background: #f8fafd;
   color: var(--pana-ink);
   font-family: 'Inter', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

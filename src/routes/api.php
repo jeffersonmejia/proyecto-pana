@@ -21,6 +21,7 @@ use App\Services\AdminUserService;
 use App\Services\HealthService;
 use App\Services\JwtService;
 use App\Services\PasswordService;
+use App\Validators\UserProfileInputValidator;
 
 $buildAuth = static function (): array {
     $connection = database_connection();
@@ -60,8 +61,9 @@ $buildAdmin = static function () use ($buildAuth): array {
         'authentication' => $auth['authentication'],
         'authorization' => $auth['authorization'],
         'users' => new AdminUserController(new AdminUserService(
-            new AdminUserRepository($connection), new PasswordService()
-        )),
+            new AdminUserRepository($connection), new PasswordService(), new UserProfileInputValidator(),
+            new \App\Repositories\BeneficiaryLookupRepository($connection)
+        ), new \App\Repositories\StudentLookupRepository($connection)),
         'roles' => new AdminRoleController(new AdminRoleService(new AdminRoleRepository($connection))),
     ];
 };
@@ -126,6 +128,7 @@ return array_merge(
     (require __DIR__ . '/people.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/attendance.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/activities.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
+    (require __DIR__ . '/courses.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/reports.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/documents.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)

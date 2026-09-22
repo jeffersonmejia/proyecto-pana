@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use App\Support\Pagination;
 use RuntimeException;
 use Throwable;
 
@@ -13,10 +14,11 @@ final class AttendanceRepository
     {
     }
 
-    public function participants(string $query): array
+    public function participants(string $query, array $actor = []): array
     {
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
         $sql = 'SELECT p.id,p.first_name,p.last_name FROM people p JOIN participants t ON t.person_id=p.id '
-            . "WHERE p.status='active'";
+            . "WHERE p.status='active' AND t.is_active=1 AND {$scope['sql']}";
         $params = [];
         if ($query !== '') {
             $sql .= ' AND (p.first_name LIKE ? OR p.last_name LIKE ?)';
@@ -27,9 +29,11 @@ final class AttendanceRepository
         return $statement->fetchAll();
     }
 
-    public function isParticipant(int $id): bool
+    public function isParticipant(int $id, array $actor = []): bool
     {
-        $query = $this->connection->prepare('SELECT 1 FROM participants WHERE person_id=?');
+        $scope = \App\Support\AccessScope::person('p.id', $actor);
+        $query = $this->connection->prepare('SELECT 1 FROM participants t JOIN people p ON p.id=t.person_id '
+            . "WHERE t.person_id=? AND t.is_active=1 AND {$scope['sql']}");
         $query->execute([$id]);
         return (bool) $query->fetchColumn();
     }
@@ -38,22 +42,27 @@ final class AttendanceRepository
     {
         $where = [];
         $params = [];
+        $scope = \App\Support\AccessScope::person('a.participant_id', $filters['_scope'] ?? []);
+        $where[] = $scope['sql'];
         foreach (['participant_id' => 'a.participant_id =', 'from' => 'a.attendance_date >=', 'to' => 'a.attendance_date <='] as $key => $column) {
             if (empty($filters[$key])) continue;
             $where[] = $column . ' ?';
             $params[] = $filters[$key];
         }
         if ($filters['status'] !== 'all') { $where[] = 'a.status = ?'; $params[] = $filters['status']; }
-        $sql = $this->selectSql() . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
-            . ' ORDER BY a.attendance_date DESC,p.last_name,p.first_name LIMIT 500';
-        $statement = $this->connection->prepare($sql);
-        $statement->execute($params);
-        return array_map([$this, 'mapRecord'], $statement->fetchAll());
+        $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+        $page = Pagination::page($filters['page'] ?? 1);
+        $result = Pagination::fetch($this->connection,
+            $this->selectSql() . $condition . ' ORDER BY a.attendance_date DESC,p.last_name,p.first_name',
+            'SELECT COUNT(*) FROM attendance_records a' . $condition, $params, $page);
+        $result['items'] = array_map([$this, 'mapRecord'], $result['items']);
+        return $result;
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, array $actor = []): ?array
     {
-        $statement = $this->connection->prepare($this->selectSql() . ' WHERE a.id=?');
+        $scope = \App\Support\AccessScope::person('a.participant_id', $actor);
+        $statement = $this->connection->prepare($this->selectSql() . " WHERE a.id=? AND {$scope['sql']}");
         $statement->execute([$id]);
         $row = $statement->fetch();
         return $row ? $this->mapRecord($row) : null;
@@ -72,16 +81,31 @@ final class AttendanceRepository
         });
     }
 
-    public function update(int $id, array $data, int $actor): void
+    public function update(int $id, array $data, int $actor, array $scopeActor = []): void
     {
-        $this->transaction(function () use ($id, $data, $actor): void {
-            $old = $this->find($id);
+        $this->transaction(function () use ($id, $data, $actor, $scopeActor): void {
+            $old = $this->find($id, $scopeActor);
             if (!$old) throw new RuntimeException('attendance_not_found');
             $statement = $this->connection->prepare('UPDATE attendance_records SET participant_id=?,attendance_date=?,status=?,'
                 . 'check_in=?,check_out=?,note=?,updated_by=? WHERE id=?');
             $statement->execute([$data['participant_id'], $data['attendance_date'], $data['status'], $data['check_in'],
                 $data['check_out'], $data['note'] ?: null, $actor, $id]);
             $this->log($id, $actor, 'corrected', $old, $data, $data['correction_reason']);
+        });
+    }
+
+    public function checkOut(int $participant,string $date,string $time,int $actor): void
+    {
+        $this->transaction(function() use($participant,$date,$time,$actor): void {
+            $query=$this->connection->prepare('SELECT * FROM attendance_records WHERE participant_id=? AND attendance_date=? FOR UPDATE');
+            $query->execute([$participant,$date]); $old=$query->fetch();
+            if(!$old) throw new RuntimeException('attendance_entry_required');
+            if($old['check_out']!==null) throw new RuntimeException('attendance_exit_exists');
+            if($old['check_in']===null) throw new RuntimeException('attendance_entry_required');
+            if($time<=$old['check_in']) throw new RuntimeException('invalid_attendance_range');
+            $statement=$this->connection->prepare('UPDATE attendance_records SET check_out=?,updated_by=? WHERE id=? AND check_out IS NULL');
+            $statement->execute([$time,$actor,$old['id']]); $new=$old; $new['check_out']=$time; $new['updated_by']=$actor;
+            $this->log((int)$old['id'],$actor,'check_out',$old,$new,null);
         });
     }
 

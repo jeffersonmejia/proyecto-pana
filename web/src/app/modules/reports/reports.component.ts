@@ -2,11 +2,15 @@ import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angula
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { PaginatorComponent } from '../../shared/paginator.component';
+import { StepDialogComponent } from '../../shared/step-dialog.component';
+import { LucideDownload, LucidePlus, LucideTrash } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
-import { DocumentItem, DocumentsApiService } from './documents-api.service';
+import { DocumentItem, DocumentsApiService, DocumentsPage } from './documents-api.service';
 import { DashboardStats, ReportsApiService } from './reports-api.service';
 
-@Component({ selector: 'pana-reports', standalone: true, imports: [FormsModule, MatButtonModule, DecimalPipe],
+@Component({ selector: 'pana-reports', standalone: true, imports: [FormsModule, MatButtonModule, DecimalPipe,
+  PaginatorComponent, StepDialogComponent, LucideDownload, LucidePlus, LucideTrash],
   templateUrl: './reports.component.html', styleUrl: './reports.component.scss' })
 export class ReportsComponent implements OnInit {
   private readonly reportsApi = inject(ReportsApiService);
@@ -18,9 +22,11 @@ export class ReportsComponent implements OnInit {
   readonly people = signal<{ id: number; first_name: string; last_name: string }[]>([]);
   readonly entities = signal<{ id: number; label: string }[]>([]);
   readonly documents = signal<DocumentItem[]>([]);
+  readonly docPage = signal<DocumentsPage>({ page: 1, page_size: 5, total: 0, pages: 1 });
   readonly error = signal('');
   tab = 'dashboard'; reportType = 'attendance'; personId: number | '' = ''; from = ''; to = '';
   docType = 'person'; entityId: number | '' = ''; entityQuery = ''; file: File | null = null; uploading = false;
+  readonly uploadOpen = signal(false);
 
   ngOnInit(): void {
     if (this.auth.hasPermission('reports.read')) { this.loadDashboard(); this.loadPeople(); }
@@ -42,16 +48,19 @@ export class ReportsComponent implements OnInit {
     next: (result) => { this.rows.set(result.rows); this.error.set(''); }, error: () => this.error.set('No se pudo generar el reporte.') }); }
   loadEntities(): void { this.documentsApi.entities(this.docType, this.entityQuery).subscribe({
     next: (result) => this.entities.set(result.entities), error: () => this.error.set('No se pudieron cargar los registros.') }); }
-  loadDocuments(): void { this.documentsApi.list(this.docType, this.entityId).subscribe({
-    next: (result) => this.documents.set(result.documents), error: () => this.error.set('No se pudieron cargar los documentos.') }); }
-  changeDocumentType(): void { this.entityId = ''; this.loadEntities(); this.loadDocuments(); }
+  loadDocuments(): void { this.documentsApi.list(this.docType, this.entityId, this.docPage().page).subscribe({
+    next: (result) => { this.documents.set(result.documents); this.docPage.set(result.pagination); }, error: () => this.error.set('No se pudieron cargar los documentos.') }); }
+  changeDocumentType(): void { this.entityId = ''; this.docPage.update((page) => ({ ...page, page: 1 })); this.loadEntities(); this.loadDocuments(); }
+  changeDocumentPage(page: number): void { this.docPage.update((value) => ({ ...value, page })); this.loadDocuments(); }
+  changeDocumentEntity(): void { this.docPage.update((value) => ({ ...value, page: 1 })); this.loadDocuments(); }
+  openUpload(): void { this.file = null; this.uploadOpen.set(true); }
   onFile(event: Event): void { this.file = (event.target as HTMLInputElement).files?.[0] ?? null; }
   upload(): void {
     if (!this.file || !this.entityId || this.uploading) return;
     if (this.file.size > 8 * 1024 * 1024) { this.error.set('El archivo supera el máximo de 8 MB.'); return; }
     this.uploading = true;
     this.documentsApi.upload(this.docType, this.entityId, this.file).subscribe({
-      next: () => { this.uploading = false; this.file = null; this.loadDocuments(); },
+      next: () => { this.uploading = false; this.file = null; this.uploadOpen.set(false); this.docPage.update((page) => ({ ...page, page: 1 })); this.loadDocuments(); },
       error: () => { this.uploading = false; this.error.set('Tipo de archivo no permitido o fallo al subirlo.'); },
     });
   }

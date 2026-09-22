@@ -13,15 +13,15 @@ final class ReportService
     {
     }
 
-    public function dashboard(): array { return $this->reports->dashboard(); }
+    public function dashboard(array $actor): array { return $this->reports->dashboard($actor); }
 
-    public function people(mixed $query): array
+    public function people(mixed $query, array $actor): array
     {
         if (!is_string($query) || strlen($query) > 100) throw new ApiException(422, 'invalid_search');
-        return $this->reports->people(trim($query));
+        return $this->reports->people(trim($query), $actor);
     }
 
-    public function report(array $input): array
+    public function report(array $input, array $actor): array
     {
         $type = $input['type'] ?? '';
         if (!in_array($type, ['attendance', 'activities', 'evaluations'], true)) throw new ApiException(422, 'invalid_report_type');
@@ -33,7 +33,7 @@ final class ReportService
         $to = $this->date($input['to'] ?? '');
         if ($from && $to && $from > $to) throw new ApiException(422, 'invalid_date_range');
         return $this->reports->report(['type' => $type, 'person_id' => $person === '' ? null : (int) $person,
-            'from' => $from, 'to' => $to]);
+            'from' => $from, 'to' => $to], $actor);
     }
 
     private function date(mixed $value): ?string

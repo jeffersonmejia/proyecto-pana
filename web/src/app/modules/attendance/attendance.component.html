@@ -1,47 +1,53 @@
-<main class="attendance-page">
+<section class="attendance-page">
   <header class="heading"><div><h1>Asistencia y horas</h1><p>Registra jornadas y consulta las horas acumuladas.</p></div>
-    <button mat-button type="button" (click)="close.emit()">Volver</button></header>
+    @if (canManage()) { <button class="primary-button" type="button" (click)="edit()"><svg lucidePlus [size]="18"></svg>Crear registro</button> }
+  </header>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-  <section class="filters">
-    <label>Participante
-      <input [(ngModel)]="participantSearch" (input)="loadPeople()" placeholder="Buscar participante">
-      <select [(ngModel)]="participantId" (change)="load()"><option value="">Todos</option>
-        @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
-      </select>
-    </label>
-    <label>Desde<input type="date" [(ngModel)]="from" (change)="load()"></label>
-    <label>Hasta<input type="date" [(ngModel)]="to" (change)="load()"></label>
-    <label>Estado<select [(ngModel)]="status" (change)="load()"><option value="all">Todos</option>
-      <option value="present">Presente</option><option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
-  </section>
-  <section class="layout">
-    <div class="records"><button mat-button type="button" (click)="edit()">Registrar asistencia</button>
-      <p class="summary">Horas acumuladas en los resultados: <strong>{{ totalHours() }}</strong></p>
-      @for (record of records(); track record.id) {
-        <button class="record" type="button" (click)="edit(record)">
-          <strong>{{ record.first_name }} {{ record.last_name }}</strong>
-          <span>{{ record.attendance_date }} · {{ record.status === 'present' ? 'Presente' : record.status === 'absent' ? 'Ausente' : 'Justificado' }}</span>
-          <span>{{ record.hours === null ? 'Horas sin marcar' : record.hours + ' horas' }}</span>
-        </button>
-      } @empty { <p class="empty">No hay registros para esos filtros.</p> }
-    </div>
-    <form class="editor" (ngSubmit)="save()">
-      <h2>{{ selected() ? 'Corregir asistencia' : 'Nuevo registro' }}</h2>
-      <label>Participante<select name="participant" [(ngModel)]="form.participant_id" required>
-        <option [ngValue]="0" disabled>Selecciona un participante</option>
+  <section class="filters" aria-label="Filtros de asistencia">
+    <label>Participante<input [(ngModel)]="participantSearch" (input)="loadPeople()" placeholder="Buscar participante">
+      <select [(ngModel)]="participantId" (change)="filter()"><option value="">Todos</option>
         @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
       </select></label>
-      <label>Fecha<input name="date" type="date" [(ngModel)]="form.attendance_date" required></label>
-      <label>Estado<select name="status" [(ngModel)]="form.status"><option value="present">Presente</option>
-        <option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
-      <div class="times"><label>Entrada<input name="in" type="time" [(ngModel)]="form.check_in"></label>
-        <label>Salida<input name="out" type="time" [(ngModel)]="form.check_out"></label></div>
-      <label>Observación<textarea name="note" maxlength="500" [(ngModel)]="form.note"></textarea></label>
-      @if (selected()) { <label>Motivo de la corrección<textarea name="reason" required minlength="3" maxlength="500" [(ngModel)]="form.correction_reason"></textarea></label> }
-      <button mat-button type="submit" [disabled]="saving() || !form.participant_id || (!!form.check_in && !!form.check_out && form.check_out <= form.check_in) || (form.status !== 'present' && (!!form.check_in || !!form.check_out)) || (!!selected() && !form.correction_reason?.trim())">Guardar</button>
-      @if (selected()) { <section class="history"><h3>Historial de cambios</h3>
-        @for (event of history(); track event.id) { <p>{{ event.event_type === 'created' ? 'Registro creado' : 'Corrección' }}{{ event.correction_reason ? ': ' + event.correction_reason : '' }}<small>{{ event.created_at }}{{ event.actor_email ? ' · ' + event.actor_email : '' }}</small></p> }
-      </section> }
-    </form>
+    <label>Desde<input type="date" [(ngModel)]="from" (change)="filter()"></label>
+    <label>Hasta<input type="date" [(ngModel)]="to" (change)="filter()"></label>
+    <label>Estado<select [(ngModel)]="status" (change)="filter()"><option value="all">Todos</option>
+      <option value="present">Presente</option><option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
   </section>
-</main>
+  <div class="summary"><svg lucideClock3 [size]="20"></svg><span>Horas de esta página</span><strong>{{ totalHours() }}</strong></div>
+  <div class="table-wrap"><table><thead><tr><th>Participante</th><th>Fecha</th><th>Jornada</th><th>Horas</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>@for (record of records(); track record.id) {
+      <tr><td><strong>{{ record.first_name }} {{ record.last_name }}</strong></td><td>{{ record.attendance_date }}</td>
+        <td>{{ record.check_in?.slice(0, 5) || '—' }}–{{ record.check_out?.slice(0, 5) || '—' }}</td>
+        <td>{{ record.hours === null ? '—' : record.hours }}</td>
+        <td><span class="status" [class]="'status ' + record.status">{{ record.status === 'present' ? 'Presente' : record.status === 'absent' ? 'Ausente' : 'Justificado' }}</span></td>
+        <td>@if (canManage()) { <button class="icon-button" type="button" aria-label="Editar asistencia" (click)="edit(record)"><svg lucidePencil [size]="18"></svg></button> }</td>
+      </tr>
+    } @empty { <tr><td class="empty" colspan="6">No hay registros para esos filtros.</td></tr> }</tbody>
+  </table></div>
+  <pana-paginator [page]="pageInfo().page" [total]="pageInfo().total" [pageSize]="pageInfo().page_size" (pageChange)="changePage($event)" />
+
+  @if (dialogOpen()) {
+    <pana-step-dialog [title]="selected() ? 'Corregir asistencia' : 'Registrar asistencia'" [steps]="['Persona y fecha', 'Jornada y estado']"
+      [step]="step()" [saving]="saving()" [canContinue]="canContinue()" [canSave]="canSave()"
+      (close)="dialogOpen.set(false)" (previous)="step.set(0)" (next)="next()" (save)="save()">
+      <div class="form-step" [hidden]="step() !== 0">
+        <label>Participante<select name="participant" [(ngModel)]="form.participant_id" required>
+          <option [ngValue]="0" disabled>Selecciona un participante</option>
+          @for (person of people(); track person.id) { <option [ngValue]="person.id">{{ person.first_name }} {{ person.last_name }}</option> }
+        </select></label>
+        <label>Fecha<input name="date" type="date" [(ngModel)]="form.attendance_date" required></label>
+      </div>
+      <div class="form-step" [hidden]="step() !== 1">
+        <label>Estado<select name="status" [(ngModel)]="form.status"><option value="present">Presente</option>
+          <option value="absent">Ausente</option><option value="excused">Justificado</option></select></label>
+        <div class="times"><label>Entrada<input name="in" type="time" [(ngModel)]="form.check_in"></label>
+          <label>Salida<input name="out" type="time" [(ngModel)]="form.check_out"></label></div>
+        <label>Observación<textarea name="note" maxlength="500" [(ngModel)]="form.note"></textarea></label>
+        @if (selected()) { <label>Motivo de la corrección<textarea name="reason" required minlength="3" maxlength="500" [(ngModel)]="form.correction_reason"></textarea></label> }
+        @if (selected()) { <section class="history"><h3>Historial de cambios</h3>
+          @for (event of history(); track event.id) { <p>{{ event.event_type === 'created' ? 'Registro creado' : 'Corrección' }}{{ event.correction_reason ? ': ' + event.correction_reason : '' }}<small>{{ event.created_at }}{{ event.actor_email ? ' · ' + event.actor_email : '' }}</small></p> }
+        </section> }
+      </div>
+    </pana-step-dialog>
+  }
+</section>
