@@ -10,7 +10,7 @@ use RuntimeException;
 
 final class ActivityService
 {
-    public function __construct(private ActivityRepository $activities, private ActivityInputValidator $validator)
+    public function __construct(private ActivityRepository $activities, private ActivityInputValidator $validator, private ?NotificationService $notifications = null)
     {
     }
 
@@ -36,7 +36,9 @@ final class ActivityService
     {
         $data = $this->validator->activity($input);
         $this->assertParticipants($data['participant_ids'], $scope);
-        return ['id' => $this->activities->create($data, $actor)];
+        $id = $this->activities->create($data, $actor);
+        $this->notifications?->activityCreated($actor, (string)$data['title'], $id);
+        return ['id' => $id];
     }
 
     public function update(array $input, int $actor, array $scope = []): void

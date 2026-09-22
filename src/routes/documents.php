@@ -10,7 +10,8 @@ use App\Services\DocumentService;
 return static function (callable $buildAuth, callable $authorize, callable $authorizeAny, callable $readJsonBody): array {
     $build = static function () use ($buildAuth): array {
         $auth = $buildAuth();
-        $auth['documents'] = new DocumentController(new DocumentService(new DocumentRepository(database_connection())));
+        $auth['documents'] = new DocumentController(new DocumentService(new DocumentRepository(database_connection()),
+            new \App\Services\NextcloudStorageService()));
         return $auth;
     };
     $id = static function (): int {

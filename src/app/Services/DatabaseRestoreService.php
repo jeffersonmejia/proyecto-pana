@@ -18,17 +18,26 @@ final class DatabaseRestoreService
     {
         $stream = fopen($path, 'rb');
         if ($stream === false) throw new ApiException(422, 'invalid_backup_file');
-        try {
-            $this->verify($stream);
-            $this->parser->process($stream, static function (string $sql): void {});
-            $rollback = $this->backup->create();
-            try { $this->replace($stream, true); }
-            catch (Throwable $error) {
-                try { $this->replace($rollback['stream'], false); }
-                catch (Throwable $rollbackError) { throw new RuntimeException('backup_restore_rollback_failed', 0, $rollbackError); }
-                throw $error;
-            } finally { fclose($rollback['stream']); }
-        } finally { fclose($stream); }
+        try { $this->restoreStream($stream); } finally { fclose($stream); }
+    }
+
+    public function restoreStream($stream): void
+    {
+        $this->validateStream($stream);
+        $rollback = $this->backup->create();
+        try { $this->replace($stream, true); }
+        catch (Throwable $error) {
+            try { $this->replace($rollback['stream'], false); }
+            catch (Throwable $rollbackError) { throw new RuntimeException('backup_restore_rollback_failed', 0, $rollbackError); }
+            throw $error;
+        } finally { fclose($rollback['stream']); }
+    }
+
+    public function validateStream($stream): void
+    {
+        $this->verify($stream);
+        $this->parser->process($stream, static function (string $sql): void {});
+        rewind($stream);
     }
 
     private function verify($stream): void

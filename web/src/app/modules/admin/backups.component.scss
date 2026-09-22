@@ -15,7 +15,8 @@ h2 { font-size: 1.35rem; letter-spacing: -.02em; }
 .spinner { width: 15px; height: 15px; border: 2px solid #ffffff88; border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
 .restore-spinner { width: 15px; height: 15px; border: 2px solid #1a73e855; border-top-color: #1a73e8; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.privacy-note { padding: 12px 15px; border-radius: 12px; background: #e8f0fe; color: #174ea6; font-size: .82rem; }
+.privacy-note { display: flex; align-items: center; gap: 9px; padding: 12px 15px; border-radius: 12px; background: #e8f0fe; color: #174ea6; font-size: .82rem; }
+.privacy-note svg { flex: 0 0 auto; }
 .progress-panel { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid #d7e2f2; border-radius: 14px; background: #fff; }
 .progress-copy { display: flex; justify-content: space-between; gap: 12px; color: #52657c; font-size: .82rem; }
 .progress-copy strong { color: #174ea6; }
@@ -40,6 +41,11 @@ th { background: #f4f8ff; color: #52657c; font-weight: 600; }
 td { color: #344054; }
 tbody tr:last-child td { border-bottom: 0; }
 .record-tag { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: #e6f4ea; color: #188038; font-size: .72rem; }
+.backup-row-actions { display: flex; align-items: center; gap: 9px; }
+.icon-button { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid #c8dafa; border-radius: 50%; background: #f8faff; color: #174ea6; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+.icon-button:hover:not(:disabled), .icon-button:focus-visible { border-color: #8ab4f8; background: #e8f0fe; }
+.icon-button.restore { background: #e8f0fe; }
+.icon-button:disabled { opacity: .6; cursor: wait; }
 .empty { padding: 22px; color: #5f6f84; text-align: center; }
 @media (max-width: 620px) { .backups-heading, .history header { align-items: flex-start; flex-direction: column; } .summary { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .spinner, .restore-spinner { animation: none; } }

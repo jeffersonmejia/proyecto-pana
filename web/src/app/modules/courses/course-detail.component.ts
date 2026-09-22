@@ -35,6 +35,7 @@ export class CourseDetailComponent implements OnInit {
   readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize);});
   readonly attendancePageRows=computed(()=>{const people=this.data()?.participants??[];const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
   readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null);
+  readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
   readonly taskDialog=signal(false); readonly taskStep=signal(0);
   readonly expandedTask=signal<number|null>(null); readonly draggingTask=signal<number|null>(null);
   taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[] as number[]};
@@ -101,8 +102,9 @@ export class CourseDetailComponent implements OnInit {
     this.submitEvidence(task,file); (event.target as HTMLInputElement).value='';
   }
   private submitEvidence(task:number,file:File): void {
-    if(!file.name.toLocaleLowerCase().endsWith('.pdf')||file.size>8*1024*1024){this.taskError.set('Selecciona un PDF de hasta 8 MB.');return;}
-    this.uploadingTask.set(task); this.taskError.set(''); this.api.uploadEvidence(this.course().id,task,file).subscribe({next:()=>{this.uploadingTask.set(null);this.reload();},error:()=>{this.uploadingTask.set(null);this.taskError.set('No se pudo subir la evidencia. Confirma que esta actividad está asignada a tu cuenta.');}});
+    if(this.uploadingTask()!==null)return;
+    if(!file.name.toLocaleLowerCase().endsWith('.pdf')||file.size>8*1024*1024){this.evidenceFeedback.set({task,type:'error',text:'Selecciona un PDF de hasta 8 MB.'});return;}
+    this.uploadingTask.set(task); this.evidenceFeedback.set(null); this.api.uploadEvidence(this.course().id,task,file).subscribe({next:()=>{this.uploadingTask.set(null);this.evidenceFeedback.set({task,type:'success',text:'Evidencia subida correctamente.'});this.reload();},error:()=>{this.uploadingTask.set(null);this.evidenceFeedback.set({task,type:'error',text:'No se pudo subir la evidencia. Confirma que esta actividad está asignada a tu cuenta.'});}});
   }
   documentsForTask(task:number) { return (this.data()?.documents??[]).filter(file=>file.entity_type==='activity'&&file.entity_id===task); }
   downloadDocument(id:number,name:string): void { this.documentsApi.download(id).subscribe(blob=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}); }

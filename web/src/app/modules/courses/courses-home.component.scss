@@ -6,7 +6,7 @@
 .pending-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 14px; border: 1px solid #d7e2f2; border-radius: 999px; background: #fff; color: #174ea6; font: inherit; font-size: .86rem; font-weight: 550; cursor: pointer; }
 .pending-toggle:hover, .pending-toggle.active { border-color: #a8c7fa; background: #e8f0fe; }
 .course-filter { display: inline-flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid #d7e2f2; border-radius: 999px; background: #fff; }
-.course-filter button { min-height: 34px; padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; color: #52657c; font: inherit; font-size: .8rem; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
+.course-filter button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; color: #52657c; font: inherit; font-size: .8rem; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
 .course-filter button:hover, .course-filter button:focus-visible { background: #f1f6fe; }
 .course-filter button.selected { background: #e8f0fe; color: #174ea6; font-weight: 600; }
 .course-filter button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
@@ -23,11 +23,11 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .course-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: #e8f0fe; color: #1a73e8; }
 .status { padding: 5px 10px; border-radius: 999px; background: #e6f4ea; color: #188038; font-size: .8rem; }
 .status.inactive { background: #f1f3f4; color: #5f6368; }
-.course-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: #188038; font: inherit; font-size: .8rem; cursor: pointer; }
+.course-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: #174ea6; font: inherit; font-size: .8rem; cursor: pointer; }
 .toggle-label { width: 50px; text-align: left; }
 .course-toggle:disabled { opacity: .65; cursor: wait; }
 .toggle-track { display: flex; align-items: center; width: 34px; height: 19px; padding: 2px; border-radius: 999px; background: #c5c9ce; transition: background-color 160ms ease; }
-.toggle-track.on { background: #8ab4f8; }
+.toggle-track.on { background: #1a73e8; }
 .toggle-track span { width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform 160ms ease; }
 .toggle-track.on span { transform: translateX(15px); }
 .course-toggle:focus-visible { outline: 2px solid #1a73e8; outline-offset: 4px; border-radius: 6px; }

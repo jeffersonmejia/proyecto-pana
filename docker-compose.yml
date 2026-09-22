@@ -1,0 +1,75 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: nextcloud-db-pana
+    restart: unless-stopped
+
+    command:
+      - --transaction-isolation=READ-COMMITTED
+      - --binlog-format=ROW
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=50
+      - --performance-schema=OFF
+
+    environment:
+      MYSQL_ROOT_PASSWORD: cambia_root_password
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: cambia_nextcloud_password
+
+    volumes:
+      - nextcloud_db:/var/lib/mysql
+
+    mem_limit: 1g
+    cpus: 1.0
+
+  redis:
+    image: redis:7-alpine
+    container_name: nextcloud-redis-pana
+    restart: unless-stopped
+
+    command:
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+
+    volumes:
+      - nextcloud_redis:/data
+
+    mem_limit: 256m
+    cpus: 0.5
+
+  nextcloud:
+    image: nextcloud:apache
+    container_name: nextcloud-name
+    restart: unless-stopped
+
+    ports:
+      - "8080:80"
+
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: cambia_nextcloud_password
+
+      REDIS_HOST: redis
+
+      PHP_MEMORY_LIMIT: 512M
+      PHP_UPLOAD_LIMIT: 10G
+
+    volumes:
+      - nextcloud_data:/var/www/html
+
+    depends_on:
+      - db
+      - redis
+
+    mem_limit: 2g
+    cpus: 2.0
+
+
+volumes:
+  nextcloud_data:
+  nextcloud_db:
+  nextcloud_redis:

@@ -2,15 +2,17 @@ import { Component, OnInit, computed, inject, output, signal } from '@angular/co
 import { forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
-import { LucideBookOpen, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText } from '@lucide/angular';
+import { LucideBan, LucideBookOpen, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText } from '@lucide/angular';
 import { Course, CourseInput, CourseSections, CoursesApiService } from './courses-api.service';
 import { CourseDetailComponent } from './course-detail.component';
 
-@Component({ selector: 'pana-courses-home', standalone: true, imports: [FormsModule, StepDialogComponent, CourseDetailComponent, LucideBookOpen, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText], templateUrl: './courses-home.component.html', styleUrl: './courses-home.component.scss' })
+@Component({ selector: 'pana-courses-home', standalone: true, imports: [FormsModule, StepDialogComponent, CourseDetailComponent, LucideBan, LucideBookOpen, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText], templateUrl: './courses-home.component.html', styleUrl: './courses-home.component.scss' })
 export class CoursesHomeComponent implements OnInit {
   readonly detailChange=output<boolean>();
+  private readonly route=inject(ActivatedRoute); private readonly router=inject(Router); private routeCourseId:number|null=null;
   private readonly api = inject(CoursesApiService); readonly auth = inject(AuthService);
   readonly greetingName=computed(()=>((this.auth.user()?.first_name??this.auth.user()?.email??'').trim().split(/\s+/)[0]));
   readonly courses = signal<Course[]>([]); readonly tutors = signal<{ id: number; name: string }[]>([]);
@@ -24,10 +26,10 @@ export class CoursesHomeComponent implements OnInit {
   participantQuery = '';
   readonly selected = signal<Course | null>(null); readonly dialog = signal(false); readonly step = signal(0);
   readonly error = signal(''); readonly saving = signal(false); form: CourseInput = this.blank();
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { this.route.paramMap.subscribe(params=>{const value=Number(params.get('courseId'));this.routeCourseId=value>0?value:null;if(this.coursesLoaded())this.selectRouteCourse();});this.load(); }
   canCreate(): boolean { const roles = this.auth.user()?.roles ?? []; return roles.includes('admin') || roles.includes('coordinator'); }
   canManage(_course: Course): boolean { return this.auth.hasPermission('courses.manage.all') || (this.auth.hasPermission('courses.manage') && (this.auth.user()?.roles.includes('coordinator') ?? false)); }
-  load(): void { this.api.list().subscribe({ next: r => { this.courses.set(r.courses); this.coursesLoaded.set(true); this.error.set(''); if(this.pendingMode())this.loadPending(); }, error: () => { this.coursesLoaded.set(true); this.pendingLoading.set(false); this.error.set('No se pudieron cargar los cursos.'); if(this.pendingMode())this.pendingError.set('No se pudieron cargar las tareas pendientes.'); } }); }
+  load(): void { this.api.list().subscribe({ next: r => { this.courses.set(r.courses); this.coursesLoaded.set(true); this.error.set(''); this.selectRouteCourse(); if(this.pendingMode())this.loadPending(); }, error: () => { this.coursesLoaded.set(true); this.pendingLoading.set(false); this.error.set('No se pudieron cargar los cursos.'); if(this.pendingMode())this.pendingError.set('No se pudieron cargar las tareas pendientes.'); } }); }
   togglePending(): void { this.pendingMode.update(value=>!value); if(this.pendingMode()){if(this.coursesLoaded())this.loadPending();else this.pendingLoading.set(true);} }
   loadPending(): void {
     if(!this.coursesLoaded()){this.pendingLoading.set(true);return;}
@@ -70,8 +72,8 @@ export class CoursesHomeComponent implements OnInit {
     this.form.participant_ids=[...this.form.participant_ids,id]; this.participantQuery='';
   }
   removeStudent(id: number): void { this.form.participant_ids=this.form.participant_ids.filter(value=>value!==id); }
-  view(course: Course): void { this.selected.set(course); this.detailChange.emit(true); }
-  closeView(): void { this.selected.set(null); this.detailChange.emit(false); }
+  view(course: Course): void { this.selected.set(course); this.detailChange.emit(true); void this.router.navigate(['/cursos',course.id]); }
+  closeView(): void { this.selected.set(null); this.detailChange.emit(false); void this.router.navigateByUrl('/cursos'); }
   toggleStatus(course:Course): void {
     if(!this.canManage(course)||this.togglingCourse()!==null)return;
     const previous=course.status;const status=previous==='active'?'inactive':'active';this.togglingCourse.set(course.id);this.error.set('');
@@ -88,4 +90,5 @@ export class CoursesHomeComponent implements OnInit {
     const request = current ? this.api.update(current.id, this.form) : this.api.create(this.form);
     request.subscribe({ next: () => { this.saving.set(false); this.dialog.set(false); this.selected.set(null); this.load(); }, error: () => { this.saving.set(false); this.error.set('No se pudo guardar el curso. Revisa los campos y las fechas.'); } }); }
   private blank(): CourseInput { return { name: '', description: '', start_date: '', end_date: '', status: 'active', tutor_user_id: null, max_participants: null, participant_ids: [] }; }
+  private selectRouteCourse(): void { if(this.routeCourseId===null){this.selected.set(null);this.detailChange.emit(false);return;} const course=this.courses().find(item=>item.id===this.routeCourseId)??null;this.selected.set(course);this.detailChange.emit(!!course);if(!course){this.error.set('No se encontró el curso solicitado.');void this.router.navigateByUrl('/cursos',{replaceUrl:true});} }
 }

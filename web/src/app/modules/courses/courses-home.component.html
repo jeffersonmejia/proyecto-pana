@@ -3,9 +3,9 @@
   @else {
   <header class="heading"><div><h2 id="courses-title">Hola, {{ greetingName() }}</h2><p>Explora cursos de voluntariado en el Patronato Municipal de Santo Domingo.</p></div>
     <div class="heading-actions">@if (!pendingMode()) { <div class="course-filter" role="group" aria-label="Filtrar cursos">
-      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')">Activos</button>
-      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')">Inactivos</button>
-      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')">Todos</button>
+      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')"><svg lucideCheck [size]="14"></svg>Activos</button>
+      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')"><svg lucideBan [size]="14"></svg>Inactivos</button>
+      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')"><svg lucideList [size]="14"></svg>Todos</button>
     </div> }
       @if (canCreate()) { <button class="primary" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg> Crear curso</button> }
       <button class="pending-toggle" type="button" [class.active]="pendingMode()" (click)="togglePending()"><svg lucideClock3 [size]="17"></svg>{{ pendingMode()?'Ver cursos':'Ver pendientes' }}</button></div>

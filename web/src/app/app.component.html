@@ -1,21 +1,20 @@
-@if (sessionReady() && !auth.user()) {
-  <pana-login />
-} @else if (!sessionReady()) {
+@if (!sessionReady()) {
   <main class="session-loading" role="status">Cargando tu espacio…</main>
 } @else if (auth.user()) {
   <div class="workspace">
     <header class="topbar" aria-label="Navegación principal">
-      <a class="brand" href="#inicio" aria-label="PANA, ir al inicio" (click)="$event.preventDefault(); open('home')">
+      <a class="brand" href="/cursos" aria-label="PANA, ir al inicio" (click)="$event.preventDefault(); open('home')">
         <img src="assets/pana-logo.svg" alt="Municipalidad de Santo Domingo · PANA" />
       </a>
       <nav class="topbar-actions" aria-label="Acciones de cuenta">
-        <button class="topbar-link courses-link" type="button" [class.active]="activeModule() === 'home'" (click)="open('home')">
-          <span>Cursos</span>
-        </button>
+        <div class="notification-menu" #notificationMenu (document:click)="closeAccountMenu($event, notificationMenu)">
+          <button class="topbar-link notification-trigger" type="button" aria-label="Notificaciones" [attr.aria-expanded]="notificationOpen()" (click)="toggleNotifications()"><svg lucideBell [size]="18"></svg>@if (notifications.unread() > 0) { <span class="notification-count">{{ notifications.unread() }}</span> }</button>
+          @if (notificationOpen()) { <section class="notification-popover" role="dialog" aria-label="Notificaciones"><header><strong>Notificaciones</strong><button type="button" (click)="notifications.markAll()">Marcar leídas</button></header>@if (notifications.items().length === 0) { <p class="notification-empty">No tienes notificaciones.</p> } @for (item of notifications.items(); track item.id) { <button class="notification-item" [class.unread]="!item.read_at" type="button" (click)="markNotification(item.id)"><strong>{{ item.title }}</strong><span>{{ item.message }}</span><small>{{ item.created_at | date:'short' }}</small></button> } </section> }
+        </div>
         @if (auth.user()?.roles.includes('admin') || auth.isPreview()) {
           <div class="preview-menu" #previewMenu (document:click)="closePreviewMenu($event, previewMenu)" (keydown.escape)="previewMenuOpen.set(false)">
             <button class="topbar-link preview-link" type="button" aria-haspopup="dialog" [class.active]="auth.isPreview()" [attr.aria-expanded]="previewMenuOpen()" (click)="previewMenuOpen.update(open => !open)">
-              <svg lucideEye [size]="17"></svg><span>Ver como</span>
+              <svg lucideEye [size]="16"></svg><span class="preview-label">{{ previewButtonLabel() }}</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
             </button>
             @if (previewMenuOpen()) {
               <section class="preview-popover" role="dialog" aria-label="Vista previa por rol">
@@ -26,14 +25,17 @@
             }
           </div>
         }
+        <button class="topbar-link courses-link" type="button" [class.active]="activeModule() === 'home'" (click)="open('home')">
+          <span>Cursos</span>
+        </button>
         @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
           <button class="topbar-link admin-link" type="button" [class.active]="activeModule() === 'admin'" (click)="open('admin')">
             <svg lucideUsersRound [size]="19"></svg><span>Administración</span>
           </button>
         }
         <div class="account-menu" #accountMenu (document:click)="closeAccountMenu($event, accountMenu)" (keydown.escape)="accountMenuOpen.set(false)">
-          <button class="topbar-link account-trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="accountMenuOpen()" (click)="accountMenuOpen.update(open => !open)">
-            Mi cuenta
+          <button class="topbar-link account-trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="accountMenuOpen()" (click)="toggleAccount($event)">
+            <svg lucideUserRound [size]="16"></svg><span>Mi cuenta</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
           </button>
           @if (accountMenuOpen()) {
             <section class="account-popover" role="menu" aria-label="Mi cuenta">
@@ -48,21 +50,7 @@
 
     <main class="main-content" [class.course-open]="courseDetailOpen()">
       @if (auth.isPreview()) { <div class="preview-banner" role="status"><span>Vista previa de {{ displayRole() }} · Solo lectura</span><button type="button" (click)="stopPreview()">Salir</button></div> }
-      @if (activeModule() === 'home') {
-        <pana-courses-home (detailChange)="courseDetailOpen.set($event)" />
-      } @else if (activeModule() === 'admin') {
-        <pana-access-admin (close)="open('home')" />
-      } @else if (activeModule() === 'people') {
-        <pana-people (close)="open('home')" />
-      } @else if (activeModule() === 'attendance') {
-        <pana-attendance (close)="open('home')" />
-      } @else if (activeModule() === 'activities') {
-        <pana-activities (close)="open('home')" />
-      } @else if (activeModule() === 'evaluations') {
-        <pana-evaluations (close)="open('home')" />
-      } @else if (activeModule() === 'reports') {
-        <pana-reports (close)="open('home')" />
-      }
+      <router-outlet (activate)="onRouteActivate($event)" />
     </main>
   </div>
-}
+} @else { <router-outlet /> }

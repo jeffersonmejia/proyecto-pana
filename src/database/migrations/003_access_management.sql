@@ -3,5 +3,6 @@
 INSERT INTO permissions (code, name) VALUES
     ('users.read', 'Consultar usuarios'),
     ('users.manage', 'Administrar usuarios'),
-    ('roles.manage', 'Administrar roles y permisos')
+    ('roles.manage', 'Administrar roles y permisos'),
+    ('notifications.read', 'Consultar notificaciones')
 ON DUPLICATE KEY UPDATE name = VALUES(name);

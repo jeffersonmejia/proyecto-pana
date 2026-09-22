@@ -2,6 +2,7 @@ import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { LucideLockKeyhole, LucideMail } from '@lucide/angular';
 
@@ -14,6 +15,7 @@ import { LucideLockKeyhole, LucideMail } from '@lucide/angular';
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   readonly authenticated = output<void>();
   email = '';
   password = '';
@@ -24,7 +26,7 @@ export class LoginComponent {
     this.busy.set(true);
     this.errorMessage.set('');
     this.auth.login(this.email, this.password).subscribe({
-      next: () => this.authenticated.emit(),
+      next: () => { this.authenticated.emit(); void this.router.navigateByUrl('/cursos'); },
       error: (error: HttpErrorResponse) => {
         const code = error.error?.error;
         this.errorMessage.set(code === 'rate_limited'

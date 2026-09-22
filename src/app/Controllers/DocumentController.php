@@ -39,10 +39,10 @@ final class DocumentController
         $file = $this->documents->download($id, $actor);
         $document = $file['document'];
         header('Content-Type: ' . $document['mime_type']);
-        header('Content-Length: ' . filesize($file['path']));
+        header('Content-Length: ' . $file['size']);
         header('Content-Disposition: attachment; filename*=UTF-8\'\'' . rawurlencode($document['original_name']));
         header('X-Content-Type-Options: nosniff');
-        readfile($file['path']);
+        try { fpassthru($file['stream']); } finally { fclose($file['stream']); }
     }
 
     public function delete(int $id, array $actor): void

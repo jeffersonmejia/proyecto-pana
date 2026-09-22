@@ -132,4 +132,5 @@ return array_merge(
     (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/reports.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/documents.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
+    ,(require __DIR__ . '/notifications.php')($buildAuth, $authorize)
 );

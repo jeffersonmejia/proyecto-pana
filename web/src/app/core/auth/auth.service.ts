@@ -36,6 +36,7 @@ export class AuthService {
   private readonly apiUrl = `${environment.apiBaseUrl}/auth`;
   readonly accessToken = signal<string | null>(null);
   readonly user = signal<AuthUser | null>(null);
+  readonly sessionReady = signal(false);
   private previewOriginal: AuthUser | null = null;
   readonly previewRole = signal<PreviewRole | null>(null);
   readonly isPreview = computed(() => this.previewRole() !== null);
@@ -47,7 +48,7 @@ export class AuthService {
   }
 
   restoreSession(): Observable<boolean> {
-    return this.refreshAccessToken();
+    return this.refreshAccessToken().pipe(tap(() => this.sessionReady.set(true)));
   }
 
   refreshAccessToken(): Observable<boolean> {

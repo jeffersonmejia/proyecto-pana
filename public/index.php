@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 use App\Exceptions\ApiException;
 
-require dirname(__DIR__) . '/src/config/bootstrap.php';
+$projectRoot = rtrim((string) (getenv('PANA_API_ROOT') ?: dirname(__DIR__)), '/');
+require $projectRoot . '/src/config/bootstrap.php';
 
 $allowedOrigin = env_value('FRONTEND_URL', 'http://localhost:4200');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -22,7 +23,7 @@ if ($requestOrigin !== '') {
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Authorization, Content-Type');
     http_response_code(204);
     exit;
@@ -36,7 +37,7 @@ if ($basePath !== '' && strpos($requestPath, $basePath) === 0) {
 }
 
 $routeKey = ($_SERVER['REQUEST_METHOD'] ?? 'GET') . ' ' . '/' . trim($requestPath, '/');
-$routes = require dirname(__DIR__) . '/src/routes/api.php';
+$routes = require $projectRoot . '/src/routes/api.php';
 $handler = $routes[$routeKey] ?? null;
 
 if ($handler === null) {
@@ -51,7 +52,7 @@ try {
     http_response_code($exception->status);
     echo json_encode(['error' => $exception->errorCode]);
 } catch (Throwable $exception) {
-    error_log('API error: ' . get_class($exception));
+    error_log('API error: ' . get_class($exception) . ' at ' . $exception->getFile() . ':' . $exception->getLine());
     http_response_code(500);
     echo json_encode(['error' => 'internal_error']);
 }

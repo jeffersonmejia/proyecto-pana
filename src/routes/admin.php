@@ -12,7 +12,7 @@ return static function (
         $backup = new \App\Services\DatabaseBackupService($connection);
         return new \App\Controllers\DatabaseBackupController($backup, new \App\Services\DatabaseRestoreService(
             $connection, $backup, new \App\Services\BackupSqlParser()
-        ));
+        ), new \App\Services\NextcloudStorageService());
     };
     return [
         'GET /api/admin/users' => static function () use ($buildAdmin, $authorizeAny): void {
@@ -80,12 +80,27 @@ return static function (
         'POST /api/admin/backups' => static function () use ($buildAdmin, $buildBackup): void {
             $components = $buildAdmin();
             $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
-            $buildBackup()->download($user);
+            $buildBackup()->createStored($user);
+        },
+        'GET /api/admin/backups/download' => static function () use ($buildAdmin, $buildBackup): void {
+            $components = $buildAdmin();
+            $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+            $buildBackup()->downloadStored($user, $_GET['name'] ?? null);
+        },
+        'GET /api/admin/backups' => static function () use ($buildAdmin, $buildBackup): void {
+            $components = $buildAdmin();
+            $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+            $buildBackup()->index($user);
         },
         'POST /api/admin/backups/restore' => static function () use ($buildAdmin, $buildBackup): void {
             $components = $buildAdmin();
             $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
             $buildBackup()->restore($user, $_FILES['backup'] ?? []);
+        },
+        'POST /api/admin/backups/restore-stored' => static function () use ($buildAdmin, $buildBackup, $readJsonBody): void {
+            $components = $buildAdmin();
+            $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+            $buildBackup()->restoreStored($user, $readJsonBody()['name'] ?? null);
         },
     ];
 };

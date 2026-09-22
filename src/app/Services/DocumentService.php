@@ -9,11 +9,9 @@ use App\Repositories\DocumentRepository;
 final class DocumentService
 {
     private const MIME_EXTENSIONS = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png', 'text/plain' => 'txt'];
-    private string $directory;
 
-    public function __construct(private DocumentRepository $documents)
+    public function __construct(private DocumentRepository $documents, private NextcloudStorageService $storage)
     {
-        $this->directory = dirname(__DIR__, 3) . '/src/storage/documents';
     }
 
     public function entities(mixed $type, mixed $query, array $actor): array
@@ -59,32 +57,43 @@ final class DocumentService
         if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime]) || ($evidence && $mime!=='application/pdf')) throw new ApiException(415, 'unsupported_file_type');
         $name = $this->safeName($file['name'] ?? '');
         if ($name === '') throw new ApiException(422, 'invalid_file_name');
-        if (!is_dir($this->directory) && !mkdir($this->directory, 0750, true) && !is_dir($this->directory)) {
-            throw new ApiException(500, 'storage_unavailable');
-        }
         $stored = bin2hex(random_bytes(16)) . '.' . self::MIME_EXTENSIONS[$mime];
-        $path = $this->directory . '/' . $stored;
-        if (!move_uploaded_file($file['tmp_name'], $path)) throw new ApiException(500, 'upload_failed');
+        $path = $this->remotePath($type, (int) $id, $stored);
+        $this->storage->uploadFile($file['tmp_name'], $path);
         try {
             $documentId = $this->documents->create(['entity_type' => $type, 'entity_id' => (int) $id,
                 'original_name' => $name, 'stored_name' => $stored, 'mime_type' => $mime, 'file_size' => (int) $file['size']], $actor);
             return ['id' => $documentId];
-        } catch (\Throwable $error) { unlink($path); throw $error; }
+        } catch (\Throwable $error) {
+            try { $this->storage->delete($path); } catch (\Throwable) { }
+            throw $error;
+        }
     }
 
     public function download(int $id, array $actor): array
     {
         $document = $this->documents->find($id, $actor) ?? throw new ApiException(404, 'document_not_found');
-        $path = $this->directory . '/' . basename($document['stored_name']);
-        if (!is_file($path)) throw new ApiException(404, 'document_file_not_found');
-        return ['document' => $document, 'path' => $path];
+        $legacy = dirname(__DIR__, 3) . '/src/storage/documents/' . basename($document['stored_name']);
+        if (is_file($legacy)) return ['document' => $document, 'stream' => fopen($legacy, 'rb'), 'size' => filesize($legacy)];
+        $file = $this->storage->download($this->remotePath($document['entity_type'], (int) $document['entity_id'], $document['stored_name']));
+        return ['document' => $document] + $file;
     }
 
     public function delete(int $id, array $actor): void
     {
-        $file = $this->download($id, $actor);
+        $document = $this->documents->find($id, $actor) ?? throw new ApiException(404, 'document_not_found');
+        $legacy = dirname(__DIR__, 3) . '/src/storage/documents/' . basename($document['stored_name']);
+        if (is_file($legacy)) unlink($legacy);
+        else $this->storage->delete($this->remotePath($document['entity_type'],
+            (int) $document['entity_id'], $document['stored_name']));
         $this->documents->delete($id);
-        if (is_file($file['path'])) unlink($file['path']);
+    }
+
+    private function remotePath(string $type, int $id, string $stored): string
+    {
+        $folder = ['person' => 'Personas', 'activity' => 'Actividades', 'evaluation' => 'Evaluaciones'][$type] ?? '';
+        if ($folder === '') throw new ApiException(422, 'invalid_document_entity');
+        return "Documentos/{$folder}/{$id}/" . basename($stored);
     }
 
     private function safeName(mixed $name): string

@@ -1,10 +1,10 @@
 <section class="backups-page" aria-labelledby="backups-title">
   <header class="backups-heading">
-    <div><h2 id="backups-title">Respaldos de la base de datos</h2><p>Descarga una copia SQL de la información actual.</p></div>
+    <div><h2 id="backups-title">Respaldos de la base de datos</h2><p>Guarda y restaura copias de seguridad desde Nextcloud.</p></div>
     <div class="backup-actions">
       <button class="create-backup" type="button" (click)="create()" [disabled]="busy()">
-        @if (busy() && operation()==='download') { <span class="spinner" aria-hidden="true"></span> } @else { <svg lucideDownload [size]="17"></svg> }
-        {{ busy() && operation()==='download' ? 'Creando…' : 'Crear respaldo' }}
+        @if (busy() && operation()==='create') { <span class="spinner" aria-hidden="true"></span> } @else { <svg lucidePlus [size]="17"></svg> }
+        {{ busy() && operation()==='create' ? 'Guardando…' : 'Crear respaldo' }}
       </button>
       <button class="restore-backup" type="button" (click)="backupInput.click()" [disabled]="busy()">
         @if (busy() && operation()==='restore') { <span class="restore-spinner" aria-hidden="true"></span> } @else { <svg lucideUpload [size]="17"></svg> }
@@ -13,7 +13,7 @@
       <input #backupInput class="file-input" type="file" accept=".sql,text/plain" (change)="restoreSelected($event)" />
     </div>
   </header>
-  <p class="privacy-note">Solo se admiten respaldos SQL generados por PANA. Restaurar reemplaza los datos actuales y cierra tu sesión.</p>
+  <p class="privacy-note"><svg lucideTriangleAlert [size]="18"></svg><span>Los respaldos se guardan en Nextcloud. Restaurar causará una interrupción temporal: reemplazará la base de datos actual y cerrará tu sesión.</span></p>
   @if (busy()) { <div class="progress-panel" role="status" aria-live="polite">
     <div class="progress-copy"><span>{{ message() }}</span><strong>{{ progress() }}%</strong></div>
     <progress max="100" [value]="progress()">{{ progress() }}%</progress>
@@ -22,14 +22,14 @@
   @if (message() && !busy()) { <p class="feedback success" role="status">{{ message() }}</p> }
   <div class="summary" aria-label="Respaldo más reciente">
     <article><span>Fecha del último respaldo</span><strong>{{ latest()?.date ?? 'Sin respaldos' }}</strong></article>
-    <article><span>Tamaño</span><strong>{{ latest() ? formatSize(latest()?.bytes ?? 0) : '—' }}</strong></article>
+    <article><span>Tamaño</span><strong>{{ latest() ? formatSize(latest().bytes) : '—' }}</strong></article>
   </div>
   <section class="history" aria-labelledby="history-title">
-    <header><h3 id="history-title">Últimos respaldos</h3><span>Historial de descargas de este navegador.</span></header>
-    <div class="table-wrap"><table><thead><tr><th>Archivo</th><th>Fecha</th><th>Tamaño</th><th>Registro</th></tr></thead>
+    <header><h3 id="history-title">Últimos respaldos</h3><span>Copias SQL guardadas en Nextcloud.</span></header>
+    <div class="table-wrap"><table><thead><tr><th>Archivo</th><th>Fecha</th><th>Tamaño</th><th>Ubicación y acción</th></tr></thead>
       <tbody>@for (row of rows(); track row.name) { <tr><td>{{ row.name }}</td><td>{{ row.date }}</td><td>{{ formatSize(row.bytes) }}</td>
-        <td><span class="record-tag">Descargado en este equipo</span></td></tr>
-      } @empty { <tr><td colspan="4" class="empty">Aún no hay descargas registradas.</td></tr> }</tbody>
+        <td class="backup-row-actions"><span class="record-tag">Nextcloud</span><button class="icon-button download" type="button" title="Descargar respaldo" aria-label="Descargar respaldo" (click)="downloadStored(row)" [disabled]="busy()"><svg lucideDownload [size]="17"></svg></button><button class="icon-button restore" type="button" title="Restaurar respaldo" aria-label="Restaurar respaldo" (click)="restoreExisting(row)" [disabled]="busy()">@if (busy() && selectedBackup()===row.name && operation()==='restore') { <span class="restore-spinner" aria-hidden="true"></span> } @else { <svg lucideRotateCcw [size]="17"></svg> }</button></td></tr>
+      } @empty { <tr><td colspan="4" class="empty">Aún no hay respaldos en Nextcloud.</td></tr> }</tbody>
     </table></div>
   </section>
 </section>

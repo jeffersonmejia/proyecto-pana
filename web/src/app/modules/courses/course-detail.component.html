@@ -65,10 +65,11 @@
               <dl><div><dt>Estado</dt><dd>{{ taskStatus(row.status) }}</dd></div><div><dt>Fechas</dt><dd>{{ row.start_at }} – {{ row.end_at }}</dd></div><div><dt>Responsable</dt><dd>{{ row.responsible }}</dd></div><div><dt>Asignados</dt><dd>{{ row.participants || '—' }}</dd></div></dl>
               <div class="evidence-list"><strong>Evidencias</strong>@for (file of documentsForTask(row.id); track file.id) { <button class="file-link" type="button" (click)="downloadDocument(file.id,file.original_name)"><svg lucideFileText [size]="17"></svg>{{ file.original_name }} · {{ file.uploader || 'Participante' }}</button> } @empty { <span class="muted">Aún no hay archivos.</span> }</div>
               @if (canSubmitEvidence()) { <label class="evidence-dropzone" [class.dragging]="draggingTask()===row.id" (dragover)="onTaskDragOver(row.id,$event)" (dragleave)="onTaskDragLeave(row.id)" (drop)="onTaskDrop(row.id,$event)">
-                <svg class="pdf-icon" lucideFileText [size]="27"></svg><span><strong>Arrastra tu evidencia PDF aquí</strong><small>PDF de hasta 8 MB o elige un archivo</small></span>
-                <span class="upload-action"><svg lucideUpload [size]="17"></svg>Elegir PDF</span><input class="file-picker" type="file" accept="application/pdf,.pdf" aria-label="Elegir evidencia PDF" (change)="uploadEvidence(row.id,$event)" [disabled]="uploadingTask()===row.id">
-              </label> }
-            </section> }
+                 <svg class="pdf-icon" lucideFileText [size]="27"></svg><span><strong>Arrastra tu evidencia PDF aquí</strong><small>PDF de hasta 8 MB o elige un archivo</small></span>
+                 <span class="upload-action">@if (uploadingTask()===row.id) { <span class="upload-spinner" aria-hidden="true"></span>Subiendo… } @else { <svg lucideUpload [size]="17"></svg>Elegir PDF }</span><input class="file-picker" type="file" accept="application/pdf,.pdf" aria-label="Elegir evidencia PDF" (change)="uploadEvidence(row.id,$event)" [disabled]="uploadingTask()===row.id">
+               </label> }
+               @if (evidenceFeedback()?.task===row.id) { <p class="evidence-feedback" [class.error]="evidenceFeedback()?.type==='error'" [attr.role]="evidenceFeedback()?.type==='error' ? 'alert' : 'status'">{{ evidenceFeedback()?.text }}</p> }
+             </section> }
           </article> } @empty { <p class="empty task-empty">Todavía no hay tareas asignadas en este curso.</p> }</div>
         </section>
         @if (canManageTasks() && taskDialog()) { <pana-step-dialog title="Crear tarea" [steps]="['Datos de la tarea','Fechas y participantes']" [step]="taskStep()" [saving]="taskSaving()" [canContinue]="canContinueTask()" [canSave]="canSaveTask(courseData.participants)" (close)="closeTaskDialog()" (previous)="previousTaskStep()" (next)="nextTaskStep()" (save)="createTask(courseData)">

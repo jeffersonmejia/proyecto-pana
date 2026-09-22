@@ -10,8 +10,9 @@ use App\Validators\ActivityInputValidator;
 return static function (callable $buildAuth, callable $authorize, callable $authorizeAny, callable $readJsonBody): array {
     $build = static function () use ($buildAuth): array {
         $auth = $buildAuth();
+        $db = database_connection();
         $auth['activities'] = new ActivityController(new ActivityService(
-            new ActivityRepository(database_connection()), new ActivityInputValidator()
+            new ActivityRepository($db), new ActivityInputValidator(), new \App\Services\NotificationService(new \App\Repositories\NotificationRepository($db))
         ));
         return $auth;
     };
