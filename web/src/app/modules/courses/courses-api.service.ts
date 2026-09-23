@@ -26,6 +26,8 @@ export class CoursesApiService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/courses`;
   list() { return this.http.get<{ courses: Course[] }>(this.url); }
+  available() { return this.http.get<{ courses: Course[] }>(`${this.url}/available`); }
+  enroll(id:number) { return this.http.post(`${this.url}/enroll?id=${id}`,{}); }
   sections(id: number,attendanceDate:string) { return this.http.get<CourseSections>(`${this.url}/sections`, { params: { id,attendance_date:attendanceDate } }); }
   createTask(courseId: number,input: { title: string; description: string; responsible: string; start_at: string; end_at: string; status: string; participant_ids: number[] }) {
     return this.http.post<{ id: number }>(`${this.url}/tasks`,input,{params:{course_id:courseId}});

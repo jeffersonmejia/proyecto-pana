@@ -1,6 +1,6 @@
 :host { display: block; color: #202124; }
 .courses-home { max-width: 1400px; margin: 4px auto 0; }
-.courses-home.detail-mode { margin-top: 0; }
+.courses-home.detail-mode { max-width: none; margin-top: 0; }
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .heading-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .pending-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 14px; border: 1px solid #d7e2f2; border-radius: 999px; background: #fff; color: #174ea6; font: inherit; font-size: .86rem; font-weight: 550; cursor: pointer; }
@@ -9,13 +9,18 @@
 .course-filter button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; color: #52657c; font: inherit; font-size: .8rem; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
 .course-filter button:hover, .course-filter button:focus-visible { background: #f1f6fe; }
 .course-filter button.selected { background: #e8f0fe; color: #174ea6; font-weight: 600; }
-.course-filter button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+.course-filter button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }.filter-count { min-width: 18px; padding: 1px 5px; border-radius: 999px; background: #dfe8f7; color: #52657c; font-size: .7rem; font-variant-numeric: tabular-nums; text-align: center; }.course-filter button.selected .filter-count { background: #c6dafb; color: #174ea6; }
 h2, h3, p { margin: 0; }
 h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .heading p { margin-top: 5px; color: #5f6f84; font-size: .82rem; }
 .primary, .close { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 15px; border: 1px solid #1a73e8; border-radius: 999px; background: #1a73e8; color: white; font: inherit; cursor: pointer; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 15px; }
 .course-card { display: flex; flex-direction: column; min-height: 245px; padding: 18px; border: 1px solid #d7e2f2; border-radius: 18px; background: #fff; cursor: pointer; transition: border-color 140ms ease, background-color 140ms ease; }
+.course-skeleton { cursor: default; pointer-events: none; }
+.course-skeleton .card-top { margin-bottom: 18px; }
+.course-skeleton > pana-skeleton { margin-bottom: 4px; }
+.skeleton-grid .details { margin-top: 16px; }
+.skeleton-grid .details pana-skeleton:first-child { grid-column: 1 / -1; }
 .course-card:hover, .course-card:focus-visible { border-color: #8ab4f8; background: #fcfdff; }
 .course-card:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
 .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
@@ -34,7 +39,7 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .course-card h3 { font-size: .92rem; letter-spacing: -.02em; }
 .details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 13px 0; padding: 0; color: #344054; font-size: .74rem; }
 .details > span { display: flex; align-content: flex-start; align-items: center; gap: 4px; min-width: 0; min-height: 62px; flex-wrap: wrap; padding: 9px 10px; border: 1px solid #e6ebf2; border-radius: 12px; background: #f8faff; }
-.details > span > strong { width: 100%; color: #748196; font-size: .66rem; font-weight: 600; }
+.details > span > strong { width: 100%; color: inherit; font-size: .66rem; font-weight: 600; }
 .details > span:first-child { grid-column: 1 / -1; min-height: 42px; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
 .tutor-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icon-action { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #e8f0fe; color: #174ea6; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }

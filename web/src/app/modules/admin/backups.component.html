@@ -21,14 +21,14 @@
   @if (error()) { <p class="feedback error" role="alert">{{ error() }}</p> }
   @if (message() && !busy()) { <p class="feedback success" role="status">{{ message() }}</p> }
   <div class="summary" aria-label="Respaldo más reciente">
-    <article><span>Fecha del último respaldo</span><strong>{{ latest()?.date ?? 'Sin respaldos' }}</strong></article>
+    <article><span>Fecha del último respaldo</span><strong>{{ latest() ? latest().date : 'Sin respaldos' }}</strong></article>
     <article><span>Tamaño</span><strong>{{ latest() ? formatSize(latest().bytes) : '—' }}</strong></article>
   </div>
   <section class="history" aria-labelledby="history-title">
     <header><h3 id="history-title">Últimos respaldos</h3><span>Copias SQL guardadas en Nextcloud.</span></header>
     <div class="table-wrap"><table><thead><tr><th>Archivo</th><th>Fecha</th><th>Tamaño</th><th>Ubicación y acción</th></tr></thead>
       <tbody>@for (row of rows(); track row.name) { <tr><td>{{ row.name }}</td><td>{{ row.date }}</td><td>{{ formatSize(row.bytes) }}</td>
-        <td class="backup-row-actions"><span class="record-tag">Nextcloud</span><button class="icon-button download" type="button" title="Descargar respaldo" aria-label="Descargar respaldo" (click)="downloadStored(row)" [disabled]="busy()"><svg lucideDownload [size]="17"></svg></button><button class="icon-button restore" type="button" title="Restaurar respaldo" aria-label="Restaurar respaldo" (click)="restoreExisting(row)" [disabled]="busy()">@if (busy() && selectedBackup()===row.name && operation()==='restore') { <span class="restore-spinner" aria-hidden="true"></span> } @else { <svg lucideRotateCcw [size]="17"></svg> }</button></td></tr>
+        <td class="backup-row-actions"><span class="record-tag">Nextcloud</span><details class="actions-menu"><summary class="icon-button" aria-label="Más acciones"><svg lucideEllipsis [size]="18"></svg></summary><div class="actions-popover"><button type="button" (click)="downloadStored(row)" [disabled]="busy()"><svg lucideDownload [size]="16"></svg>Descargar</button><button type="button" (click)="restoreExisting(row)" [disabled]="busy()"><svg lucideRotateCcw [size]="16"></svg>Restaurar</button></div></details></td></tr>
       } @empty { <tr><td colspan="4" class="empty">Aún no hay respaldos en Nextcloud.</td></tr> }</tbody>
     </table></div>
   </section>

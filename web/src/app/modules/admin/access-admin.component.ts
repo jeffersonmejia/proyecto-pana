@@ -2,7 +2,7 @@ import { Component, OnInit, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginatorComponent, PageInfo } from '../../shared/paginator.component';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
-import { LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight } from '@lucide/angular';
+import { LucideEllipsis, LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight } from '@lucide/angular';
 import { AdminApiService, BeneficiaryOption, ManagedUser, RoleOption } from './admin-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BeneficiaryPickerComponent } from './beneficiary-picker.component';
@@ -12,7 +12,7 @@ import { emptyProfile, validIdentity, validProfile } from './admin-user-form.val
 @Component({
   selector: 'pana-admin-users',
   standalone: true,
-  imports: [FormsModule, PaginatorComponent, StepDialogComponent, BeneficiaryPickerComponent, TutorStudentPickerComponent, LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight],
+  imports: [FormsModule, PaginatorComponent, StepDialogComponent, BeneficiaryPickerComponent, TutorStudentPickerComponent, LucideEllipsis, LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight],
   templateUrl: './access-admin.component.html',
   styleUrl: './access-admin.component.scss',
 })

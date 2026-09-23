@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "ng serve",
+    "start": "ng serve --live-reload --poll 1000",
     "build": "ng build"
   },
   "dependencies": {

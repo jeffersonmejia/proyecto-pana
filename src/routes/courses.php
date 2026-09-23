@@ -20,6 +20,8 @@ return static function (callable $buildAuth,callable $authorize,callable $author
         'GET /api/courses/sections'=>static function() use($build,$read,$id): void { $p=$build(); $actor=$read($p); $p['courses']->sections($id(),$actor,(string)($_GET['attendance_date']??'')); },
         'POST /api/courses/tasks'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $actor=$manage($p); $course=filter_var($_GET['course_id']??null,FILTER_VALIDATE_INT); if(!$course||$course<1) throw new \App\Exceptions\ApiException(400,'invalid_id'); $p['courses']->createTask((int)$course,$readJsonBody(),$actor); },
         'GET /api/courses'=>static function() use($build,$read,$id): void { $p=$build(); $actor=$read($p); if(isset($_GET['id'])) $p['courses']->show($id(),$actor); else $p['courses']->index($actor); },
+        'GET /api/courses/available'=>static function() use($build,$read): void { $p=$build(); $p['courses']->available($read($p)); },
+        'POST /api/courses/enroll'=>static function() use($build,$read,$id): void { $p=$build(); $p['courses']->enroll($id(),$read($p)); },
         'POST /api/courses'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $p['courses']->create($readJsonBody(),$manage($p)); },
         'PUT /api/courses'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $p['courses']->update($readJsonBody(),$manage($p)); },
         'PATCH /api/courses/status'=>static function() use($build,$manage,$readJsonBody,$id): void { $p=$build(); $p['courses']->setStatus($id(),$readJsonBody(),$manage($p)); },

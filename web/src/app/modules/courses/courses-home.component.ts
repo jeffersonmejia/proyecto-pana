@@ -5,31 +5,40 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
+import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { LucideBan, LucideBookOpen, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText } from '@lucide/angular';
 import { Course, CourseInput, CourseSections, CoursesApiService } from './courses-api.service';
 import { CourseDetailComponent } from './course-detail.component';
 
-@Component({ selector: 'pana-courses-home', standalone: true, imports: [FormsModule, StepDialogComponent, CourseDetailComponent, LucideBan, LucideBookOpen, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText], templateUrl: './courses-home.component.html', styleUrl: './courses-home.component.scss' })
+@Component({ selector: 'pana-courses-home', standalone: true, imports: [FormsModule, StepDialogComponent, SkeletonLoaderComponent, CourseDetailComponent, LucideBan, LucideBookOpen, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideX, LucideClock3, LucideFileText], templateUrl: './courses-home.component.html', styleUrl: './courses-home.component.scss' })
 export class CoursesHomeComponent implements OnInit {
   readonly detailChange=output<boolean>();
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router); private routeCourseId:number|null=null;
   private readonly api = inject(CoursesApiService); readonly auth = inject(AuthService);
   readonly greetingName=computed(()=>((this.auth.user()?.first_name??this.auth.user()?.email??'').trim().split(/\s+/)[0]));
-  readonly courses = signal<Course[]>([]); readonly tutors = signal<{ id: number; name: string }[]>([]);
+  readonly courses = signal<(Course & { enrolled?: boolean })[]>([]); readonly tutors = signal<{ id: number; name: string }[]>([]);
   readonly statusFilter=signal<'active'|'inactive'|'all'>('active'); readonly togglingCourse=signal<number|null>(null);
   readonly pendingMode=signal(false); readonly pendingTasks=signal<(CourseSections['activities'][number]&{course_id:number;course_name:string})[]>([]);
   readonly coursesLoaded=signal(false);
   readonly pendingLoading=signal(false); readonly pendingError=signal(''); readonly uploadingTask=signal<number|null>(null);
   readonly visibleCourses=computed(()=>this.courses().filter(course=>this.statusFilter()==='all'||course.status===this.statusFilter()));
+  readonly activeCount=computed(()=>this.courses().filter(course=>course.status==='active').length);
+  readonly inactiveCount=computed(()=>this.courses().filter(course=>course.status==='inactive').length);
+  readonly allCount=computed(()=>this.courses().length);
   readonly participants = signal<{ id: number; name: string; profile: string }[]>([]);
   readonly capacities = Array.from({ length: 30 }, (_, index) => index + 1);
   participantQuery = '';
   readonly selected = signal<Course | null>(null); readonly dialog = signal(false); readonly step = signal(0);
   readonly error = signal(''); readonly saving = signal(false); form: CourseInput = this.blank();
+  private loadingStartedAt = 0;
   ngOnInit(): void { this.route.paramMap.subscribe(params=>{const value=Number(params.get('courseId'));this.routeCourseId=value>0?value:null;if(this.coursesLoaded())this.selectRouteCourse();});this.load(); }
-  canCreate(): boolean { const roles = this.auth.user()?.roles ?? []; return roles.includes('admin') || roles.includes('coordinator'); }
+  canCreate(): boolean { return this.auth.user()?.roles.includes('coordinator') ?? false; }
+  canSeePending(): boolean { return !(this.auth.user()?.roles.includes('admin') ?? false); }
+  canEnroll(): boolean { return this.auth.user()?.roles.includes('beneficiary') ?? false; }
   canManage(_course: Course): boolean { return this.auth.hasPermission('courses.manage.all') || (this.auth.hasPermission('courses.manage') && (this.auth.user()?.roles.includes('coordinator') ?? false)); }
-  load(): void { this.api.list().subscribe({ next: r => { this.courses.set(r.courses); this.coursesLoaded.set(true); this.error.set(''); this.selectRouteCourse(); if(this.pendingMode())this.loadPending(); }, error: () => { this.coursesLoaded.set(true); this.pendingLoading.set(false); this.error.set('No se pudieron cargar los cursos.'); if(this.pendingMode())this.pendingError.set('No se pudieron cargar las tareas pendientes.'); } }); }
+  load(): void { this.loadingStartedAt=Date.now(); this.api.list().subscribe({next:r=>this.api.available().subscribe({next:a=>this.finishLoad([...r.courses.map(c=>({...c,enrolled:true})),...a.courses.filter(c=>!r.courses.some(x=>x.id===c.id)).map(c=>({...c,enrolled:false}))]),error:()=>this.finishLoad(r.courses.map(c=>({...c,enrolled:true})))}),error:()=>{this.finishLoad([]);this.error.set('No se pudieron cargar los cursos.');this.pendingError.set('No se pudieron cargar las tareas pendientes.');}}); }
+  private finishLoad(courses:(Course & { enrolled?: boolean })[]): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt)); setTimeout(()=>{this.courses.set(courses);this.coursesLoaded.set(true);this.pendingLoading.set(false);this.selectRouteCourse();if(this.pendingMode())this.loadPending();},wait); }
+  enroll(course: Course & { enrolled?: boolean }): void { this.api.enroll(course.id).subscribe({next:()=>this.load(),error:()=>this.error.set('No se pudo completar la inscripción. El curso puede estar lleno o inactivo.')}); }
   togglePending(): void { this.pendingMode.update(value=>!value); if(this.pendingMode()){if(this.coursesLoaded())this.loadPending();else this.pendingLoading.set(true);} }
   loadPending(): void {
     if(!this.coursesLoaded()){this.pendingLoading.set(true);return;}
@@ -72,7 +81,7 @@ export class CoursesHomeComponent implements OnInit {
     this.form.participant_ids=[...this.form.participant_ids,id]; this.participantQuery='';
   }
   removeStudent(id: number): void { this.form.participant_ids=this.form.participant_ids.filter(value=>value!==id); }
-  view(course: Course): void { this.selected.set(course); this.detailChange.emit(true); void this.router.navigate(['/cursos',course.id]); }
+  view(course: Course & { enrolled?: boolean }): void { if(this.canEnroll()&&!course.enrolled)return; this.selected.set(course); this.detailChange.emit(true); void this.router.navigate(['/cursos',course.id]); }
   closeView(): void { this.selected.set(null); this.detailChange.emit(false); void this.router.navigateByUrl('/cursos'); }
   toggleStatus(course:Course): void {
     if(!this.canManage(course)||this.togglingCourse()!==null)return;

@@ -1,28 +1,26 @@
-<section class="course-detail" aria-label="Detalle del curso">
-  <div class="course-navigation"><button class="back-button" type="button" (click)="back.emit()"><svg lucideBookOpen [size]="18"></svg><span>Cursos</span></button>
+<section class="course-detail" [class.activity-page]="activityPage()" aria-label="Detalle del curso">
+  @if (!activityPage()) { <div class="course-navigation"><button class="back-button" type="button" (click)="back.emit()"><svg lucideBookOpen [size]="18"></svg><span>Cursos</span></button>
     <nav class="course-tabs" role="tablist" aria-label="Secciones del curso">
       @for (tab of tabs; track tab.id) { <button type="button" role="tab" [attr.aria-selected]="active() === tab.id" [class.active]="active() === tab.id" (click)="select(tab.id)">
         @if (tab.id === 'overview') { <svg lucideChartNoAxesCombined [size]="18"></svg> }
         @if (tab.id === 'participants') { <svg lucideUsersRound [size]="18"></svg> }
         @if (tab.id === 'attendance') { <svg lucideClock3 [size]="18"></svg> }
         @if (tab.id === 'activities') { <svg lucideBookOpen [size]="18"></svg> }
-        @if (tab.id === 'evaluations') { <svg lucideClipboardCheck [size]="18"></svg> }<span>{{ tab.label }}</span>
+        @if (tab.id === 'evaluations') { <svg lucideClipboardCheck [size]="18"></svg> }<span>{{ tab.label }}@if (tab.id !== 'overview' && !loading() && data()) { <span class="tab-count">({{ tabCount(tab.id) }}@if (tab.id === 'attendance') {<span>%</span>})</span> }</span>
       </button> }
     </nav>
-  </div>
+  </div> }
+  @if (loading() || sectionLoading()) { <pana-course-section-skeleton [section]="active()" /> }
+  @if (loading()) { <section class="detail-skeleton" aria-label="Cargando detalle del curso" aria-busy="true"><div class="detail-skeleton-heading"><pana-skeleton variant="title" width="38%"></pana-skeleton><pana-skeleton variant="text" width="62%"></pana-skeleton></div><div class="detail-skeleton-metrics">@for (item of [1,2,3,4]; track item) { <pana-skeleton variant="block"></pana-skeleton> }</div><div class="detail-skeleton-table">@for (item of [1,2,3,4,5,6]; track item) { <pana-skeleton variant="text" [width]="item === 1 ? '30%' : '88%'"></pana-skeleton> }</div></section> }
   @if (loading()) { <p class="feedback" role="status">Cargando información del curso…</p> }
   @if (error()) { <p class="feedback error" role="alert">{{ error() }}</p> }
-  @if (data(); as courseData) {
+  @if (!loading() && !sectionLoading() && data(); as courseData) {
     @if (attendanceError()) { <p class="feedback error" role="alert">{{ attendanceError() }}</p> }
     @switch (active()) {
       @case ('overview') {
         <section class="section-content course-overview"><header class="overview-heading"><h1>{{ course().name }}</h1><p>{{ course().description }}</p></header>
-          <div class="summary-heading"><h2>Resumen del curso</h2><p>Información y actividad de las personas inscritas.</p></div>
-          <div class="metric-grid"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Participantes</span><strong>{{ course().participant_count }}</strong></article>
-            <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Horas registradas</span><strong>{{ attendanceHours() }}</strong></article>
-            <article><span class="summary-label"><svg lucideBookOpen [size]="16"></svg>Actividades</span><strong>{{ courseData.activities.length }}</strong></article>
-            <article><span class="summary-label"><svg lucideClipboardCheck [size]="16"></svg>Evaluaciones</span><strong>{{ courseData.evaluations.length }}</strong></article></div>
-          <div class="info-grid"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Tutor</span><strong>{{ course().tutor_name }}</strong></article>
+          <div class="overview-metrics" aria-label="Información principal del curso"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Tutor</span><strong>{{ course().tutor_name }}</strong></article><article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de inicio</span><strong>{{ course().start_date }}</strong></article><article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de finalización</span><strong>{{ course().end_date }}</strong></article><article class="capacity-card"><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Cupo disponible</span><strong>{{ course().participant_count }} de {{ course().max_participants || 'Ilimitado' }}</strong>@if (course().max_participants) {<span class="capacity-track"><span class="capacity-bar" [style.width.%]="capacityPercent()"></span></span>}</article></div>
+          <div class="overview-data-grid"><article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Tutor</span><strong>{{ course().tutor_name }}</strong></article>
             <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de inicio</span><strong>{{ course().start_date }}</strong></article>
             <article><span class="summary-label"><svg lucideClock3 [size]="16"></svg>Fecha de finalización</span><strong>{{ course().end_date }}</strong></article>
             <article><span class="summary-label"><svg lucideUsersRound [size]="16"></svg>Cupo</span><strong>{{ course().participant_count }} de {{ course().max_participants }}</strong></article></div>
@@ -53,13 +51,13 @@
         </section>
       }
       @case ('activities') {
-        <section class="section-content activity-content"><div class="activities-overview"><header class="section-heading"><div><h2>Actividades</h2><p>Asigna tareas, revisa reportes de avance y evidencias PDF.</p></div></header>
+        <section class="section-content activity-content"><div class="activities-overview"><header class="section-heading"><div><h2>Actividades</h2><p>Asigna tareas, revisa reportes de avance y evidencias PDF.</p></div>@if (expandedTask()) { <button type="button" class="back-to-activities" (click)="toggleTaskDetails(expandedTask()!)">← Volver a actividades</button> }</header>
           <div class="metric-grid activity-metrics"><article><span>Tareas</span><strong>{{ courseData.activities.length }}</strong></article><article><span>Evidencias subidas</span><strong>{{ evidenceCount() }}</strong></article><article><span>Completadas</span><strong>{{ completedTasks() }}</strong></article>
             @if (canManageTasks()) { <button class="primary-action create-task-button" type="button" (click)="openTaskDialog()"><svg lucidePlus [size]="18"></svg>Crear tarea</button> }
           </div></div>
           @if (taskError()) { <p class="feedback error" role="alert">{{ taskError() }}</p> }
-          <div class="task-list">@for (row of courseData.activities; track row.id) { <article class="task-card" [class.expanded]="expandedTask()===row.id">
-            <header><button class="task-summary-button" type="button" [attr.aria-expanded]="expandedTask()===row.id" (click)="toggleTaskDetails(row.id)"><span class="task-card-summary"><strong>{{ row.title }}</strong><span>{{ taskSummary(row.description) }}</span></span>
+          <div class="task-list">@for (row of courseData.activities; track row.id) { <article class="task-card" [class.expanded]="expandedTask()===row.id" [class.activity-hidden]="expandedTask() !== null && expandedTask() !== row.id">
+            <header><button class="task-summary-button" type="button" [attr.aria-expanded]="expandedTask()===row.id" (click)="toggleTaskDetails(row.id)"><span class="task-card-summary"><svg lucideFileText [size]="17"></svg><span><strong>{{ row.title }}</strong><span>{{ taskSummary(row.description) }}</span></span></span>
               <span class="task-deadline" [class.overdue]="timeRemaining(row.end_at,row.status)==='Entrega vencida'">{{ timeRemaining(row.end_at,row.status) }}</span></button></header>
             @if (expandedTask()===row.id) { <section class="task-details"><p class="task-description">{{ row.description || 'Sin descripción.' }}</p>
               <dl><div><dt>Estado</dt><dd>{{ taskStatus(row.status) }}</dd></div><div><dt>Fechas</dt><dd>{{ row.start_at }} – {{ row.end_at }}</dd></div><div><dt>Responsable</dt><dd>{{ row.responsible }}</dd></div><div><dt>Asignados</dt><dd>{{ row.participants || '—' }}</dd></div></dl>
@@ -68,7 +66,7 @@
                  <svg class="pdf-icon" lucideFileText [size]="27"></svg><span><strong>Arrastra tu evidencia PDF aquí</strong><small>PDF de hasta 8 MB o elige un archivo</small></span>
                  <span class="upload-action">@if (uploadingTask()===row.id) { <span class="upload-spinner" aria-hidden="true"></span>Subiendo… } @else { <svg lucideUpload [size]="17"></svg>Elegir PDF }</span><input class="file-picker" type="file" accept="application/pdf,.pdf" aria-label="Elegir evidencia PDF" (change)="uploadEvidence(row.id,$event)" [disabled]="uploadingTask()===row.id">
                </label> }
-               @if (evidenceFeedback()?.task===row.id) { <p class="evidence-feedback" [class.error]="evidenceFeedback()?.type==='error'" [attr.role]="evidenceFeedback()?.type==='error' ? 'alert' : 'status'">{{ evidenceFeedback()?.text }}</p> }
+               @if (evidenceFeedback()?.task===row.id) { <p class="evidence-feedback" [class.error]="evidenceFeedback()?.type==='error'" [attr.role]="evidenceFeedback()?.type==='error' ? 'alert' : 'status'">{{ evidenceFeedback()?.text }}</p> }<div class="date-readable"><span>Fechas</span><strong>{{ formatActivityDate(row.start_at) }} · {{ formatActivityTime(row.start_at) }} a {{ formatActivityTime(row.end_at) }}</strong></div><section class="assigned-section"><h4>Asignados</h4><table><thead><tr><th>No.</th><th>Participante</th><th>Perfil</th><th>Asistencias</th><th>Actividades</th><th>Evaluaciones</th></tr></thead><tbody>@for (name of assignedNames(row.participants); track name; let i = $index) { @let person = assignedParticipant(name,courseData.participants);<tr><td>{{ i + 1 }}</td><td>{{ name }}</td><td>{{ person?.profile || 'Participante' }}</td><td>{{ person?.attendance_count ?? 0 }}</td><td>{{ person?.task_count ?? 0 }}</td><td>{{ person?.evaluation_count ?? 0 }}</td></tr>}</tbody></table></section>
              </section> }
           </article> } @empty { <p class="empty task-empty">Todavía no hay tareas asignadas en este curso.</p> }</div>
         </section>

@@ -1,23 +1,28 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { DocumentsApiService } from '../reports/documents-api.service';
 import { AttendanceApiService } from '../attendance/attendance-api.service';
 import { PaginatorComponent } from '../../shared/paginator.component';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
+import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
+import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
 import { LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload } from '@lucide/angular';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
+  private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
   private readonly documentsApi=inject(DocumentsApiService);
   private readonly attendanceApi=inject(AttendanceApiService);
   readonly auth=inject(AuthService);
   readonly course=input.required<Course>(); readonly back=output<void>();
-  readonly data=signal<CourseSections|null>(null); readonly loading=signal(true); readonly error=signal('');
+  readonly data=signal<CourseSections|null>(null); readonly loading=signal(true); readonly sectionLoading=signal(false); readonly error=signal('');
+  private loadingStartedAt=0;
   readonly active=signal<CourseTab>('overview');
   readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
   readonly maxAttendanceDate=this.today(); readonly attendanceDate=signal(this.maxAttendanceDate);
@@ -29,6 +34,7 @@ export class CourseDetailComponent implements OnInit {
   readonly attendanceHours=computed(()=>(((this.data()?.participants??[]).reduce((sum,row)=>sum+Number(row.attendance_minutes??0),0)/60).toFixed(1)));
   readonly evidenceCount=computed(()=>((this.data()?.documents??[]).filter(file=>file.entity_type==='activity').length));
   readonly completedTasks=computed(()=>((this.data()?.activities??[]).filter(task=>task.status==='completed').length));
+  capacityPercent(): number { const limit=Number(this.course().max_participants??0); return limit>0 ? Math.min(100,Math.round(Number(this.course().participant_count??0)*100/limit)) : 0; }
   readonly alphabet=Array.from({length:26},(_,i)=>String.fromCharCode(65+i));
   readonly firstInitial=signal(''); readonly lastInitial=signal(''); readonly participantQuery=signal('');
   readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>(!this.firstInitial()||p.first_name.toLocaleUpperCase().startsWith(this.firstInitial()))&&(!this.lastInitial()||p.last_name.toLocaleUpperCase().startsWith(this.lastInitial()))&&(!q||p.name.toLocaleLowerCase().includes(q)));});
@@ -38,9 +44,11 @@ export class CourseDetailComponent implements OnInit {
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
   readonly taskDialog=signal(false); readonly taskStep=signal(0);
   readonly expandedTask=signal<number|null>(null); readonly draggingTask=signal<number|null>(null);
+  readonly activityPage=signal(false);
   taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[] as number[]};
-  ngOnInit(): void { this.reload(); }
-  reload(afterLoad?:()=>void): void { this.api.sections(this.course().id,this.attendanceDate()).subscribe({next:value=>{this.data.set(value);this.loading.set(false);afterLoad?.();},error:()=>{this.error.set('No se pudo cargar la información de este curso.');this.loading.set(false);}}); }
+  ngOnInit(): void { const activityId=Number(this.route.snapshot.paramMap.get('activityId')); if(activityId>0){this.activityPage.set(true);this.active.set('activities');this.expandedTask.set(activityId);} this.reload(); }
+  reload(afterLoad?:()=>void): void { this.loadingStartedAt=Date.now();this.loading.set(true);this.api.sections(this.course().id,this.attendanceDate()).subscribe({next:value=>this.finishLoad(value,afterLoad),error:()=>{this.error.set('No se pudo cargar la información de este curso.');this.finishLoad(null);}}); }
+  private finishLoad(value:CourseSections|null,afterLoad?:()=>void): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt));setTimeout(()=>{if(value)this.data.set(value);this.loading.set(false);afterLoad?.();},wait); }
   setAttendanceDate(date:string): void { if(!date)return; this.attendanceDate.set(date);this.attendancePage.set(1);this.attendanceError.set('');this.reload(); }
   changeAttendancePage(page:number): void { this.attendancePage.set(page); }
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
@@ -80,7 +88,11 @@ export class CourseDetailComponent implements OnInit {
   allTaskParticipantsSelected(people:CourseSections['participants']): boolean { return people.length>0&&this.taskForm.participant_ids.length===people.length; }
   toggleAllTaskParticipants(checked:boolean,people:CourseSections['participants']): void { this.taskForm.participant_ids=checked?people.map(person=>person.id):[]; }
   taskStatus(status:string): string { return ({planned:'Planificada',in_progress:'En curso',completed:'Completada',cancelled:'Cancelada'} as Record<string,string>)[status]??status; }
-  toggleTaskDetails(id:number): void { this.expandedTask.update(current=>current===id?null:id); }
+  toggleTaskDetails(id:number): void { const closing=this.expandedTask()===id; this.expandedTask.set(closing?null:id); this.activityPage.set(!closing); if(closing)void this.router.navigate(['/cursos',this.course().id]); else void this.router.navigate(['/cursos',this.course().id,'actividades',id]); }
+   assignedNames(value:string|null): string[] { return value ? value.split(',').map(name=>name.trim()).filter(Boolean) : []; }
+  assignedParticipant(name:string,people:CourseSections['participants']): CourseSections['participants'][number] | undefined { return people.find(person=>person.name===name); }
+  formatActivityDate(value:string): string { const date=new Date(value.replace(' ','T')); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-EC',{day:'2-digit',month:'short',year:'numeric'}).format(date); }
+  formatActivityTime(value:string): string { const date=new Date(value.replace(' ','T')); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-EC',{hour:'2-digit',minute:'2-digit',hour12:false}).format(date); }
   taskSummary(description:string|null): string { const text=description?.trim()||'Sin descripción.'; return text.length>120?`${text.slice(0,117).trimEnd()}…`:text; }
   timeRemaining(endAt:string,status:string): string {
     if(status==='completed')return 'Completada'; if(status==='cancelled')return 'Cancelada';
@@ -108,5 +120,8 @@ export class CourseDetailComponent implements OnInit {
   }
   documentsForTask(task:number) { return (this.data()?.documents??[]).filter(file=>file.entity_type==='activity'&&file.entity_id===task); }
   downloadDocument(id:number,name:string): void { this.documentsApi.download(id).subscribe(blob=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}); }
-  select(tab: CourseTab): void { this.active.set(tab); }
+  select(tab: CourseTab): void { if(tab===this.active())return;this.active.set(tab);if(!this.data())return;this.sectionLoading.set(true);setTimeout(()=>this.sectionLoading.set(false),500); }
+  private coursePeriodDays(): number { const start=new Date(`${this.course().start_date}T00:00:00`); const end=new Date(`${this.course().end_date}T00:00:00`); const days=Math.floor((end.getTime()-start.getTime())/86400000)+1; return Number.isFinite(days)&&days>0?days:0; }
+  attendancePercent(): number { const data=this.data(); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
+  tabCount(tab: CourseTab): number { const data=this.data(); if(!data)return 0; if(tab==='participants')return data.participants.length; if(tab==='attendance')return this.attendancePercent(); if(tab==='activities')return data.activities.length; if(tab==='evaluations')return data.evaluations.length; return 0; }
 }

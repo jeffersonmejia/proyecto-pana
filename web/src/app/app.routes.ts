@@ -6,7 +6,10 @@ const adminPermissions=['users.read','users.manage','people.read','people.manage
 
 export const routes: Routes = [
   {path:'login',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/login.component').then(m=>m.LoginComponent)},
+  {path:'inscripcion',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/registration.component').then(m=>m.RegistrationComponent)},
+  {path:'inscripcion/:step',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/registration.component').then(m=>m.RegistrationComponent)},
   {path:'cursos',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/courses/courses-home.component').then(m=>m.CoursesHomeComponent)},
+  {path:'cursos/:courseId/actividades/:activityId',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/courses/courses-home.component').then(m=>m.CoursesHomeComponent)},
   {path:'cursos/:courseId',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/courses/courses-home.component').then(m=>m.CoursesHomeComponent)},
   {path:'administracion',canActivate:[authGuard,permissionGuard],data:{permissions:adminPermissions},loadComponent:()=>import('./modules/admin/administration.component').then(m=>m.AdministrationComponent)},
   {path:'administracion/:section',canActivate:[authGuard,permissionGuard],data:{permissions:adminPermissions},loadComponent:()=>import('./modules/admin/administration.component').then(m=>m.AdministrationComponent)},

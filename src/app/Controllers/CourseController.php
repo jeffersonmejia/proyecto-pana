@@ -6,6 +6,8 @@ final class CourseController
 {
     public function __construct(private CourseService $courses) {}
     public function index(array $actor): void { echo json_encode(['courses'=>$this->courses->all($actor)]); }
+    public function available(array $actor): void { echo json_encode(['courses'=>$this->courses->available($actor)]); }
+    public function enroll(int $id,array $actor): void { $this->courses->enroll($id,$actor); echo json_encode(['status'=>'enrolled']); }
     public function show(int $id,array $actor): void { echo json_encode(['course'=>$this->courses->one($id,$actor)]); }
     public function sections(int $id,array $actor,string $attendanceDate): void { echo json_encode($this->courses->sections($id,$actor,$attendanceDate)); }
     public function createTask(int $course,array $data,array $actor): void { http_response_code(201); echo json_encode(['id'=>$this->courses->createTask($course,$data,$actor)]); }

@@ -5,6 +5,7 @@ use App\Controllers\AuthController;
 use App\Controllers\AdminRoleController;
 use App\Controllers\AdminUserController;
 use App\Controllers\HealthController;
+use App\Controllers\RegistrationController;
 use App\Exceptions\ApiException;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\AuthorizationMiddleware;
@@ -93,6 +94,20 @@ $routes = array_merge([
             new \App\Repositories\HealthRepository(database_connection())
         ));
         $controller->show();
+    },
+    'POST /api/public/registrations' => static function () use ($readJsonBody): void {
+        $connection = database_connection();
+        $controller = new RegistrationController(new \App\Services\RegistrationService(
+            new \App\Repositories\RegistrationRepository($connection), new PasswordService()
+        ));
+        $controller->create($readJsonBody());
+    },
+    'GET /api/public/courses' => static function (): void {
+        $connection = database_connection();
+        $controller = new RegistrationController(new \App\Services\RegistrationService(
+            new \App\Repositories\RegistrationRepository($connection), new PasswordService()
+        ));
+        $controller->courses();
     },
     'POST /api/auth/login' => static function () use ($buildAuth, $readJsonBody): void {
         $components = $buildAuth();

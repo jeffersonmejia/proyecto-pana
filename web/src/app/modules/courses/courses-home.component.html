@@ -3,12 +3,12 @@
   @else {
   <header class="heading"><div><h2 id="courses-title">Hola, {{ greetingName() }}</h2><p>Explora cursos de voluntariado en el Patronato Municipal de Santo Domingo.</p></div>
     <div class="heading-actions">@if (!pendingMode()) { <div class="course-filter" role="group" aria-label="Filtrar cursos">
-      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')"><svg lucideCheck [size]="14"></svg>Activos</button>
-      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')"><svg lucideBan [size]="14"></svg>Inactivos</button>
-      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')"><svg lucideList [size]="14"></svg>Todos</button>
+      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')"><svg lucideCheck [size]="14"></svg>Activos ({{ activeCount() }})</button>
+      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')"><svg lucideBan [size]="14"></svg>Inactivos ({{ inactiveCount() }})</button>
+      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')"><svg lucideList [size]="14"></svg>Todos ({{ allCount() }})</button>
     </div> }
       @if (canCreate()) { <button class="primary" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg> Crear curso</button> }
-      <button class="pending-toggle" type="button" [class.active]="pendingMode()" (click)="togglePending()"><svg lucideClock3 [size]="17"></svg>{{ pendingMode()?'Ver cursos':'Ver pendientes' }}</button></div>
+      @if (canSeePending()) { <button class="pending-toggle" type="button" [class.active]="pendingMode()" (click)="togglePending()"><svg lucideClock3 [size]="17"></svg>{{ pendingMode()?'Ver cursos':'Ver pendientes' }}</button> }</div>
   </header>
   @if (pendingMode()) {
     @if (pendingError()) { <p class="error" role="alert">{{ pendingError() }}</p> }
@@ -22,10 +22,15 @@
     @else { <div class="empty"><span class="course-icon"><svg lucideClock3 [size]="23"></svg></span><p>No tienes tareas pendientes.</p></div> }
   } @else {
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-  @if (visibleCourses().length) {
+  @if (!coursesLoaded()) {
+    <div class="grid skeleton-grid" aria-label="Cargando cursos" aria-busy="true">
+      @for (item of [1, 2, 3, 4]; track item) { <article class="course-card course-skeleton"><div class="card-top"><pana-skeleton variant="circle"></pana-skeleton><pana-skeleton variant="text" width="62px"></pana-skeleton></div><pana-skeleton variant="title" width="78%"></pana-skeleton><div class="details"><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton></div></article> }
+    </div>
+  } @else if (visibleCourses().length) {
     <div class="grid">@for (course of visibleCourses(); track course.id) {
       <article class="course-card" role="link" tabindex="0" [attr.aria-label]="'Abrir curso ' + course.name" (click)="view(course)" (keydown.enter)="view(course)">
         <div class="card-top"><span class="course-icon"><svg lucideBookOpen [size]="21"></svg></span><div class="card-controls">
+          @if (canEnroll() && !course.enrolled) { <button class="primary" type="button" (click)="$event.stopPropagation(); enroll(course)">Inscribirme</button> }
           @if (canManage(course)) { <button class="course-toggle" type="button" role="switch" [attr.aria-checked]="course.status==='active'" [attr.aria-label]="course.status==='active'?'Desactivar curso':'Activar curso'" [disabled]="togglingCourse()!==null" (click)="$event.stopPropagation(); toggleStatus(course)" (keydown.enter)="$event.stopPropagation()">
             <span class="toggle-track" [class.on]="course.status==='active'"><span></span></span><span class="toggle-label">{{ course.status==='active'?'Activo':'Inactivo' }}</span></button> }
           @else { <span class="status" [class.inactive]="course.status === 'inactive'">{{ course.status === 'active' ? 'Activo' : 'Inactivo' }}</span> }

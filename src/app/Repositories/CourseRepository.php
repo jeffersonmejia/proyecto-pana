@@ -11,6 +11,12 @@ final class CourseRepository
         $q=$this->db->prepare($this->select()." WHERE {$scope} GROUP BY c.id ORDER BY c.start_date,c.name");
         $q->execute($params); return array_map([$this,'mapCourse'],$q->fetchAll());
     }
+    public function available(array $actor): array
+    {
+        if (($actor['roles'][0] ?? '') !== 'beneficiary') return [];
+        $q=$this->db->query($this->select()." WHERE c.status='active' GROUP BY c.id ORDER BY c.start_date,c.name");
+        return array_map([$this,'mapCourse'],$q->fetchAll());
+    }
     public function find(int $id,array $actor): ?array
     {
         [$scope,$params]=$this->scope($actor); $q=$this->db->prepare($this->select()." WHERE c.id=? AND {$scope} GROUP BY c.id");
@@ -22,7 +28,7 @@ final class CourseRepository
     }
     public function participants(): array
     {
-        $sql="SELECT p.id,CONCAT(p.first_name,' ',p.last_name) name,CASE WHEN EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) THEN 'Estudiante' WHEN EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) THEN 'Beneficiario' ELSE 'Participante' END profile FROM people p WHERE p.status='active' AND (EXISTS (SELECT 1 FROM participants t WHERE t.person_id=p.id AND t.is_active=1) OR EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) OR EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1)) ORDER BY p.last_name,p.first_name";
+        $sql="SELECT p.id,CONCAT(p.first_name,' ',p.last_name) name,'Estudiante' profile FROM people p WHERE p.status='active' AND EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) ORDER BY p.last_name,p.first_name";
         return $this->db->query($sql)->fetchAll();
     }
     public function create(array $data,int $actor,array $user): int
@@ -63,8 +69,21 @@ final class CourseRepository
     }
     public function participantExists(int $id): bool
     {
-        $q=$this->db->prepare("SELECT 1 FROM people p WHERE p.id=? AND p.status='active' AND (EXISTS (SELECT 1 FROM participants t WHERE t.person_id=p.id AND t.is_active=1) OR EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) OR EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1))");
+        $q=$this->db->prepare("SELECT 1 FROM people p WHERE p.id=? AND p.status='active' AND EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1)");
         $q->execute([$id]); return (bool)$q->fetchColumn();
+    }
+    public function enroll(int $course,int $user): void
+    {
+        $this->transaction(function() use($course,$user): void {
+            $q=$this->db->prepare("SELECT c.max_participants,COUNT(cp.person_id) enrolled FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id AND cp.status='active' WHERE c.id=? AND c.status='active' GROUP BY c.id FOR UPDATE");
+            $q->execute([$course]); $row=$q->fetch(); if(!$row) throw new \RuntimeException('course_unavailable');
+            $person=$this->db->prepare("SELECT p.id FROM people p JOIN beneficiaries b ON b.person_id=p.id AND b.is_active=1 WHERE p.user_id=? AND p.status='active'");
+            $person->execute([$user]); $personId=(int)$person->fetchColumn(); if(!$personId) throw new \RuntimeException('beneficiary_not_found');
+            $exists=$this->db->prepare("SELECT status FROM course_participants WHERE course_id=? AND person_id=?"); $exists->execute([$course,$personId]);
+            if($exists->fetchColumn()==='active') return;
+            if((int)$row['max_participants']>0 && (int)$row['enrolled'] >= (int)$row['max_participants']) throw new \RuntimeException('course_full');
+            $insert=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'active') ON DUPLICATE KEY UPDATE status='active',enrolled_at=CURRENT_TIMESTAMP"); $insert->execute([$course,$personId]);
+        });
     }
     private function select(): string
     {

@@ -10,7 +10,7 @@
 }
 
 .login-art { min-width: 0; height: 100vh; margin: 0; overflow: hidden; }
-.login-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.login-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; animation: login-art-in 900ms cubic-bezier(.2,.7,.2,1) both; }
 
 .login-side {
   display: flex;
@@ -19,6 +19,7 @@
   flex-direction: column;
   align-items: center;
   padding: clamp(28px, 4vw, 64px);
+  animation: login-fade-in 700ms ease-out both;
 }
 
 .login-panel {
@@ -28,15 +29,20 @@
   flex-direction: column;
   justify-content: center;
   margin: 0;
+  animation: login-panel-in 700ms 120ms cubic-bezier(.2,.7,.2,1) both;
 }
-.login-brand { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
-h1 { flex: 0 0 120px; margin: 0; }
-h1 img { display: block; width: 120px; max-height: 100px; object-fit: contain; }
-.intro { margin: 0; color: var(--pana-muted); line-height: 1.5; }
-form { display: grid; gap: 7px; }
+.login-title { margin: 0 0 18px; color: var(--pana-ink); font-size: 1.45rem; font-weight: 700; animation: login-fade-in 500ms 240ms ease-out both; }
+.login-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+h1 { flex: 0 0 110px; margin: 0; }
+h1 img { display: block; width: 110px; max-height: 100px; object-fit: contain; }
+.intro { margin: 0; color: var(--pana-muted); font-size: .875rem; line-height: 1.5; }
+form { display: grid; gap: 7px; animation: login-fade-in 500ms 360ms ease-out both; }
 label { margin-top: 5px; color: var(--pana-ink); font-size: .9rem; font-weight: 600; }
 .input-shell { position: relative; display: flex; align-items: center; }
 .input-shell svg { position: absolute; left: 14px; color: var(--pana-muted); pointer-events: none; }
+.password-shell .password-input { padding-right: 44px; }
+.password-toggle { position: absolute; right: 10px; display: grid; width: 32px; height: 32px; place-items: center; padding: 0; border: 0; background: transparent; color: var(--pana-muted); cursor: pointer; }
+.password-toggle svg { position: static; }
 
 input {
   box-sizing: border-box;
@@ -51,20 +57,55 @@ input {
 }
 
 input:focus-visible { outline: 2px solid var(--pana-violet); outline-offset: 2px; background: #fff; }
+input { transition: background-color 180ms ease, opacity 180ms ease, outline-color 180ms ease; }
 .form-error { margin: 3px 0; color: #874338; font-size: .9rem; }
-button.mat-mdc-unelevated-button { justify-self: stretch; min-height: 44px; margin-top: 7px; border-radius: 24px; }
+.remember-option { display: flex; align-items: center; gap: 8px; margin: 2px 0 0; color: var(--pana-muted); font-size: .82rem; font-weight: 500; }.remember-option input { width: 17px; min-height: 17px; padding: 0; accent-color: var(--pana-blue); }
+.login-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 7px; }
+.login-actions svg { display: block; flex: 0 0 auto; }
+.login-actions button { flex-direction: row !important; white-space: nowrap; }
+.login-actions button { cursor: pointer; transition: opacity 180ms ease, transform 180ms ease; }
+.login-actions button:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.login-actions button:active:not(:disabled) { opacity: .76; transform: translateY(0); }
+.login-actions button:disabled { cursor: not-allowed; }
+.login-actions button .mdc-button__label { display: flex !important; flex-direction: row !important; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+:host ::ng-deep .login-actions button .mdc-button__label { display: flex !important; flex-direction: row !important; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+:host ::ng-deep .login-actions button .mdc-button__label svg { display: block; flex: 0 0 auto; }
+button.mat-mdc-unelevated-button { grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: center; gap: 8px; justify-self: stretch; min-height: 44px; border-radius: 24px; background: var(--pana-blue); color: #fff; }
+.registration-button.mat-mdc-outlined-button { --mdc-outlined-button-outline-color: var(--pana-blue); --mdc-outlined-button-label-text-color: var(--pana-blue); display: flex; align-items: center; justify-content: center; gap: 8px; justify-self: stretch; min-height: 44px; margin-top: 0; border: 2px solid var(--pana-blue) !important; border-radius: 24px; color: var(--pana-blue); font-weight: 700; }
 .login-footer { width: min(100%, 410px); margin-top: auto; color: var(--pana-muted); font-size: .85rem; text-align: center; }
 
+@keyframes login-art-in {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes login-panel-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes login-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-art img, .login-side, .login-panel, .login-title, form { animation: none; }
+  .login-actions button, input { transition: none; }
+}
+
 @media (max-width: 760px) {
-  .login-layout { grid-template-columns: 1fr; grid-template-rows: minmax(220px, 34vh) auto; }
-  .login-art { height: 34vh; min-height: 220px; }
-  .login-side { min-height: 66vh; padding: 26px 22px 20px; }
+  .login-layout { display: block; overflow: auto; }
+  .login-art { display: none; }
+  .login-side { min-height: 100vh; padding: 26px 22px 20px; }
   .login-panel { margin: 0 auto 32px; }
-  .login-footer { margin-top: auto; }
+  .login-footer { margin-top: auto; padding-bottom: 18px; }
 }
 
 @media (max-width: 420px) {
-  .login-brand { gap: 12px; }
+  .login-actions { grid-template-columns: 1fr; }
+  button.mat-mdc-unelevated-button, .registration-button.mat-mdc-outlined-button { grid-column: auto; grid-row: auto; }
+  .login-brand { gap: 8px; }
   h1 { flex-basis: 96px; }
   h1 img { width: 96px; max-height: 82px; }
   .intro { font-size: .9rem; }

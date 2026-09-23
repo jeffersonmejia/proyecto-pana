@@ -11,20 +11,6 @@
           <button class="topbar-link notification-trigger" type="button" aria-label="Notificaciones" [attr.aria-expanded]="notificationOpen()" (click)="toggleNotifications()"><svg lucideBell [size]="18"></svg>@if (notifications.unread() > 0) { <span class="notification-count">{{ notifications.unread() }}</span> }</button>
           @if (notificationOpen()) { <section class="notification-popover" role="dialog" aria-label="Notificaciones"><header><strong>Notificaciones</strong><button type="button" (click)="notifications.markAll()">Marcar leídas</button></header>@if (notifications.items().length === 0) { <p class="notification-empty">No tienes notificaciones.</p> } @for (item of notifications.items(); track item.id) { <button class="notification-item" [class.unread]="!item.read_at" type="button" (click)="markNotification(item.id)"><strong>{{ item.title }}</strong><span>{{ item.message }}</span><small>{{ item.created_at | date:'short' }}</small></button> } </section> }
         </div>
-        @if (auth.user()?.roles.includes('admin') || auth.isPreview()) {
-          <div class="preview-menu" #previewMenu (document:click)="closePreviewMenu($event, previewMenu)" (keydown.escape)="previewMenuOpen.set(false)">
-            <button class="topbar-link preview-link" type="button" aria-haspopup="dialog" [class.active]="auth.isPreview()" [attr.aria-expanded]="previewMenuOpen()" (click)="previewMenuOpen.update(open => !open)">
-              <svg lucideEye [size]="16"></svg><span class="preview-label">{{ previewButtonLabel() }}</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
-            </button>
-            @if (previewMenuOpen()) {
-              <section class="preview-popover" role="dialog" aria-label="Vista previa por rol">
-                <h2>Vista previa</h2><p>Elige un rol para cambiar al instante a su vista de solo lectura.</p>
-                <label>Rol<select [value]="previewSelection()" (change)="choosePreviewRole($event)"><option value="" disabled>Selecciona un rol</option>@for (role of previewRoles; track role.code) { <option [value]="role.code">{{ role.label }}</option> }</select></label>
-                @if (auth.isPreview()) { <button class="preview-stop" type="button" (click)="stopPreview()">Volver a mi vista</button> }
-              </section>
-            }
-          </div>
-        }
         <button class="topbar-link courses-link" type="button" [class.active]="activeModule() === 'home'" (click)="open('home')">
           <span>Cursos</span>
         </button>

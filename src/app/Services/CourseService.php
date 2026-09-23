@@ -10,6 +10,16 @@ final class CourseService
 {
     public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities) {}
     public function all(array $actor): array { return $this->courses->all($actor); }
+    public function available(array $actor): array { return $this->courses->available($actor); }
+    public function enroll(int $id,array $actor): void
+    {
+        if (($actor['roles'][0] ?? '') !== 'beneficiary') throw new ApiException(403,'permission_denied');
+        try { $this->courses->enroll($id,(int)$actor['id']); }
+        catch(\RuntimeException $error) {
+            $map=['course_unavailable'=>[404,'course_not_available'],'beneficiary_not_found'=>[422,'beneficiary_not_found'],'course_full'=>[409,'course_full']];
+            [$status,$code]=$map[$error->getMessage()]??[500,'course_enrollment_failed']; throw new ApiException($status,$code);
+        }
+    }
     public function one(int $id,array $actor): array { return $this->courses->find($id,$actor) ?? throw new ApiException(404,'course_not_found'); }
     public function sections(int $id,array $actor,string $attendanceDate): array
     {

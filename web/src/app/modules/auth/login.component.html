@@ -1,34 +1,17 @@
 <main class="login-layout" aria-label="Acceso a PANA">
-  <figure class="login-art">
-    <img src="assets/login-pana.png" alt="Personas trabajando juntas para impulsar la inclusion social">
-  </figure>
-
+  <figure class="login-art"><img src="assets/login-pana.png" alt="Personas trabajando juntas para impulsar la inclusion social"></figure>
   <section class="login-side" aria-labelledby="login-title">
     <div class="login-panel">
-      <header class="login-brand">
-        <h1 id="login-title" aria-label="Acceso a PANA">
-          <img src="assets/logo-santo-domingo.svg" alt="Patronato Municipal de Santo Domingo">
-        </h1>
-        <p class="intro">Inicia sesi&#243;n en PANA con las credenciales asignadas a tu cuenta.</p>
-      </header>
-
+      <h2 class="login-title">Ingreso al sistema</h2>
+      <header class="login-brand"><h1 id="login-title" aria-label="Acceso a PANA"><img src="assets/logo-santo-domingo.svg" alt="Patronato Municipal de Santo Domingo"></h1><p class="intro">Inicia sesión en PANA con las credenciales asignadas a tu cuenta.</p></header>
       <form (ngSubmit)="submit()">
-        <label for="email">Correo electr&#243;nico</label>
-        <span class="input-shell">
-          <svg lucideMail [size]="18" aria-hidden="true"></svg>
-          <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
-        </span>
-
-        <label for="password">Contrase&#241;a</label>
-        <span class="input-shell">
-          <svg lucideLockKeyhole [size]="18" aria-hidden="true"></svg>
-          <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>
-        </span>
-
+        <label for="email">Correo electrónico</label>
+        <span class="input-shell"><svg lucideMail [size]="18" aria-hidden="true"></svg><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required></span>
+        <label for="password">Contraseña</label>
+        <span class="input-shell password-shell"><svg lucideLockKeyhole [size]="18" aria-hidden="true"></svg><input id="password" name="password" class="password-input" [type]="passwordVisible() ? 'text' : 'password'" [(ngModel)]="password" autocomplete="current-password" required><button class="password-toggle" type="button" (click)="togglePassword()" [attr.aria-label]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'">@if (passwordVisible()) { <svg lucideEyeOff [size]="18"></svg> } @else { <svg lucideEye [size]="18"></svg> }</button></span>
+        <label class="remember-option"><input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe"><span>Recordar contraseña</span></label>
         <p class="form-error" role="alert" [hidden]="!errorMessage()">{{ errorMessage() }}</p>
-        <button mat-flat-button type="submit" [disabled]="busy() || !email || !password">
-          {{ busy() ? 'Validando...' : 'Iniciar sesión' }}
-        </button>
+        <div class="login-actions"><button mat-flat-button type="submit" [disabled]="busy() || !email || !password"><svg lucideLogIn [size]="18"></svg>{{ busy() ? 'Validando...' : 'Iniciar sesión' }}</button><button mat-stroked-button type="button" class="registration-button" (click)="openRegistration()"><svg lucideUserPlus [size]="18"></svg><span>Inscríbete</span></button></div>
       </form>
     </div>
     <footer class="login-footer">Patronato Municipal de Santo Domingo 2026</footer>
