@@ -102,6 +102,13 @@ $routes = array_merge([
         ));
         $controller->create($readJsonBody());
     },
+    'POST /api/public/registrations/check-identity' => static function () use ($readJsonBody): void {
+        $connection = database_connection();
+        $controller = new RegistrationController(new \App\Services\RegistrationService(
+            new \App\Repositories\RegistrationRepository($connection), new PasswordService()
+        ));
+        $controller->checkIdentity($readJsonBody());
+    },
     'GET /api/public/courses' => static function (): void {
         $connection = database_connection();
         $controller = new RegistrationController(new \App\Services\RegistrationService(
@@ -147,5 +154,6 @@ return array_merge(
     (require __DIR__ . '/evaluations.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/reports.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody),
     (require __DIR__ . '/documents.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
-    ,(require __DIR__ . '/notifications.php')($buildAuth, $authorize)
+    ,(require __DIR__ . '/notifications.php')($buildAuth, $authorize),
+    (require __DIR__ . '/events.php')($buildAuth, $authorize, $authorizeAny, $readJsonBody)
 );

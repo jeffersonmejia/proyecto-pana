@@ -11,10 +11,10 @@ final class StudentLookupRepository
     {
     }
 
-    public function search(string $query, ?int $tutorId = null): array
+    public function search(string $query, ?int $tecnicoId = null): array
     {
         $term = '%' . $query . '%';
-        $assigned = $tutorId ? ' OR p.id IN (SELECT student_person_id FROM tutor_student_assignments WHERE tutor_user_id=?)' : '';
+        $assigned = $tecnicoId ? ' OR p.id IN (SELECT student_person_id FROM tecnico_student_assignments WHERE tecnico_user_id=?)' : '';
         $statement = $this->connection->prepare(
             'SELECT p.id,p.ci,p.first_name,p.last_name FROM people p '
             . 'JOIN participants pa ON pa.person_id=p.id AND pa.is_active=1 '
@@ -24,7 +24,7 @@ final class StudentLookupRepository
             . "WHERE ((?<>'' AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.ci LIKE ?)){$assigned}) "
             . 'ORDER BY p.last_name,p.first_name LIMIT 50'
         );
-        $statement->execute($tutorId ? [$query, $term, $term, $term, $tutorId] : [$query, $term, $term, $term]);
+        $statement->execute($tecnicoId ? [$query, $term, $term, $term, $tecnicoId] : [$query, $term, $term, $term]);
         return $statement->fetchAll();
     }
 }

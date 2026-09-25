@@ -21,4 +21,9 @@ final class RegistrationController
     {
         echo json_encode(['courses' => $this->registrations->publicCourses()]);
     }
+
+    public function checkIdentity(array $input): void
+    {
+        echo json_encode($this->registrations->checkIdentity((string)($input['id'] ?? ''), (string)($input['email'] ?? ''), (string)($input['phone'] ?? '')));
+    }
 }

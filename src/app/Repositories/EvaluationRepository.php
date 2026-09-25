@@ -66,7 +66,7 @@ final class EvaluationRepository
         $where[] = $scope['sql'];
         $role = ($filters['_scope']['roles'][0] ?? '');
         if ($role === 'beneficiary') $where[] = "e.evaluation_type='satisfaction'";
-        if (in_array($role, ['student', 'tutor'], true)) $where[] = "e.evaluation_type='participant'";
+        if (in_array($role, ['student', 'tecnico'], true)) $where[] = "e.evaluation_type='participant'";
         if ($filters['person_id']) { $where[] = 'e.person_id=?'; $params[] = $filters['person_id']; }
         if ($filters['from']) { $where[] = 'e.evaluated_on>=?'; $params[] = $filters['from']; }
         if ($filters['to']) { $where[] = 'e.evaluated_on<=?'; $params[] = $filters['to']; }
@@ -83,7 +83,7 @@ final class EvaluationRepository
     {
         $scope = \App\Support\AccessScope::person('e.person_id', $actor);
         $type = ($actor['roles'][0] ?? '') === 'beneficiary' ? " AND e.evaluation_type='satisfaction'" : '';
-        if (in_array($actor['roles'][0] ?? '', ['student', 'tutor'], true)) $type = " AND e.evaluation_type='participant'";
+        if (in_array($actor['roles'][0] ?? '', ['student', 'tecnico'], true)) $type = " AND e.evaluation_type='participant'";
         $query = $this->connection->prepare($this->selectSql() . " WHERE e.id=? AND {$scope['sql']}{$type} GROUP BY e.id");
         $query->execute([$id]); $row = $query->fetch();
         if (!$row) return null;

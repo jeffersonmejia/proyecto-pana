@@ -95,7 +95,7 @@ export class AdminUsersComponent implements OnInit {
   }
 
   hasProfile(): boolean {
-    return ['coordinator', 'tutor', 'student', 'volunteer', 'beneficiary'].includes(this.userForm.roles[0]);
+ return ['coordinator', 'tecnico', 'student', 'beneficiary'].includes(this.userForm.roles[0]);
   }
 
   private run(request: import('rxjs').Observable<unknown>, success: string): void {

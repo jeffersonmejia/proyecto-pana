@@ -15,7 +15,7 @@ return static function (callable $buildAuth,callable $authorize,callable $author
     $manage=static fn(array $parts): array=>$authorizeAny($parts,['courses.manage.all','courses.manage']);
     $id=static function(): int { $value=filter_var($_GET['id']??null,FILTER_VALIDATE_INT); if($value===false||$value<1) throw new \App\Exceptions\ApiException(400,'invalid_id'); return (int)$value; };
     return [
-        'GET /api/courses/tutors'=>static function() use($build,$manage): void { $p=$build(); $manage($p); $p['courses']->tutors(); },
+ 'GET /api/courses/tecnicos'=>static function() use($build,$manage): void { $p=$build(); $manage($p); $p['courses']->tecnicos(); },
         'GET /api/courses/participants'=>static function() use($build,$manage): void { $p=$build(); $manage($p); $p['courses']->participants(); },
         'GET /api/courses/sections'=>static function() use($build,$read,$id): void { $p=$build(); $actor=$read($p); $p['courses']->sections($id(),$actor,(string)($_GET['attendance_date']??'')); },
         'POST /api/courses/tasks'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $actor=$manage($p); $course=filter_var($_GET['course_id']??null,FILTER_VALIDATE_INT); if(!$course||$course<1) throw new \App\Exceptions\ApiException(400,'invalid_id'); $p['courses']->createTask((int)$course,$readJsonBody(),$actor); },

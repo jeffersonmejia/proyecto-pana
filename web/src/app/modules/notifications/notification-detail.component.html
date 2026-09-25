@@ -1,0 +1,3 @@
+<main class="notification-detail" aria-labelledby="notification-detail-title">
+  @if (item(); as notification) { <button class="back-link" type="button" (click)="back()"><svg lucideArrowLeft [size]="17"></svg>Volver a notificaciones</button><article><div class="detail-icon"><svg lucideSparkles [size]="26"></svg></div><h1 id="notification-detail-title">{{ notification.title }}</h1><time>{{ timeAgo(notification.created_at) }}</time><p>{{ notification.message }}</p></article> } @else { <p class="detail-empty">No se encontró esta notificación.</p> }
+</main>

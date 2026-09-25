@@ -9,13 +9,13 @@ final class AccessScope
     {
         $role = $actor['roles'][0] ?? '';
         if (in_array($role, ['admin', 'coordinator'], true)) return ['sql' => '1=1', 'params' => []];
+        if ($role === 'student') return ['sql' => '1=1', 'params' => []];
         $userId = (int) ($actor['id'] ?? 0);
-        if ($role === 'tutor') return [
-            'sql' => "EXISTS (SELECT 1 FROM tutor_student_assignments tsa JOIN tutors tr ON tr.user_id=tsa.tutor_user_id AND tr.is_active=1 JOIN people tp ON tp.id=tsa.student_person_id JOIN users tu ON (tu.id=tp.user_id OR tu.ci=tp.ci) AND tu.is_active=1 JOIN roles trol ON trol.id=tu.role_id AND trol.code='student' AND trol.is_active=1 JOIN students ts ON ts.user_id=tu.id AND ts.is_active=1 WHERE tsa.tutor_user_id={$userId} AND tsa.student_person_id={$idExpression})",
+        if ($role === 'tecnico') return [
+            'sql' => "EXISTS (SELECT 1 FROM tecnico_student_assignments tsa JOIN tecnicos tr ON tr.user_id=tsa.tecnico_user_id AND tr.is_active=1 JOIN people tp ON tp.id=tsa.student_person_id JOIN users tu ON (tu.id=tp.user_id OR tu.ci=tp.ci) AND tu.is_active=1 JOIN roles trol ON trol.id=tu.role_id AND trol.code='student' AND trol.is_active=1 JOIN students ts ON ts.user_id=tu.id AND ts.is_active=1 WHERE tsa.tecnico_user_id={$userId} AND tsa.student_person_id={$idExpression})",
             'params' => [],
         ];
         $profile = ['student' => "EXISTS (SELECT 1 FROM students ps WHERE ps.user_id={$userId} AND ps.is_active=1)",
-            'volunteer' => "EXISTS (SELECT 1 FROM volunteers pv WHERE pv.user_id={$userId} AND pv.is_active=1)",
             'beneficiary' => "EXISTS (SELECT 1 FROM beneficiaries pb WHERE pb.person_id=sp.id AND pb.is_active=1)"][$role] ?? '1=0';
         return [
             'sql' => "EXISTS (SELECT 1 FROM people sp WHERE sp.id={$idExpression} AND (sp.user_id={$userId} OR sp.ci=(SELECT ci FROM users WHERE id={$userId})) AND {$profile})",
@@ -38,10 +38,9 @@ final class AccessScope
     public static function evaluation(string $idExpression, array $actor, string $recordAlias = 'e'): array
     {
         $role = $actor['roles'][0] ?? '';
-        if ($role === 'volunteer') return ['sql' => '1=0', 'params' => []];
         $person = self::person($idExpression, $actor);
         if ($role === 'beneficiary') $person['sql'] .= " AND {$recordAlias}.evaluation_type='satisfaction'";
-        if (in_array($role, ['student', 'tutor'], true)) $person['sql'] .= " AND {$recordAlias}.evaluation_type='participant'";
+        if (in_array($role, ['student', 'tecnico'], true)) $person['sql'] .= " AND {$recordAlias}.evaluation_type='participant'";
         return $person;
     }
 

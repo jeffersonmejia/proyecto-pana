@@ -12,7 +12,7 @@ final class CourseController
     public function sections(int $id,array $actor,string $attendanceDate): void { echo json_encode($this->courses->sections($id,$actor,$attendanceDate)); }
     public function createTask(int $course,array $data,array $actor): void { http_response_code(201); echo json_encode(['id'=>$this->courses->createTask($course,$data,$actor)]); }
     public function assertTask(int $course,int $activity,array $actor): void { $this->courses->assertTask($course,$activity,$actor); }
-    public function tutors(): void { echo json_encode(['tutors'=>$this->courses->tutors()]); }
+    public function tecnicos(): void { echo json_encode(['tecnicos'=>$this->courses->tecnicos()]); }
     public function participants(): void { echo json_encode(['participants'=>$this->courses->participants()]); }
     public function create(array $data,array $actor): void { http_response_code(201); echo json_encode(['id'=>$this->courses->create($data,$actor)]); }
     public function update(array $data,array $actor): void { $this->courses->update($data,$actor); echo json_encode(['status'=>'updated']); }

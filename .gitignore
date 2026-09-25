@@ -26,6 +26,7 @@ node_modules/
 !/src/storage/.gitkeep
 
 # Registros y volcados locales.
+.logs/
 *.log
 *.log.*
 npm-debug.log*

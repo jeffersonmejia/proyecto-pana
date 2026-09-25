@@ -27,6 +27,11 @@ export class LoginComponent {
   constructor() {
     const rememberedEmail = localStorage.getItem('pana.remembered.email');
     if (rememberedEmail) { this.email = rememberedEmail; this.rememberMe = true; }
+    const state = history.state as { registrationEmail?: unknown; registrationPassword?: unknown };
+    if (typeof state.registrationEmail === 'string' && typeof state.registrationPassword === 'string') {
+      this.email = state.registrationEmail; this.password = state.registrationPassword; this.rememberMe = true;
+      history.replaceState({}, document.title, window.location.href);
+    }
   }
 
   submit(): void {

@@ -10,7 +10,7 @@ return static function (callable $buildAuth, callable $authorize): array {
     };
     $id = static function (): int { $value=filter_var($_GET['id']??null,FILTER_VALIDATE_INT); if($value===false||$value<1) throw new ApiException(400,'invalid_notification'); return (int)$value; };
     return [
-        'GET /api/notifications'=>static function() use($build,$authorize): void { $p=$build(); $user=$authorize($p,'notifications.read'); $p['notifications']->index($user); },
+        'GET /api/notifications'=>static function() use($build,$authorize): void { $p=$build(); $user=$authorize($p,'notifications.read'); $p['notifications']->index($user, ($_GET['all'] ?? '') === '1'); },
         'PATCH /api/notifications/read'=>static function() use($build,$authorize,$id): void { $p=$build(); $user=$authorize($p,'notifications.read'); $p['notifications']->read($id(),$user); },
         'POST /api/notifications/read-all'=>static function() use($build,$authorize): void { $p=$build(); $user=$authorize($p,'notifications.read'); $p['notifications']->readAll($user); },
     ];

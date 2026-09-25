@@ -31,9 +31,9 @@
           <label>Cargo<input name="position" [(ngModel)]="userForm.profile.position" required maxlength="100"></label>
           <label>Teléfono institucional<input name="institutional_phone" [(ngModel)]="userForm.profile.institutional_phone" maxlength="20"></label>
         }
-        @if (userForm.roles[0] === 'tutor') {
+ @if (userForm.roles[0] === 'tecnico') {
           <label>Institución<input name="institution" [(ngModel)]="userForm.profile.institution" required maxlength="150"></label>
-          <label>Cargo<input name="tutor-position" [(ngModel)]="userForm.profile.position" maxlength="100"></label>
+ <label>Cargo<input name="tecnico-position" [(ngModel)]="userForm.profile.position" maxlength="100"></label>
           <pana-tutor-student-picker [userId]="userForm.id" [selectedIds]="userForm.profile.student_person_ids ?? []"
             (selectedIdsChange)="userForm.profile.student_person_ids = $event" />
         }

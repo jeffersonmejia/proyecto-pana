@@ -8,7 +8,7 @@ use App\Repositories\DocumentRepository;
 
 final class DocumentService
 {
-    private const MIME_EXTENSIONS = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png', 'text/plain' => 'txt'];
+    private const MIME_EXTENSIONS = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png', 'video/mp4' => 'mp4', 'video/webm' => 'webm'];
 
     public function __construct(private DocumentRepository $documents, private NextcloudStorageService $storage)
     {
@@ -52,9 +52,9 @@ final class DocumentService
         if (!$this->documents->entityExists($type, (int) $id, $scope)) throw new ApiException(404, 'document_entity_not_found');
         if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
             || !is_uploaded_file($file['tmp_name'] ?? '')) throw new ApiException(422, 'invalid_upload');
-        if ($file['size'] > 8 * 1024 * 1024) throw new ApiException(413, 'file_too_large');
+        if ($file['size'] > 50 * 1024 * 1024) throw new ApiException(413, 'file_too_large');
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-        if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime]) || ($evidence && $mime!=='application/pdf')) throw new ApiException(415, 'unsupported_file_type');
+        if (!is_string($mime) || !isset(self::MIME_EXTENSIONS[$mime])) throw new ApiException(415, 'unsupported_file_type');
         $name = $this->safeName($file['name'] ?? '');
         if ($name === '') throw new ApiException(422, 'invalid_file_name');
         $stored = bin2hex(random_bytes(16)) . '.' . self::MIME_EXTENSIONS[$mime];

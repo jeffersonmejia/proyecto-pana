@@ -15,12 +15,11 @@ export interface AuthUser {
   permissions: string[];
 }
 
-export type PreviewRole = 'coordinator' | 'tutor' | 'student' | 'volunteer' | 'beneficiary';
+export type PreviewRole = 'coordinator' | 'tecnico' | 'student' | 'beneficiary';
 const PREVIEW_PERMISSIONS: Record<PreviewRole, string[]> = {
   coordinator: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','reports.read','documents.read'],
-  tutor: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','reports.read','documents.read'],
+  tecnico: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','reports.read','documents.read'],
   student: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','documents.read'],
-  volunteer: ['courses.read','people.read','attendance.read','activities.read','documents.read'],
   beneficiary: ['courses.read','people.read','evaluations.read','documents.read'],
 };
 

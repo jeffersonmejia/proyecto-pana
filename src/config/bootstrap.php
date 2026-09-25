@@ -35,6 +35,8 @@ function env_value(string $name, ?string $default = null): ?string
 
 date_default_timezone_set(env_value('APP_TIMEZONE', 'UTC') ?? 'UTC');
 
+require_once __DIR__ . '/logging.php';
+
 $composerAutoloader = $projectRoot . '/vendor/autoload.php';
 if (is_file($composerAutoloader)) {
     require_once $composerAutoloader;

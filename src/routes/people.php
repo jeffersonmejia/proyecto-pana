@@ -5,6 +5,7 @@ use App\Controllers\PeopleController;
 use App\Exceptions\ApiException;
 use App\Repositories\PeopleRepository;
 use App\Repositories\PersonHistoryRepository;
+use App\Repositories\PersonDetailRepository;
 use App\Services\PeopleService;
 use App\Validators\PersonInputValidator;
 
@@ -13,7 +14,7 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         $auth = $buildAuth();
         $connection = database_connection();
         $auth['people'] = new PeopleController(new PeopleService(
-            new PeopleRepository($connection), new PersonHistoryRepository($connection), new PersonInputValidator()
+            new PeopleRepository($connection), new PersonHistoryRepository($connection), new PersonInputValidator(), new PersonDetailRepository($connection)
         ));
         return $auth;
     };
@@ -29,6 +30,14 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
             $actor = $authorizeAny($components, ['people.read', 'people.manage']);
             if (isset($_GET['id'])) $components['people']->show($id(), $actor);
             else $components['people']->index(array_merge($_GET, ['_scope' => $actor]));
+        },
+        'GET /api/people/detail' => static function () use ($build, $authorizeAny, $id): void {
+            $components = $build();
+            $actor = $authorizeAny($components, ['people.read', 'people.manage']);
+            if (!in_array($actor['roles'][0] ?? '', ['admin', 'coordinator'], true)) {
+                throw new ApiException(403, 'forbidden');
+            }
+            $components['people']->detail($id(), $actor);
         },
         'POST /api/people' => static function () use ($build, $authorize, $readJsonBody): void {
             $components = $build();

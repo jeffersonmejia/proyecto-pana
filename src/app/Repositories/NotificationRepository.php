@@ -5,11 +5,21 @@ use PDO;
 final class NotificationRepository
 {
     public function __construct(private PDO $connection) {}
-    public function list(int $userId, int $limit = 30): array
+    public function list(int $userId, int $limit = 10): array
     {
         $query = $this->connection->prepare('SELECT id,type,title,message,action_url,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT ?');
         $query->bindValue(1, $userId, PDO::PARAM_INT); $query->bindValue(2, $limit, PDO::PARAM_INT); $query->execute();
         return $query->fetchAll();
+    }
+    public function prune(int $userId, int $keep = 50): void
+    {
+        $query = $this->connection->prepare('SELECT id FROM notifications WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT ?');
+        $query->bindValue(1, $userId, PDO::PARAM_INT); $query->bindValue(2, $keep, PDO::PARAM_INT); $query->execute();
+        $ids = array_map('intval', $query->fetchAll(PDO::FETCH_COLUMN));
+        if (!$ids) return;
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $delete = $this->connection->prepare("DELETE FROM notifications WHERE user_id=? AND id NOT IN ($marks)");
+        $delete->execute(array_merge([$userId], $ids));
     }
     public function unread(int $userId): int
     {

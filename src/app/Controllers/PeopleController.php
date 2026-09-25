@@ -22,6 +22,11 @@ final class PeopleController
         echo json_encode(['person' => $this->people->one($id, $actor)]);
     }
 
+    public function detail(int $id, array $actor): void
+    {
+        echo json_encode($this->people->detail($id, $actor));
+    }
+
     public function create(array $input, int $actorId): void
     {
         http_response_code(201);

@@ -4,18 +4,19 @@ import { environment } from '../../../environments/environment';
 
 export interface Course {
   id: number; name: string; description: string | null; start_date: string; end_date: string;
-  status: 'active' | 'inactive'; max_participants: number | null; tutor_user_id: number | null;
-  tutor_name: string; participant_count: number; participant_names: string | null;
+  status: 'active' | 'inactive'; max_participants: number | null; tecnico_user_ids: number[];
+  tecnico_name: string; tutor_name?: string; participant_count: number; participant_names: string | null;
   participant_ids: number[];
 }
 export interface CourseInput {
   name: string; description: string; start_date: string; end_date: string;
-  status: 'active' | 'inactive'; tutor_user_id: number | null; max_participants: number | null;
+  status: 'active' | 'inactive'; tecnico_user_ids: number[]; max_participants: number | null;
   participant_ids: number[];
 }
 export interface CourseSections {
   course: Course;
-  participants: { id: number; first_name: string; last_name: string; name: string; profile: string; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
+  attendance_percentage?: number;
+  participants: { id: number; ci: string; phone: string | null; has_disability: string | null; disability_type: string | null; education: string | null; birth_city: string | null; first_name: string; last_name: string; birth_date: string | null; name: string; profile: string; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
   activities: { id: number; title: string; description: string | null; start_at: string; end_at: string; status: string; responsible: string; participants: string | null }[];
   activity_logs: { id: number; activity_title: string; event_type: string; details: string; created_at: string; participant_id: number | null; participant_name: string | null; actor_email: string | null }[];
   evaluations: { id: number; evaluation_type: string; evaluated_on: string; satisfaction_score: number | null; observations: string | null; first_name: string; last_name: string; average_score: number | null }[];
@@ -36,7 +37,7 @@ export class CoursesApiService {
     const form=new FormData(); form.append('course_id',String(courseId)); form.append('entity_type','activity'); form.append('entity_id',String(activityId)); form.append('file',file);
     return this.http.post<{id:number}>(`${environment.apiBaseUrl}/courses/evidence`,form);
   }
-  tutors() { return this.http.get<{ tutors: { id: number; name: string }[] }>(`${this.url}/tutors`); }
+  tecnicos() { return this.http.get<{ tecnicos: { id: number; name: string }[] }>(`${this.url}/tecnicos`); }
   participants() { return this.http.get<{ participants: { id: number; name: string; profile: string }[] }>(`${this.url}/participants`); }
   create(input: CourseInput) { return this.http.post<{ id: number }>(this.url, input); }
   update(id: number, input: CourseInput) { return this.http.put(`${this.url}?id=${id}`, { ...input, id }); }

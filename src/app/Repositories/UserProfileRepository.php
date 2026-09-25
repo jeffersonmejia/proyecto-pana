@@ -18,8 +18,7 @@ final class UserProfileRepository
     {
         $queries = [
             'coordinator' => 'SELECT position,institutional_phone,is_active FROM coordinators WHERE user_id=?',
-            'tutor' => 'SELECT institution,position,is_active FROM tutors WHERE user_id=?',
-            'volunteer' => 'SELECT birth_date,address,entry_date,is_active FROM volunteers WHERE user_id=?',
+            'tecnico' => 'SELECT institution,position,is_active FROM tecnicos WHERE user_id=?',
             'beneficiary' => 'SELECT b.birth_date,b.address,b.observations,b.is_active FROM beneficiaries b '
                 . 'JOIN people p ON p.id=b.person_id WHERE p.user_id=?',
         ];
@@ -36,14 +35,14 @@ final class UserProfileRepository
         }
         $query->execute([$userId]);
         $profile = $query->fetch() ?: [];
-        if ($role === 'tutor') $profile['student_person_ids'] = $this->assignments->personIds($userId);
+        if ($role === 'tecnico') $profile['student_person_ids'] = $this->assignments->personIds($userId);
         if (isset($profile['is_active'])) $profile['is_active'] = (bool) $profile['is_active'];
         return $profile;
     }
 
     public function save(int $userId, string $role, array $profile): void
     {
-        foreach (['coordinators', 'tutors', 'students', 'volunteers'] as $table) {
+        foreach (['coordinators', 'tecnicos', 'students'] as $table) {
             if ($table !== $this->table($role)) {
                 $this->connection->prepare("UPDATE {$table} SET is_active=0 WHERE user_id=?")->execute([$userId]);
             }
@@ -56,14 +55,12 @@ final class UserProfileRepository
         switch ($role) {
             case 'coordinator': $this->upsert('coordinators', $userId, $profile,
                 'position,institutional_phone', 'position=VALUES(position),institutional_phone=VALUES(institutional_phone)', $profile['is_active']); break;
-            case 'tutor': $this->upsert('tutors', $userId, $profile,
+            case 'tecnico': $this->upsert('tecnicos', $userId, $profile,
                 'institution,position', 'institution=VALUES(institution),position=VALUES(position)', $profile['is_active']); break;
             case 'student': $this->saveStudent($userId, $profile); break;
-            case 'volunteer': $this->upsert('volunteers', $userId, $profile,
-                'birth_date,address,entry_date', 'birth_date=VALUES(birth_date),address=VALUES(address),entry_date=VALUES(entry_date)', $profile['is_active']); break;
             case 'beneficiary': $this->saveBeneficiary($userId, $profile); break;
         }
-        $this->assignments->replace($userId, $role === 'tutor' ? $profile['student_person_ids'] : []);
+        $this->assignments->replace($userId, $role === 'tecnico' ? $profile['student_person_ids'] : []);
     }
 
     private function upsert(string $table, int $id, array $data, string $columns, string $updates,
@@ -120,7 +117,7 @@ final class UserProfileRepository
 
     private function table(string $role): ?string
     {
-        return ['coordinator' => 'coordinators', 'tutor' => 'tutors',
-            'student' => 'students', 'volunteer' => 'volunteers'][$role] ?? null;
+        return ['coordinator' => 'coordinators', 'tecnico' => 'tecnicos',
+            'student' => 'students'][$role] ?? null;
     }
 }

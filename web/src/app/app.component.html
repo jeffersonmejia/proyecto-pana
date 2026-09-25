@@ -9,10 +9,13 @@
       <nav class="topbar-actions" aria-label="Acciones de cuenta">
         <div class="notification-menu" #notificationMenu (document:click)="closeAccountMenu($event, notificationMenu)">
           <button class="topbar-link notification-trigger" type="button" aria-label="Notificaciones" [attr.aria-expanded]="notificationOpen()" (click)="toggleNotifications()"><svg lucideBell [size]="18"></svg>@if (notifications.unread() > 0) { <span class="notification-count">{{ notifications.unread() }}</span> }</button>
-          @if (notificationOpen()) { <section class="notification-popover" role="dialog" aria-label="Notificaciones"><header><strong>Notificaciones</strong><button type="button" (click)="notifications.markAll()">Marcar leídas</button></header>@if (notifications.items().length === 0) { <p class="notification-empty">No tienes notificaciones.</p> } @for (item of notifications.items(); track item.id) { <button class="notification-item" [class.unread]="!item.read_at" type="button" (click)="markNotification(item.id)"><strong>{{ item.title }}</strong><span>{{ item.message }}</span><small>{{ item.created_at | date:'short' }}</small></button> } </section> }
+          @if (notificationOpen()) { <section class="notification-popover" role="dialog" aria-label="Notificaciones"><header><strong>Notificaciones</strong><div class="notification-header-actions"><button type="button" (click)="openAllNotifications()">Ver todo</button><button type="button" (click)="notifications.markAll()">Marcar leídas</button></div></header>@if (notifications.items().length === 0) { <p class="notification-empty">No tienes notificaciones.</p> } @for (item of notifications.items(); track item.id) { <button class="notification-item" [class.unread]="!item.read_at" type="button" (click)="markNotification(item.id)"><svg lucideSparkles [size]="17"></svg><span class="notification-copy"><strong>{{ shortNotificationText(item.title, 54) }}</strong><span>{{ shortNotificationText(item.message, 120) }}</span><small>{{ timeAgo(item.created_at) }}</small></span></button> } </section> }
         </div>
         <button class="topbar-link courses-link" type="button" [class.active]="activeModule() === 'home'" (click)="open('home')">
-          <span>Cursos</span>
+          <svg lucideBookOpen [size]="16"></svg><span>Cursos</span>
+        </button>
+        <button class="topbar-link events-link" type="button" [class.active]="activeModule() === 'eventos'" (click)="open('events')">
+          <svg lucideCalendarDays [size]="16"></svg><span>Eventos</span>
         </button>
         @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
           <button class="topbar-link admin-link" type="button" [class.active]="activeModule() === 'admin'" (click)="open('admin')">
@@ -21,7 +24,7 @@
         }
         <div class="account-menu" #accountMenu (document:click)="closeAccountMenu($event, accountMenu)" (keydown.escape)="accountMenuOpen.set(false)">
           <button class="topbar-link account-trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="accountMenuOpen()" (click)="toggleAccount($event)">
-            <svg lucideUserRound [size]="16"></svg><span>Mi cuenta</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
+            <svg lucideUserRound [size]="16"></svg><span>{{ displayShortName() }}</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
           </button>
           @if (accountMenuOpen()) {
             <section class="account-popover" role="menu" aria-label="Mi cuenta">

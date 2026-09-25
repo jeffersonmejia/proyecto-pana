@@ -12,6 +12,9 @@ export interface PersonRecord {
   birth_date: string | null;
   address: string | null;
   observations: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  created_at?: string;
   has_account: boolean;
   status: 'active' | 'inactive';
   types: string[];
@@ -23,6 +26,11 @@ export interface PersonEvent {
   details: string;
   created_at: string;
   actor_email: string | null;
+}
+export interface PersonDetail {
+  person: PersonRecord; courses: Record<string, unknown>[]; activities: Record<string, unknown>[];
+  events: Record<string, unknown>[]; attendance: Record<string, unknown>[];
+  evaluations: Record<string, unknown>[]; documents: Record<string, unknown>[]; history: PersonEvent[];
 }
 export interface PeoplePage { page: number; page_size: number; total: number; pages: number; }
 
@@ -37,6 +45,10 @@ export class PeopleApiService {
     const params = new HttpParams()
       .set('q', filters.q).set('type', filters.type).set('status', filters.status).set('page', filters.page);
     return this.http.get<{ people: PersonRecord[]; pagination: PeoplePage }>(this.url, { params });
+  }
+
+  detail(id: number) {
+    return this.http.get<PersonDetail>(`${this.url}/detail`, { params: { id } });
   }
 
   create(person: PersonInput) {

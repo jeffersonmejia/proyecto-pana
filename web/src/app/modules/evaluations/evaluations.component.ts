@@ -35,7 +35,7 @@ export class EvaluationsComponent implements OnInit {
   canViewType(type: EvaluationType): boolean {
     const roles = this.auth.user()?.roles ?? [];
     if (roles.some((role) => ['admin', 'coordinator'].includes(role))) return true;
-    return type === 'participant' ? roles.some((role) => ['tutor', 'student'].includes(role)) : roles.includes('beneficiary');
+ return type === 'participant' ? roles.some((role) => ['tecnico', 'student'].includes(role)) : roles.includes('beneficiary');
   }
   setType(type: EvaluationType): void {
     if (!this.canViewType(type)) return;

@@ -65,7 +65,7 @@ final class ActivityService
     {
         $activity = $this->validator->id($input['activity_id'] ?? null);
         $participant = $input['participant_id'] ?? null;
-        if (($scope['roles'][0] ?? '') === 'tutor' && ($participant === null || $participant === '')) {
+        if (($scope['roles'][0] ?? '') === 'tecnico' && ($participant === null || $participant === '')) {
             throw new ApiException(422, 'participant_required_for_observation');
         }
         if ($participant !== null && $participant !== '') {

@@ -1,15 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from './core/auth/auth.service';
-import { LucideBell, LucideChevronDown, LucideUserRound, LucideUsersRound } from '@lucide/angular';
-import { NotificationsService } from './core/notifications/notifications.service';
+import { LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideSparkles, LucideUserRound, LucideUsersRound } from '@lucide/angular';
+import { notificationTimeAgo, NotificationsService } from './core/notifications/notifications.service';
 
 @Component({
   selector: 'pana-root',
   standalone: true,
-  imports: [RouterOutlet, DatePipe, LucideUsersRound, LucideBell, LucideChevronDown, LucideUserRound],
+  imports: [RouterOutlet, LucideUsersRound, LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideSparkles, LucideUserRound],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -29,9 +28,11 @@ export class AppComponent {
     return [name,surname].filter(Boolean).join(' ')||user?.email||'';
   });
   readonly displayRole = computed(() => {
-    const labels: Record<string,string>={admin:'Informático',coordinator:'Coordinador',tutor:'Tutor',student:'Estudiante',volunteer:'Voluntario',beneficiary:'Beneficiario'};
+ const labels: Record<string,string>={admin:'Informático',coordinator:'Coordinador',tecnico:'Técnico',student:'Estudiante',volunteer:'Voluntario',beneficiary:'Beneficiario'};
     const role=this.auth.user()?.roles[0]??''; return labels[role]??role;
   });
+  readonly timeAgo = notificationTimeAgo;
+  shortNotificationText(value: string, limit: number): string { return value.length > limit ? `${value.slice(0, limit - 1).trimEnd()}…` : value; }
 
   constructor() {
     this.auth.restoreSession().subscribe(ok => { this.sessionReady.set(true); if (ok) this.notifications.load(); });
@@ -43,7 +44,7 @@ export class AppComponent {
   }
 
   open(module: string): void {
-    const paths:Record<string,string>={home:'/cursos',admin:'/administracion',people:'/personas',attendance:'/asistencia',activities:'/actividades',evaluations:'/evaluaciones',reports:'/reportes'};
+    const paths:Record<string,string>={home:'/cursos',events:'/eventos',admin:'/administracion',people:'/personas',attendance:'/asistencia',activities:'/actividades',evaluations:'/evaluaciones',reports:'/reportes'};
     this.accountMenuOpen.set(false);if(module!=='home')this.courseDetailOpen.set(false);
     void this.router.navigateByUrl(paths[module]??'/cursos');
   }
@@ -70,5 +71,6 @@ export class AppComponent {
     this.auth.logout().subscribe(()=>void this.router.navigateByUrl('/login'));
   }
 
-  markNotification(id:number): void { this.notifications.markRead(id); }
+  markNotification(id:number): void { this.notifications.markRead(id); this.notificationOpen.set(false); void this.router.navigateByUrl(`/notificaciones/${id}`); }
+  openAllNotifications(): void { this.notificationOpen.set(false); void this.router.navigateByUrl('/notificaciones'); }
 }

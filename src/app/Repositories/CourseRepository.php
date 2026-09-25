@@ -13,7 +13,7 @@ final class CourseRepository
     }
     public function available(array $actor): array
     {
-        if (($actor['roles'][0] ?? '') !== 'beneficiary') return [];
+        if (!in_array($actor['roles'][0] ?? '', ['beneficiary', 'student'], true)) return [];
         $q=$this->db->query($this->select()." WHERE c.status='active' GROUP BY c.id ORDER BY c.start_date,c.name");
         return array_map([$this,'mapCourse'],$q->fetchAll());
     }
@@ -22,9 +22,9 @@ final class CourseRepository
         [$scope,$params]=$this->scope($actor); $q=$this->db->prepare($this->select()." WHERE c.id=? AND {$scope} GROUP BY c.id");
         $q->execute(array_merge([$id],$params)); $course=$q->fetch(); return $course ? $this->mapCourse($course) : null;
     }
-    public function tutors(): array
+    public function tecnicos(): array
     {
-        return $this->db->query("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM tutors t JOIN users u ON u.id=t.user_id WHERE t.is_active=1 AND u.is_active=1 ORDER BY u.last_name,u.first_name")->fetchAll();
+        return $this->db->query("SELECT u.id,CONCAT(u.first_name,' ',u.last_name) name FROM tecnicos t JOIN users u ON u.id=t.user_id WHERE t.is_active=1 AND u.is_active=1 ORDER BY u.last_name,u.first_name")->fetchAll();
     }
     public function participants(): array
     {
@@ -34,17 +34,17 @@ final class CourseRepository
     public function create(array $data,int $actor,array $user): int
     {
         return $this->transaction(function() use($data,$actor,$user): int {
-            $q=$this->db->prepare('INSERT INTO courses (name,description,start_date,end_date,status,max_participants,tutor_user_id,coordinator_user_id) VALUES (?,?,?,?,?,?,?,?)');
-            $q->execute([$data['name'],$data['description'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$data['tutor_user_id'],($user['roles'][0]??'')==='coordinator'?$actor:null]);
-            $id=(int)$this->db->lastInsertId(); $this->syncParticipants($id,$data['participant_ids']); return $id;
+            $q=$this->db->prepare('INSERT INTO courses (name,description,start_date,end_date,status,max_participants,coordinator_user_id) VALUES (?,?,?,?,?,?,?)');
+            $q->execute([$data['name'],$data['description'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],($user['roles'][0]??'')==='coordinator'?$actor:null]);
+            $id=(int)$this->db->lastInsertId(); $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']); return $id;
         });
     }
     public function update(int $id,array $data): void
     {
         $this->transaction(function() use($id,$data): void {
-            $q=$this->db->prepare('UPDATE courses SET name=?,description=?,start_date=?,end_date=?,status=?,max_participants=?,tutor_user_id=? WHERE id=?');
-            $q->execute([$data['name'],$data['description'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$data['tutor_user_id'],$id]);
-            $this->syncParticipants($id,$data['participant_ids']);
+            $q=$this->db->prepare('UPDATE courses SET name=?,description=?,start_date=?,end_date=?,status=?,max_participants=? WHERE id=?');
+            $q->execute([$data['name'],$data['description'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$id]);
+            $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']);
         });
     }
     public function deactivate(int $id): void { $q=$this->db->prepare("UPDATE courses SET status='inactive' WHERE id=?"); $q->execute([$id]); }
@@ -63,9 +63,9 @@ final class CourseRepository
         $q=$this->db->prepare('SELECT 1 FROM course_activities WHERE course_id=? AND activity_id=?');
         $q->execute([$course,$activity]); return (bool)$q->fetchColumn();
     }
-    public function tutorExists(int $id): bool
+    public function tecnicoExists(int $id): bool
     {
-        $q=$this->db->prepare('SELECT 1 FROM tutors t JOIN users u ON u.id=t.user_id WHERE t.user_id=? AND t.is_active=1 AND u.is_active=1'); $q->execute([$id]); return (bool)$q->fetchColumn();
+        $q=$this->db->prepare('SELECT 1 FROM tecnicos t JOIN users u ON u.id=t.user_id WHERE t.user_id=? AND t.is_active=1 AND u.is_active=1'); $q->execute([$id]); return (bool)$q->fetchColumn();
     }
     public function participantExists(int $id): bool
     {
@@ -77,8 +77,8 @@ final class CourseRepository
         $this->transaction(function() use($course,$user): void {
             $q=$this->db->prepare("SELECT c.max_participants,COUNT(cp.person_id) enrolled FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id AND cp.status='active' WHERE c.id=? AND c.status='active' GROUP BY c.id FOR UPDATE");
             $q->execute([$course]); $row=$q->fetch(); if(!$row) throw new \RuntimeException('course_unavailable');
-            $person=$this->db->prepare("SELECT p.id FROM people p JOIN beneficiaries b ON b.person_id=p.id AND b.is_active=1 WHERE p.user_id=? AND p.status='active'");
-            $person->execute([$user]); $personId=(int)$person->fetchColumn(); if(!$personId) throw new \RuntimeException('beneficiary_not_found');
+            $person=$this->db->prepare("SELECT p.id FROM people p WHERE p.user_id=? AND p.status='active' AND (EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) OR EXISTS (SELECT 1 FROM students s WHERE s.user_id=? AND s.is_active=1))");
+            $person->execute([$user,$user]); $personId=(int)$person->fetchColumn(); if(!$personId) throw new \RuntimeException('participant_not_found');
             $exists=$this->db->prepare("SELECT status FROM course_participants WHERE course_id=? AND person_id=?"); $exists->execute([$course,$personId]);
             if($exists->fetchColumn()==='active') return;
             if((int)$row['max_participants']>0 && (int)$row['enrolled'] >= (int)$row['max_participants']) throw new \RuntimeException('course_full');
@@ -87,16 +87,22 @@ final class CourseRepository
     }
     private function select(): string
     {
-        return "SELECT c.id,c.name,c.description,c.start_date,c.end_date,c.status,c.max_participants,c.tutor_user_id,COALESCE(CONCAT(u.first_name,' ',u.last_name),'Sin asignar') tutor_name,COUNT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_count,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_ids_csv,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN CONCAT(p.first_name,' ',p.last_name) END ORDER BY p.last_name,p.first_name SEPARATOR ', ') participant_names FROM courses c LEFT JOIN users u ON u.id=c.tutor_user_id LEFT JOIN course_participants cp ON cp.course_id=c.id LEFT JOIN people p ON p.id=cp.person_id";
+        return "SELECT c.id,c.name,c.description,c.start_date,c.end_date,c.status,c.max_participants,(SELECT GROUP_CONCAT(ct.tecnico_user_id) FROM course_tecnicos ct WHERE ct.course_id=c.id) tecnico_user_ids_csv,(SELECT GROUP_CONCAT(CONCAT(tu.first_name,' ',tu.last_name) ORDER BY tu.last_name,tu.first_name SEPARATOR ', ') FROM course_tecnicos ct JOIN users tu ON tu.id=ct.tecnico_user_id WHERE ct.course_id=c.id) tecnico_name,COUNT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_count,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_ids_csv,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN CONCAT(p.first_name,' ',p.last_name) END ORDER BY p.last_name,p.first_name SEPARATOR ', ') participant_names FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id LEFT JOIN people p ON p.id=cp.person_id";
     }
     private function mapCourse(array $course): array
     {
-        $csv=$course['participant_ids_csv']??''; $course['participant_ids']=$csv===''?[]:array_map('intval',explode(',',$csv)); unset($course['participant_ids_csv']); return $course;
+        $csv=$course['participant_ids_csv']??''; $course['participant_ids']=$csv===''?[]:array_map('intval',explode(',',$csv)); $tecnicos=$course['tecnico_user_ids_csv']??''; $course['tecnico_user_ids']=$tecnicos===''?[]:array_map('intval',explode(',',$tecnicos)); unset($course['participant_ids_csv'],$course['tecnico_user_ids_csv']); return $course;
     }
     private function syncParticipants(int $course,array $ids): void
     {
         $q=$this->db->prepare("UPDATE course_participants SET status='inactive' WHERE course_id=?"); $q->execute([$course]);
         $q=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'active') ON DUPLICATE KEY UPDATE status='active'");
+        foreach($ids as $id) $q->execute([$course,$id]);
+    }
+    private function syncTecnicos(int $course,array $ids): void
+    {
+        $this->db->prepare('DELETE FROM course_tecnicos WHERE course_id=?')->execute([$course]);
+        $q=$this->db->prepare('INSERT INTO course_tecnicos (course_id,tecnico_user_id) VALUES (?,?)');
         foreach($ids as $id) $q->execute([$course,$id]);
     }
     private function transaction(callable $callback): mixed
@@ -109,7 +115,7 @@ final class CourseRepository
         $role=$a['roles'][0]??''; $id=(int)($a['id']??0);
         if ($role==='admin') return ['1=1',[]];
         if ($role==='coordinator') return ['c.coordinator_user_id=?',[$id]];
-        if ($role==='tutor') return ['c.tutor_user_id=?',[$id]];
+        if ($role==='tecnico') return ['c.tecnico_user_id=?',[$id]];
         $person="(p.user_id={$id} OR p.ci=(SELECT ci FROM users WHERE id={$id}))";
         if ($role==='beneficiary') $person.=' AND EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1)';
         elseif ($role==='student') $person.=" AND EXISTS (SELECT 1 FROM students s JOIN users su ON su.id=s.user_id AND su.is_active=1 WHERE su.id={$id} AND s.is_active=1)";

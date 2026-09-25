@@ -27,6 +27,7 @@ final class AdminUserService
         $user = $this->identity($input);
         $password = $this->password($input['password'] ?? null);
         $roles = $this->roles($input['roles'] ?? []);
+        $this->assertUniqueManagementRole($roles[0]);
         $profile = $this->profiles->validate($roles[0], $input['profile'] ?? []);
         $personId = $this->beneficiaryPersonId($roles[0], $input['person_id'] ?? null);
         try {
@@ -37,7 +38,7 @@ final class AdminUserService
         } catch (RuntimeException $error) {
             if ($error->getMessage() === 'role_not_found') throw new ApiException(422, 'role_not_found_or_inactive');
             if ($error->getMessage() === 'beneficiary_person_not_linkable') throw new ApiException(409, 'beneficiary_person_not_linkable');
-            if ($error->getMessage() === 'invalid_tutor_students') throw new ApiException(422, 'invalid_tutor_students');
+        if ($error->getMessage() === 'invalid_tecnico_students') throw new ApiException(422, 'invalid_tecnico_students');
             throw $error;
         }
         return ['id' => $id];
@@ -51,6 +52,7 @@ final class AdminUserService
         if ($id === false || $id < 1 || !is_bool($active)) throw new ApiException(422, 'invalid_input');
         if ((int) $id === $actorId && !$active) throw new ApiException(409, 'cannot_disable_self');
         $roles = $this->roles($input['roles'] ?? []);
+        $this->assertUniqueManagementRole($roles[0], (int) $id);
         $profile = $this->profiles->validate($roles[0], $input['profile'] ?? []);
         $personId = $this->beneficiaryPersonId($roles[0], $input['person_id'] ?? null);
         $hash = isset($input['password']) && $input['password'] !== ''
@@ -64,7 +66,7 @@ final class AdminUserService
             if ($error->getMessage() === 'role_not_found') throw new ApiException(422, 'role_not_found_or_inactive');
             if ($error->getMessage() === 'user_not_found') throw new ApiException(404, 'user_not_found');
             if ($error->getMessage() === 'beneficiary_person_not_linkable') throw new ApiException(409, 'beneficiary_person_not_linkable');
-            if ($error->getMessage() === 'invalid_tutor_students') throw new ApiException(422, 'invalid_tutor_students');
+        if ($error->getMessage() === 'invalid_tecnico_students') throw new ApiException(422, 'invalid_tecnico_students');
             throw $error;
         }
     }
@@ -147,5 +149,12 @@ final class AdminUserService
         $id = filter_var($value, FILTER_VALIDATE_INT);
         if ($id === false || $id < 1) throw new ApiException(422, 'beneficiary_person_required');
         return (int) $id;
+    }
+
+    private function assertUniqueManagementRole(string $role, ?int $exceptId = null): void
+    {
+        if (in_array($role, ['admin', 'coordinator'], true) && $this->users->roleTaken($role, $exceptId)) {
+            throw new ApiException(409, 'management_role_already_assigned');
+        }
     }
 }

@@ -13,9 +13,9 @@ export function validIdentity(user: { ci: string; first_name: string; last_name:
 
 export function validProfile(role: string, profile: UserProfile): boolean {
   if (role === 'coordinator') return !!profile.position?.trim();
-  if (role === 'tutor') return !!profile.institution?.trim();
+ if (role === 'tecnico') return !!profile.institution?.trim();
   if (role === 'student') return !!profile.university?.trim() && !!profile.career?.trim()
     && !!profile.process_type?.trim() && String(profile.hours_required ?? '').trim() !== ''
     && Number(profile.hours_required) >= 0 && !!profile.start_date;
-  return role !== 'volunteer' || !!profile.entry_date;
+  return true;
 }

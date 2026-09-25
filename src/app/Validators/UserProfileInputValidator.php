@@ -15,17 +15,12 @@ final class UserProfileInputValidator
                 'position' => $this->text($input, 'position', 100),
                 'institutional_phone' => $this->optional($input, 'institutional_phone', 20),
             ],
-            'tutor' => [
+            'tecnico' => [
                 'institution' => $this->text($input, 'institution', 150),
                 'position' => $this->optional($input, 'position', 100),
                 'student_person_ids' => $this->ids($input['student_person_ids'] ?? []),
             ],
             'student' => $this->student($input),
-            'volunteer' => [
-                'birth_date' => $this->date($input['birth_date'] ?? null, true),
-                'address' => $this->optional($input, 'address', 255),
-                'entry_date' => $this->date($input['entry_date'] ?? null),
-            ],
             'beneficiary' => [
                 'birth_date' => $this->date($input['birth_date'] ?? null, true),
                 'address' => $this->optional($input, 'address', 255),
@@ -92,10 +87,10 @@ final class UserProfileInputValidator
 
     private function ids(mixed $values): array
     {
-        if (!is_array($values) || count($values) > 100) throw new ApiException(422, 'invalid_tutor_students');
+        if (!is_array($values) || count($values) > 100) throw new ApiException(422, 'invalid_tecnico_students');
         foreach ($values as $id) {
             if (filter_var($id, FILTER_VALIDATE_INT) === false || (int) $id < 1) {
-                throw new ApiException(422, 'invalid_tutor_students');
+                throw new ApiException(422, 'invalid_tecnico_students');
             }
         }
         return array_values(array_unique(array_map('intval', $values)));

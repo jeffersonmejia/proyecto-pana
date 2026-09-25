@@ -14,6 +14,7 @@
       <tr><td><strong>{{ person.first_name }} {{ person.last_name }}</strong></td><td>{{ person.ci || '—' }}</td><td>{{ person.types.join(' · ') }}</td>
         <td>{{ person.email || person.phone || 'Sin contacto' }}</td><td><span class="status" [class.inactive]="person.status === 'inactive'">{{ person.status === 'active' ? 'Activo' : 'Inactivo' }}</span></td>
         <td class="actions">@if (auth.hasPermission('people.manage')) {
+          <button class="icon-button" type="button" aria-label="Ver detalle" (click)="openDetail(person)">Ver</button>
           <button class="icon-button" type="button" aria-label="Editar persona" (click)="edit(person)"><svg lucidePencil [size]="18"></svg></button>
           <button class="icon-button" type="button" [attr.aria-label]="person.status === 'active' ? 'Desactivar persona' : 'Activar persona'" (click)="toggleStatus(person)">
             @if (person.status === 'active') { <svg lucideToggleRight [size]="20"></svg> } @else { <svg lucideToggleLeft [size]="20"></svg> }

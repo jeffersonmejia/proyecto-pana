@@ -22,8 +22,8 @@ final class AdminUserRepository
         $result = Pagination::fetch($this->connection,
             'SELECT u.id,u.ci,u.first_name,u.last_name,u.phone,u.email,u.is_active,u.last_login_at,'
             . 'r.code role_code,p.id person_id FROM users u INNER JOIN roles r ON r.id=u.role_id '
-            . 'LEFT JOIN people p ON p.user_id=u.id ORDER BY u.email',
-            'SELECT COUNT(*) FROM users', [], $page);
+            . 'LEFT JOIN people p ON p.user_id=u.id WHERE u.is_active=1 ORDER BY u.email',
+            'SELECT COUNT(*) FROM users WHERE is_active=1', [], $page);
         $result['items'] = array_map(static function (array $row): array {
             $row['roles'] = [$row['role_code']];
             unset($row['role_code']);
@@ -36,6 +36,8 @@ final class AdminUserRepository
         unset($user);
         return $result;
     }
+
+    public function roleTaken(string $role, ?int $exceptId = null): bool { $sql='SELECT 1 FROM users u JOIN roles r ON r.id=u.role_id WHERE r.code=? AND u.is_active=1'; $params=[$role]; if($exceptId!==null){$sql.=' AND u.id<>?';$params[]=$exceptId;} $query=$this->connection->prepare($sql.' LIMIT 1');$query->execute($params);return $query->fetchColumn()!==false; }
 
     public function create(array $user, string $passwordHash, array $roles, array $profile, ?int $personId): int
     {

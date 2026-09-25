@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { PaginatorComponent } from '../../shared/paginator.component';
@@ -13,6 +14,7 @@ import { PeopleApiService, PersonEvent, PersonInput, PersonRecord, PeoplePage } 
 })
 export class PeopleComponent implements OnInit {
   private readonly api = inject(PeopleApiService);
+  private readonly router = inject(Router);
   readonly auth = inject(AuthService);
   @Output() close = new EventEmitter<void>();
   readonly people = signal<PersonRecord[]>([]);
@@ -36,6 +38,7 @@ export class PeopleComponent implements OnInit {
 
   filter(): void { this.pageInfo.update((page) => ({ ...page, page: 1 })); this.load(); }
   changePage(page: number): void { this.pageInfo.update((value) => ({ ...value, page })); this.load(); }
+  openDetail(person: PersonRecord): void { if (this.auth.hasPermission('people.manage')) void this.router.navigate(['/personas', person.id]); }
 
   edit(person?: PersonRecord): void {
     this.step.set(0); this.dialogOpen.set(true);

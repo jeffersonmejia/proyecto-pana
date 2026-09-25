@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Validators\PersonInputValidator;
 use App\Exceptions\ApiException;
 use App\Repositories\PeopleRepository;
+use App\Repositories\PersonDetailRepository;
 use App\Repositories\PersonHistoryRepository;
 use PDOException;
 use RuntimeException;
@@ -15,7 +16,8 @@ final class PeopleService
     public function __construct(
         private PeopleRepository $people,
         private PersonHistoryRepository $history,
-        private PersonInputValidator $validator
+        private PersonInputValidator $validator,
+        private PersonDetailRepository $details
     ) {
     }
 
@@ -37,6 +39,15 @@ final class PeopleService
     public function one(int $id, array $actor = []): array
     {
         return $this->people->find($id, $actor) ?? throw new ApiException(404, 'person_not_found');
+    }
+
+    public function detail(int $id, array $actor): array
+    {
+        $person = $this->people->find($id, $actor);
+        if ($person === null) throw new ApiException(404, 'person_not_found');
+        $detail = ['person' => $person] + $this->details->related($id);
+        $detail['history'] = $this->history->forPerson($id);
+        return $detail;
     }
 
     public function create(array $input, int $actorId): array

@@ -17,7 +17,7 @@ JOIN activity_participants ap ON ap.participant_id=cp.person_id
 WHERE cp.status='active';
 
 INSERT INTO permissions (code,name,description) VALUES
-    ('activities.submit_evidence','Subir evidencia PDF de actividades','Entregar archivos PDF en actividades asignadas.')
+    ('activities.submit_evidence','Subir evidencias de actividades','Entregar fotos, videos o archivos PDF en actividades asignadas.')
 ON DUPLICATE KEY UPDATE name=VALUES(name),description=VALUES(description);
 INSERT IGNORE INTO role_permissions (role_id,permission_id)
 SELECT r.id,p.id FROM roles r JOIN permissions p ON p.code='activities.submit_evidence'

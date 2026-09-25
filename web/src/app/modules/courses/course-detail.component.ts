@@ -9,11 +9,11 @@ import { StepDialogComponent } from '../../shared/step-dialog.component';
 import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
-import { LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload } from '@lucide/angular';
+import { LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucidePrinter } from '@lucide/angular';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucidePrinter], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
@@ -31,14 +31,14 @@ export class CourseDetailComponent implements OnInit {
   readonly tabs: {id: CourseTab; label: string}[]=[{id:'overview',label:'Resumen'},{id:'participants',label:'Participantes'},
     {id:'attendance',label:'Asistencia'},
     {id:'activities',label:'Actividades'},{id:'evaluations',label:'Evaluaciones'}];
-  readonly attendanceHours=computed(()=>(((this.data()?.participants??[]).reduce((sum,row)=>sum+Number(row.attendance_minutes??0),0)/60).toFixed(1)));
+  readonly visibleTabs = computed(() => this.isBeneficiary() ? this.tabs.filter(tab => tab.id === 'activities' || tab.id === 'attendance') : this.tabs);
+  readonly attendanceHours=computed(()=>{const hours=(this.data()?.participants??[]).reduce((sum,row)=>sum+Number(row.attendance_minutes??0),0)/60;return Number.isInteger(hours)?String(hours):hours.toFixed(1);});
   readonly evidenceCount=computed(()=>((this.data()?.documents??[]).filter(file=>file.entity_type==='activity').length));
   readonly completedTasks=computed(()=>((this.data()?.activities??[]).filter(task=>task.status==='completed').length));
   capacityPercent(): number { const limit=Number(this.course().max_participants??0); return limit>0 ? Math.min(100,Math.round(Number(this.course().participant_count??0)*100/limit)) : 0; }
-  readonly alphabet=Array.from({length:26},(_,i)=>String.fromCharCode(65+i));
-  readonly firstInitial=signal(''); readonly lastInitial=signal(''); readonly participantQuery=signal('');
-  readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>(!this.firstInitial()||p.first_name.toLocaleUpperCase().startsWith(this.firstInitial()))&&(!this.lastInitial()||p.last_name.toLocaleUpperCase().startsWith(this.lastInitial()))&&(!q||p.name.toLocaleLowerCase().includes(q)));});
-  readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize);});
+  readonly participantQuery=signal('');
+  readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>!q||p.name.toLocaleLowerCase().includes(q));});
+  readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
   readonly attendancePageRows=computed(()=>{const people=this.data()?.participants??[];const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
   readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null);
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
@@ -46,18 +46,21 @@ export class CourseDetailComponent implements OnInit {
   readonly expandedTask=signal<number|null>(null); readonly draggingTask=signal<number|null>(null);
   readonly activityPage=signal(false);
   taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[] as number[]};
-  ngOnInit(): void { const activityId=Number(this.route.snapshot.paramMap.get('activityId')); if(activityId>0){this.activityPage.set(true);this.active.set('activities');this.expandedTask.set(activityId);} this.reload(); }
+  ngOnInit(): void { const activityId=Number(this.route.snapshot.paramMap.get('activityId')); if(this.route.snapshot.queryParamMap.get('tab')==='participants')this.active.set('participants'); if(this.isBeneficiary())this.active.set('activities'); if(activityId>0){this.activityPage.set(true);this.active.set('activities');this.expandedTask.set(activityId);} this.reload(); }
   reload(afterLoad?:()=>void): void { this.loadingStartedAt=Date.now();this.loading.set(true);this.api.sections(this.course().id,this.attendanceDate()).subscribe({next:value=>this.finishLoad(value,afterLoad),error:()=>{this.error.set('No se pudo cargar la información de este curso.');this.finishLoad(null);}}); }
   private finishLoad(value:CourseSections|null,afterLoad?:()=>void): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt));setTimeout(()=>{if(value)this.data.set(value);this.loading.set(false);afterLoad?.();},wait); }
   setAttendanceDate(date:string): void { if(!date)return; this.attendanceDate.set(date);this.attendancePage.set(1);this.attendanceError.set('');this.reload(); }
   changeAttendancePage(page:number): void { this.attendancePage.set(page); }
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
-  setFirstInitial(letter:string): void { this.firstInitial.set(this.firstInitial()===letter?'':letter);this.participantPage.set(1); }
-  clearFirstInitial(): void { this.firstInitial.set('');this.participantPage.set(1); }
-  setLastInitial(letter:string): void { this.lastInitial.set(this.lastInitial()===letter?'':letter);this.participantPage.set(1); }
-  clearLastInitial(): void { this.lastInitial.set('');this.participantPage.set(1); }
   changeParticipantPage(page:number): void { this.participantPage.set(page); }
+  openPerson(id:number): void { void this.router.navigate(['/cursos', this.course().id, 'participantes', id]); }
+  printParticipants(): void { window.print(); }
+  participantAttendanceHours(person: CourseSections['participants'][number]): string { const hours=Number(person.attendance_minutes ?? 0)/60; return Number.isInteger(hours)?String(hours):hours.toFixed(1); }
+  ageFromBirthDate(value: string | null): string { if (!value) return '—'; const birth = new Date(`${value}T00:00:00`), today = new Date(); let age = today.getFullYear() - birth.getFullYear(); const beforeBirthday = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()); return String(age - (beforeBirthday ? 1 : 0)); }
   canMarkAttendance(): boolean { return this.auth.hasPermission('attendance.manage'); }
+  isBeneficiary(): boolean { return this.auth.user()?.roles.includes('beneficiary') ?? false; }
+  isStudent(): boolean { return this.auth.user()?.roles.includes('student') ?? false; }
+  isLearner(): boolean { const roles = this.auth.user()?.roles ?? []; return roles.includes('beneficiary') || roles.includes('student'); }
   attendanceLabel(status:string|null): string { return status==='present'?'Presente':status==='absent'?'Ausente':status==='excused'?'Justificado':'Sin registros'; }
   attendanceDisplayStatus(person:{selected_attendance_status:'present'|'absent'|'excused'|null;selected_check_in:string|null}): string {
     return person.selected_attendance_status==='present'&&this.isLate(person.selected_check_in)?'Atraso':this.attendanceLabel(person.selected_attendance_status);
@@ -115,13 +118,14 @@ export class CourseDetailComponent implements OnInit {
   }
   private submitEvidence(task:number,file:File): void {
     if(this.uploadingTask()!==null)return;
-    if(!file.name.toLocaleLowerCase().endsWith('.pdf')||file.size>8*1024*1024){this.evidenceFeedback.set({task,type:'error',text:'Selecciona un PDF de hasta 8 MB.'});return;}
+    if(!this.isEvidenceFile(file)||file.size>50*1024*1024){this.evidenceFeedback.set({task,type:'error',text:'Selecciona una foto, video o PDF de hasta 50 MB.'});return;}
     this.uploadingTask.set(task); this.evidenceFeedback.set(null); this.api.uploadEvidence(this.course().id,task,file).subscribe({next:()=>{this.uploadingTask.set(null);this.evidenceFeedback.set({task,type:'success',text:'Evidencia subida correctamente.'});this.reload();},error:()=>{this.uploadingTask.set(null);this.evidenceFeedback.set({task,type:'error',text:'No se pudo subir la evidencia. Confirma que esta actividad está asignada a tu cuenta.'});}});
   }
+  private isEvidenceFile(file:File): boolean { return ['application/pdf','image/jpeg','image/png','video/mp4','video/webm'].includes(file.type); }
   documentsForTask(task:number) { return (this.data()?.documents??[]).filter(file=>file.entity_type==='activity'&&file.entity_id===task); }
   downloadDocument(id:number,name:string): void { this.documentsApi.download(id).subscribe(blob=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}); }
   select(tab: CourseTab): void { if(tab===this.active())return;this.active.set(tab);if(!this.data())return;this.sectionLoading.set(true);setTimeout(()=>this.sectionLoading.set(false),500); }
   private coursePeriodDays(): number { const start=new Date(`${this.course().start_date}T00:00:00`); const end=new Date(`${this.course().end_date}T00:00:00`); const days=Math.floor((end.getTime()-start.getTime())/86400000)+1; return Number.isFinite(days)&&days>0?days:0; }
-  attendancePercent(): number { const data=this.data(); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
+  attendancePercent(): number { const data=this.data(); if(this.isBeneficiary())return Number(data?.attendance_percentage??0); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
   tabCount(tab: CourseTab): number { const data=this.data(); if(!data)return 0; if(tab==='participants')return data.participants.length; if(tab==='attendance')return this.attendancePercent(); if(tab==='activities')return data.activities.length; if(tab==='evaluations')return data.evaluations.length; return 0; }
 }

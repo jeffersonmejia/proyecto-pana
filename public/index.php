@@ -6,6 +6,20 @@ use App\Exceptions\ApiException;
 $projectRoot = rtrim((string) (getenv('PANA_API_ROOT') ?: dirname(__DIR__)), '/');
 require $projectRoot . '/src/config/bootstrap.php';
 
+register_shutdown_function(static function (): void {
+    $error = error_get_last();
+    if ($error === null || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
+    }
+    pana_log('php', 'Error fatal de la API', [
+        'stage' => 'route_loading_or_runtime',
+        'type' => $error['type'], 'message' => $error['message'],
+        'file' => $error['file'], 'line' => $error['line'],
+        'method' => $_SERVER['REQUEST_METHOD'] ?? 'CLI',
+        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+    ]);
+});
+
 $allowedOrigin = env_value('FRONTEND_URL', 'http://localhost:4200');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 header('Content-Type: application/json; charset=utf-8');
@@ -52,7 +66,20 @@ try {
     http_response_code($exception->status);
     echo json_encode(['error' => $exception->errorCode]);
 } catch (Throwable $exception) {
-    error_log('API error: ' . get_class($exception) . ' at ' . $exception->getFile() . ':' . $exception->getLine());
+    $sqlDetail = '';
+    if ($exception instanceof \PDOException) {
+        $driverCode = $exception->errorInfo[1] ?? 'unknown';
+        $sqlDetail = ' SQLSTATE=' . $exception->getCode() . ' driver_code=' . $driverCode;
+    }
+    $logChannel = $exception instanceof \PDOException ? 'bdd' : 'php';
+    pana_log($logChannel, 'Error no controlado de la API', [
+        'stage' => 'request_handler',
+        'exception' => get_class($exception), 'message' => $exception->getMessage(),
+        'sqlstate' => $exception instanceof \PDOException ? $exception->getCode() : null,
+        'driver_code' => $exception instanceof \PDOException ? ($exception->errorInfo[1] ?? null) : null,
+        'file' => $exception->getFile(), 'line' => $exception->getLine(),
+        'method' => $_SERVER['REQUEST_METHOD'] ?? 'CLI', 'uri' => $_SERVER['REQUEST_URI'] ?? '',
+    ]);
     http_response_code(500);
     echo json_encode(['error' => 'internal_error']);
 }
