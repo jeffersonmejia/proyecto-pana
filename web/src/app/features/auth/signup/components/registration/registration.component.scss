@@ -1,4 +1,10 @@
 :host { display: block; min-height: 100vh; color: var(--pana-ink); }
+.availability-table tbody tr:nth-child(1) .schedule-label > span::after { content: '08:30 - 12:30'; display: block; color: var(--pana-gray); font-size: .68rem; font-weight: 400; }
+.availability-table tbody tr:nth-child(2) .schedule-label > span::after { content: '14:30 - 16:30'; display: block; color: var(--pana-gray); font-size: .68rem; font-weight: 400; }
+.registration-card .field-hint-list li.invalid { color: var(--pana-danger) !important; }
+.registration-card label:has(input[name="password"].password-invalid)::after { content: none !important; }
+.registration-card fieldset[aria-label="Datos personales"] > label:has(select[name="hasDisability"]) .field-label::after { color: var(--pana-gray) !important; }
+.registration-card fieldset[aria-label="Datos personales"] > label:has(select[name="hasDisability"]) .field-label, .registration-card fieldset[aria-label="Datos personales"] > label:has(select[name="hasDisability"]) .field-label svg { color: var(--pana-gray) !important; }
 .registration-backdrop { min-height: 100vh; box-sizing: border-box; padding: 0 16px; overflow: auto; background: var(--pana-page); animation: registration-fade-in 500ms ease-out both; }
 .registration-card { width: min(100%, 1240px); box-sizing: border-box; margin: 0 auto; padding: 28px 32px 24px; border: 1px solid var(--pana-divider); border-radius: var(--pana-radius); background: var(--pana-surface); animation: registration-card-in 600ms 80ms cubic-bezier(.2,.7,.2,1) both; }
 .registration-header, .step-indicator, .section-title, form { width: min(100%, 1000px); margin-right: auto; margin-left: auto; }

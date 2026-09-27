@@ -72,7 +72,7 @@ export class RegistrationFacade {
   }
   lastNames = "";
   @HostListener("document:input", ["$event"])
-  validateCredentialsWhileTyping(event: Event): void { const target = event.target as HTMLInputElement; this.inputService.validateCredentials(target); queueMicrotask(() => this.cdr.detectChanges()); }
+  validateCredentialsWhileTyping(event: Event): void { const target = event.target as HTMLInputElement; this.inputService.validateCredentials(target); if (target.name === "password") { this.error.set(""); this.errorField.set(""); } queueMicrotask(() => this.cdr.detectChanges()); }
   @HostListener("document:keyup", ["$event"])
   validateCredentialsOnKeyup(event: KeyboardEvent): void { this.validateCredentialsWhileTyping(event); }
   @HostListener("document:keydown", ["$event"])
@@ -81,6 +81,16 @@ export class RegistrationFacade {
   preventForbiddenSpacePaste(event: ClipboardEvent): void { const target = event.target as HTMLInputElement; if (this.inputService.pasteHasForbiddenSpace(target, event.clipboardData?.getData("text") ?? "")) event.preventDefault(); }
   @HostListener("document:input", ["$event"])
   updateNameHint(event: Event): void { const target = event.target as HTMLInputElement; if (target.name && ["firstNames", "lastNames"].includes(target.name)) target.classList.toggle("name-invalid", target.value.length > 0 && !this.inputService.nameIsValid(target)); }
+  @HostListener("document:focusout", ["$event"])
+  normalizeNameOnBlur(event: FocusEvent): void {
+    const target = event.target as HTMLInputElement;
+    if (!target?.name || !["firstNames", "lastNames"].includes(target.name)) return;
+    const value = this.inputService.normalizeName(target.value);
+    target.value = value;
+    if (target.name === "firstNames") this.firstNames = value;
+    else this.lastNames = value;
+    this.syncFullName();
+  }
   private readonly flow = inject(RegistrationFlowService);
   private readonly stepRegistry = inject(RegistrationStepRegistryService);
   private readonly formService = inject(RegistrationFormService);
@@ -142,7 +152,7 @@ export class RegistrationFacade {
     "Viernes",
     "Sábado",
   ];
-  readonly availableSchedules = ["Mañana", "Tarde", "Noche"];
+  readonly availableSchedules = ["Mañana", "Tarde"];
   birthYear = "";
   birthMonth = "";
   birthDay = "";
@@ -348,6 +358,10 @@ export class RegistrationFacade {
         this.data.availabilitySlots = this.data.days.flatMap((day) =>
           this.data.schedules.map((schedule) => this.slotKey(day, schedule)),
         );
+      this.data.availabilitySlots = this.data.availabilitySlots.filter(
+        (slot) => !slot.endsWith("::Noche"),
+      );
+      this.syncAvailabilityArrays();
       this.data.id = this.data.id.replace(/\D/g, "").slice(0, 10);
       this.data.phone = this.data.phone.replace(/\D/g, "").slice(0, 10);
       if (this.data.birthDate)
@@ -479,6 +493,7 @@ export class RegistrationFacade {
           : "Completa todos los campos obligatorios del paso 1."
         : this.missingFieldMessage();
     if (message) {
+      if (this.step() === 0 && !this.hasValidPassword()) return;
       this.error.set(message);
       return;
     }
@@ -516,6 +531,7 @@ export class RegistrationFacade {
     return error ? this.invalid(error.field, error.message) : "";
   }
   fieldError(field: string): string {
+    if (field === "password") return "";
     return this.errorField() === field ? this.error() : "";
   }
   identityError(field: "ci" | "email"): string {
