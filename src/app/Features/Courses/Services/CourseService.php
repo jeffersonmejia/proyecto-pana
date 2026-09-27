@@ -6,6 +6,7 @@ use App\Repositories\CourseRepository;
 use App\Repositories\CourseDetailsRepository;
 use App\Validators\CourseInputValidator;
 use App\Services\ActivityService;
+use PDOException;
 final class CourseService
 {
     public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers) {}
@@ -58,14 +59,18 @@ final class CourseService
     public function participants(): array { return $this->courses->participants(); }
     public function create(array $input,array $actor): int
     {
-        $data=$this->validated($input); $this->assertAssignments($data); return $this->courses->create($data,(int)$actor['id'],$actor);
+        $data=$this->validated($input); $this->assertAssignments($data);
+        try { return $this->courses->create($data,(int)$actor['id'],$actor); }
+        catch (PDOException $error) { if ($error->getCode() === '23000') throw new ApiException(409,'course_name_exists'); throw $error; }
     }
     public function update(array $input,array $actor): void
     {
         $id=$this->validator->id($input['id']??null); $current=$this->one($id,$actor); $data=$this->validated($input);
         $currentParticipants=array_map('intval',$current['participant_ids']??[]);
         $submittedParticipants=array_map('intval',$data['participant_ids']); sort($currentParticipants); sort($submittedParticipants);
-        $this->assertAssignments($data,$currentParticipants===$submittedParticipants); $this->courses->update($id,$data);
+        $this->assertAssignments($data,$currentParticipants===$submittedParticipants);
+        try { $this->courses->update($id,$data); }
+        catch (PDOException $error) { if ($error->getCode() === '23000') throw new ApiException(409,'course_name_exists'); throw $error; }
     }
     public function deactivate(int $id,array $actor): void { $this->one($id,$actor); $this->courses->deactivate($id); }
     public function setStatus(int $id,string $status,array $actor): void

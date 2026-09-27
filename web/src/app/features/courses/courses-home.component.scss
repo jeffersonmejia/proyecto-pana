@@ -156,6 +156,8 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .tecnico-table th, .tecnico-table td { padding: 8px 10px; border-bottom: 1px solid var(--pana-outline); text-align: left; }
 .tecnico-table th { position: sticky; top: 0; z-index: 1; background: var(--pana-primary-softer); color: var(--pana-primary); font-size: .78rem; }
 .tecnico-table td { color: var(--pana-ink); font-size: .85rem; }
+.tecnico-row { cursor: pointer; }
+.tecnico-row:hover, .tecnico-row.selected { background: var(--pana-surface-subtle); }
 .tecnico-table th:first-child, .tecnico-table td:first-child { width: 110px; text-align: center; }
 .tecnico-table input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; min-height: 16px; accent-color: var(--pana-primary); }
 .tecnico-table tr:last-child td { border-bottom: 0; }
