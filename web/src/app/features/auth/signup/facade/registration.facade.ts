@@ -353,7 +353,8 @@ export class RegistrationFacade {
       };
       const volunteer =
         draft.version === this.draftVersion ? draft.volunteer : "No";
-      Object.assign(this.data, draft, { password: "", volunteer });
+      Object.assign(this.data, draft, { volunteer });
+      this.restoreNameParts();
       if (!Array.isArray(this.data.availabilitySlots))
         this.data.availabilitySlots = this.data.days.flatMap((day) =>
           this.data.schedules.map((schedule) => this.slotKey(day, schedule)),
@@ -417,8 +418,8 @@ export class RegistrationFacade {
   private restoreNameParts(): void {
     const parts = this.data.name.trim().split(/\s+/).filter(Boolean);
     if (!this.firstNames && parts.length) {
-      this.firstNames = parts[0];
-      this.lastNames = parts.slice(1).join(" ");
+      this.firstNames = parts.slice(0, 2).join(" ");
+      this.lastNames = parts.slice(2).join(" ");
     }
   }
   hasValidNames(): boolean {

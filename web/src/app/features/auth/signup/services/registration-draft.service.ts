@@ -5,7 +5,6 @@ import { RegistrationData } from '../models/registration-data';
 export class RegistrationDraftService {
   save(key: string, data: RegistrationData, version: string): void {
     const draft: Partial<RegistrationData> & { version?: string } = { ...data, version };
-    draft.password = undefined;
     localStorage.setItem(key, JSON.stringify(draft));
   }
   read(key: string): (Partial<RegistrationData> & { version?: string }) | null {
