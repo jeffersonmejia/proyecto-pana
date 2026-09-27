@@ -5,8 +5,7 @@ import { RegistrationData } from '../../models/registration-data';
 export class AdditionalInfoSectionService {
   phoneIsComplete(phone: string): boolean {
     const digits = phone.replace(/\D/g, '');
-    const fullPhone = digits.length === 8 ? `09${digits}` : digits;
-    return /^09\d{8}$/.test(fullPhone);
+    return /^\d{10}$/.test(digits);
   }
 
   isComplete(data: RegistrationData): boolean {

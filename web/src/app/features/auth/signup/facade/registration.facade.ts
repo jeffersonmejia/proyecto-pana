@@ -132,8 +132,6 @@ export class RegistrationFacade {
     "Múltiple",
     "Otra",
   ];
-  readonly emailDomains = ["@gmail.com", "@outlook.com"];
-  emailDomain = "@gmail.com";
   readonly dateYears = this.dateService.years;
   readonly dateMonths = this.dateService.months;
   readonly availableDays = [
@@ -351,9 +349,7 @@ export class RegistrationFacade {
           this.data.schedules.map((schedule) => this.slotKey(day, schedule)),
         );
       this.data.id = this.data.id.replace(/\D/g, "").slice(0, 10);
-      if (this.data.phone.startsWith("09"))
-        this.data.phone = this.data.phone.slice(2);
-      this.data.phone = this.data.phone.replace(/\D/g, "").slice(0, 8);
+      this.data.phone = this.data.phone.replace(/\D/g, "").slice(0, 10);
       if (this.data.birthDate)
         [this.birthYear, this.birthMonth, this.birthDay] =
           this.data.birthDate.split("-");
@@ -362,14 +358,7 @@ export class RegistrationFacade {
       if (this.data.role === "student" && !this.data.level)
         this.data.level = "1";
       if (!this.data.volunteer) this.data.volunteer = "No";
-      const parts = this.data.email.split("@");
-      if (parts.length > 1) {
-        this.data.email = parts[0];
-        this.emailDomain = `@${parts[1]}`;
-      }
       this.sanitizeEmail();
-      if (!this.emailDomains.includes(this.emailDomain))
-        this.emailDomain = "@gmail.com";
     } catch {
       localStorage.removeItem(this.draftKey);
     }

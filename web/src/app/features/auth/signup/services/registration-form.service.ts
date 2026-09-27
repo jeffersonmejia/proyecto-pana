@@ -6,10 +6,9 @@ export class RegistrationFormService {
   sanitizeEmail(value: string): string { return value.replace(/[^A-Za-z0-9._@-]/g, ''); }
   fullEmail(value: string): string { return value.trim(); }
   normalizePhone(value: string): string {
-    const digits = value.replace(/\D/g, '');
-    return (digits.startsWith('09') && digits.length === 10 ? digits.slice(2) : digits).slice(0, 8);
+    return value.replace(/\D/g, '').slice(0, 10);
   }
-  fullPhone(value: string): string { const digits = value.replace(/\D/g, ''); return digits.length === 8 ? `09${digits}` : digits.slice(0, 10); }
+  fullPhone(value: string): string { return value.replace(/\D/g, '').slice(0, 10); }
   hasValidEmail(value: string): boolean { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.fullEmail(value)); }
   hasValidPassword(value: string): boolean { return value.length >= 12 && /\d/.test(value) && /\p{L}/u.test(value); }
   hasValidNames(firstNames: string, lastNames: string): boolean {
