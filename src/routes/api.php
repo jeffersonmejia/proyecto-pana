@@ -133,6 +133,12 @@ $routes = array_merge([
         $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
         $components['controller']->me($user);
     },
+    'GET /api/auth/profile' => static function () use ($buildAuth): void {
+        $components = $buildAuth(); $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null); $components['controller']->profile($user);
+    },
+    'PUT /api/auth/profile' => static function () use ($buildAuth, $readJsonBody): void {
+        $components = $buildAuth(); $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null); $components['controller']->updateProfile($user, $readJsonBody());
+    },
     'GET /api/auth/can' => static function () use ($buildAuth): void {
         $components = $buildAuth();
         $user = $components['authentication']->authenticate($_SERVER['HTTP_AUTHORIZATION'] ?? null);
@@ -143,7 +149,7 @@ $routes = array_merge([
         $components['authorization']->requirePermission((int) $user['id'], $permission);
         echo json_encode(['allowed' => true]);
     },
-], (require __DIR__ . '/admin.php')($buildAdmin, $authorize, $authorizeAny, $readJsonBody));
+], (require __DIR__ . '/admin.php')($buildAdmin, $authorize, $authorizeAny, $readJsonBody), require __DIR__ . '/public.php');
 
 return array_merge(
     $routes,

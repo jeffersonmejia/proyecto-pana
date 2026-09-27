@@ -9,7 +9,7 @@ use App\Services\ActivityService;
 use App\Validators\ActivityInputValidator;
 return static function (callable $buildAuth,callable $authorize,callable $authorizeAny,callable $readJsonBody): array {
     $build=static function() use($buildAuth): array {
-        $auth=$buildAuth(); $db=database_connection(); $auth['courses']=new CourseController(new CourseService(new CourseRepository($db),new \App\Repositories\CourseDetailsRepository($db),new CourseInputValidator(),new ActivityService(new ActivityRepository($db),new ActivityInputValidator()))); return $auth;
+        $auth=$buildAuth(); $db=database_connection(); $repo=new CourseRepository($db); $auth['courses']=new CourseController(new CourseService($repo,new \App\Repositories\CourseDetailsRepository($db),new CourseInputValidator(),new ActivityService(new ActivityRepository($db),new ActivityInputValidator()),new \App\Services\CourseCoverService($repo,new \App\Services\NextcloudStorageService()))); return $auth;
     };
     $read=static fn(array $parts): array=>$authorize($parts,'courses.read');
     $manage=static fn(array $parts): array=>$authorizeAny($parts,['courses.manage.all','courses.manage']);
@@ -20,8 +20,9 @@ return static function (callable $buildAuth,callable $authorize,callable $author
         'GET /api/courses/sections'=>static function() use($build,$read,$id): void { $p=$build(); $actor=$read($p); $p['courses']->sections($id(),$actor,(string)($_GET['attendance_date']??'')); },
         'POST /api/courses/tasks'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $actor=$manage($p); $course=filter_var($_GET['course_id']??null,FILTER_VALIDATE_INT); if(!$course||$course<1) throw new \App\Exceptions\ApiException(400,'invalid_id'); $p['courses']->createTask((int)$course,$readJsonBody(),$actor); },
         'GET /api/courses'=>static function() use($build,$read,$id): void { $p=$build(); $actor=$read($p); if(isset($_GET['id'])) $p['courses']->show($id(),$actor); else $p['courses']->index($actor); },
-        'GET /api/courses/available'=>static function() use($build,$read): void { $p=$build(); $p['courses']->available($read($p)); },
-        'POST /api/courses/enroll'=>static function() use($build,$read,$id): void { $p=$build(); $p['courses']->enroll($id(),$read($p)); },
+        'GET /api/courses/available'=>static function() use($build,$authorizeAny): void { $p=$build(); $p['courses']->available($authorizeAny($p,['courses.read','courses.enroll'])); },
+        'POST /api/courses/enroll'=>static function() use($build,$authorizeAny,$id): void { $p=$build(); $p['courses']->enroll($id(),$authorizeAny($p,['courses.read','courses.enroll'])); },
+        'POST /api/courses/cover'=>static function() use($build,$manage,$id): void { $p=$build(); $p['courses']->uploadCover($id(),$_FILES['file']??null,$manage($p)); },
         'POST /api/courses'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $p['courses']->create($readJsonBody(),$manage($p)); },
         'PUT /api/courses'=>static function() use($build,$manage,$readJsonBody): void { $p=$build(); $p['courses']->update($readJsonBody(),$manage($p)); },
         'PATCH /api/courses/status'=>static function() use($build,$manage,$readJsonBody,$id): void { $p=$build(); $p['courses']->setStatus($id(),$readJsonBody(),$manage($p)); },

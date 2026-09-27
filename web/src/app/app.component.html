@@ -1,6 +1,6 @@
 @if (!sessionReady()) {
   <main class="session-loading" role="status">Cargando tu espacio…</main>
-} @else if (auth.user()) {
+} @else if (auth.user() && !publicWelcome()) {
   <div class="workspace">
     <header class="topbar" aria-label="Navegación principal">
       <a class="brand" href="/cursos" aria-label="PANA, ir al inicio" (click)="$event.preventDefault(); open('home')">
@@ -28,8 +28,7 @@
           </button>
           @if (accountMenuOpen()) {
             <section class="account-popover" role="menu" aria-label="Mi cuenta">
-              <strong>{{ displayShortName() }}</strong>
-              <span class="account-role">{{ displayRole() }}</span>
+              <button class="popover-profile" type="button" role="menuitem" (click)="openProfile()"><svg lucideUserRound [size]="16"></svg><span>Perfil ({{ displayRole() }})</span></button>
               <button class="popover-logout" type="button" role="menuitem" (click)="logout()">Cerrar sesión</button>
             </section>
           }

@@ -9,11 +9,13 @@ import { StepDialogComponent } from '../../shared/step-dialog.component';
 import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
-import { LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucidePrinter } from '@lucide/angular';
+import { LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye } from '@lucide/angular';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideChartNoAxesCombined, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucidePrinter], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
@@ -23,12 +25,12 @@ export class CourseDetailComponent implements OnInit {
   readonly course=input.required<Course>(); readonly back=output<void>();
   readonly data=signal<CourseSections|null>(null); readonly loading=signal(true); readonly sectionLoading=signal(false); readonly error=signal('');
   private loadingStartedAt=0;
-  readonly active=signal<CourseTab>('overview');
+  readonly active=signal<CourseTab>('participants');
   readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
   readonly maxAttendanceDate=this.today(); readonly attendanceDate=signal(this.maxAttendanceDate);
   readonly attendancePage=signal(1); readonly attendancePageSize=10;
   readonly participantPage=signal(1); readonly participantPageSize=10;
-  readonly tabs: {id: CourseTab; label: string}[]=[{id:'overview',label:'Resumen'},{id:'participants',label:'Participantes'},
+  readonly tabs: {id: CourseTab; label: string}[]=[{id:'participants',label:'Participantes'},
     {id:'attendance',label:'Asistencia'},
     {id:'activities',label:'Actividades'},{id:'evaluations',label:'Evaluaciones'}];
   readonly visibleTabs = computed(() => this.isBeneficiary() ? this.tabs.filter(tab => tab.id === 'activities' || tab.id === 'attendance') : this.tabs);
@@ -54,7 +56,26 @@ export class CourseDetailComponent implements OnInit {
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
   changeParticipantPage(page:number): void { this.participantPage.set(page); }
   openPerson(id:number): void { void this.router.navigate(['/cursos', this.course().id, 'participantes', id]); }
-  printParticipants(): void { window.print(); }
+  printParticipants(): void {
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const courseName = this.course().name || 'Curso';
+    doc.setProperties({title:`Participantes - ${courseName}`,subject:'Listado de participantes'});
+    const rows = this.participantRows().map((person,index)=>[
+      String(index+1), person.name, this.ageFromBirthDate(person.birth_date), person.ci || '-', person.phone || '-',
+      person.sector || '-', person.self_identification || '-', person.has_disability === 'Si' ? (person.disability_type || 'Si') : 'No',
+      person.education || '-', person.birth_city || '-'
+    ]);
+    autoTable(doc,{startY:34,margin:{top:34,right:12,bottom:16,left:12},head:[['No.','Apellidos y nombres','Edad','Cédula','Teléfono','Sector','Auto-identificación','Discapacidad','Instrucción','Ciudad de nacimiento']],body:rows,
+      theme:'grid',tableWidth:'wrap',styles:{font:'helvetica',fontSize:6.5,overflow:'linebreak',cellPadding:1.8,cellWidth:'wrap',lineColor:[0,0,0],lineWidth:.3},headStyles:{fillColor:[255,255,255],textColor:[0,0,0],fontStyle:'normal',fontSize:6.5,overflow:'linebreak',lineColor:[0,0,0],lineWidth:.3},alternateRowStyles:{fillColor:[248,248,248],textColor:[0,0,0]},columnStyles:{0:{cellWidth:8},1:{cellWidth:30},2:{cellWidth:10},3:{cellWidth:20},4:{cellWidth:20},5:{cellWidth:20},6:{cellWidth:25},7:{cellWidth:20},8:{cellWidth:20},9:{cellWidth:21}},didDrawPage:()=>{
+        doc.setFontSize(15);doc.setTextColor(0,0,0);doc.text('Listado de participantes',12,15);
+        doc.setFontSize(9);doc.setTextColor(0,0,0);doc.text(courseName,12,22);doc.text(`Generado: ${new Intl.DateTimeFormat('es-EC',{dateStyle:'medium'}).format(new Date())}`,12,27);
+        doc.setFontSize(8);doc.setTextColor(0,0,0);doc.text(`Página ${doc.getNumberOfPages()}`,285,202,{align:'right'});
+        doc.setFontSize(8);doc.setTextColor(0,0,0);doc.text(`Pagina ${doc.getNumberOfPages()}`,198,287,{align:'right'});
+      }});
+    doc.save(`${this.fileName(courseName)}_${this.pdfTimestamp()}.pdf`);
+  }
+  private fileName(value:string): string { return value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'curso'; }
+  private pdfTimestamp(): string { const now=new Date(); const pad=(value:number)=>String(value).padStart(2,'0'); return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`; }
   participantAttendanceHours(person: CourseSections['participants'][number]): string { const hours=Number(person.attendance_minutes ?? 0)/60; return Number.isInteger(hours)?String(hours):hours.toFixed(1); }
   ageFromBirthDate(value: string | null): string { if (!value) return '—'; const birth = new Date(`${value}T00:00:00`), today = new Date(); let age = today.getFullYear() - birth.getFullYear(); const beforeBirthday = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()); return String(age - (beforeBirthday ? 1 : 0)); }
   canMarkAttendance(): boolean { return this.auth.hasPermission('attendance.manage'); }
@@ -127,5 +148,6 @@ export class CourseDetailComponent implements OnInit {
   select(tab: CourseTab): void { if(tab===this.active())return;this.active.set(tab);if(!this.data())return;this.sectionLoading.set(true);setTimeout(()=>this.sectionLoading.set(false),500); }
   private coursePeriodDays(): number { const start=new Date(`${this.course().start_date}T00:00:00`); const end=new Date(`${this.course().end_date}T00:00:00`); const days=Math.floor((end.getTime()-start.getTime())/86400000)+1; return Number.isFinite(days)&&days>0?days:0; }
   attendancePercent(): number { const data=this.data(); if(this.isBeneficiary())return Number(data?.attendance_percentage??0); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
+  attendanceDuration(checkIn:string|null,checkOut:string|null): string { if(!checkIn||!checkOut)return '—'; const start=new Date(`1970-01-01T${checkIn}`),end=new Date(`1970-01-01T${checkOut}`); const minutes=Math.max(0,Math.round((end.getTime()-start.getTime())/60000)); return `${Math.floor(minutes/60)}h ${minutes%60}m`; }
   tabCount(tab: CourseTab): number { const data=this.data(); if(!data)return 0; if(tab==='participants')return data.participants.length; if(tab==='attendance')return this.attendancePercent(); if(tab==='activities')return data.activities.length; if(tab==='evaluations')return data.evaluations.length; return 0; }
 }

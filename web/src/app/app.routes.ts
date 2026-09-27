@@ -5,6 +5,7 @@ const coursePermissions=['courses.read'];
 const adminPermissions=['users.read','users.manage','people.read','people.manage','roles.manage'];
 
 export const routes: Routes = [
+  {path:'bienvenido',loadComponent:()=>import('./modules/welcome/welcome.component').then(m=>m.WelcomeComponent)},
   {path:'login',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/login.component').then(m=>m.LoginComponent)},
   {path:'inscripcion',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/registration.component').then(m=>m.RegistrationComponent)},
   {path:'inscripcion/:step',canActivate:[guestGuard],loadComponent:()=>import('./modules/auth/registration.component').then(m=>m.RegistrationComponent)},
@@ -12,6 +13,7 @@ export const routes: Routes = [
   {path:'eventos',canActivate:[authGuard,permissionGuard],data:{permissions:['events.read']},loadComponent:()=>import('./modules/events/events.component').then(m=>m.EventsComponent)},
   {path:'notificaciones',canActivate:[authGuard],loadComponent:()=>import('./modules/notifications/notification-list.component').then(m=>m.NotificationListComponent)},
   {path:'notificaciones/:id',canActivate:[authGuard],loadComponent:()=>import('./modules/notifications/notification-detail.component').then(m=>m.NotificationDetailComponent)},
+  {path:'perfil',canActivate:[authGuard],loadComponent:()=>import('./modules/profile/profile.component').then(m=>m.ProfileComponent)},
   {path:'cursos/:courseId/actividades/:activityId',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/courses/courses-home.component').then(m=>m.CoursesHomeComponent)},
   {path:'cursos/:courseId/participantes/:id',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/people/person-detail.component').then(m=>m.PersonDetailComponent)},
   {path:'cursos/:courseId',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./modules/courses/courses-home.component').then(m=>m.CoursesHomeComponent)},

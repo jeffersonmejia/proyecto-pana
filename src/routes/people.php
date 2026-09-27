@@ -34,7 +34,7 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         'GET /api/people/detail' => static function () use ($build, $authorizeAny, $id): void {
             $components = $build();
             $actor = $authorizeAny($components, ['people.read', 'people.manage']);
-            if (!in_array($actor['roles'][0] ?? '', ['admin', 'coordinator'], true)) {
+            if (!in_array($actor['roles'][0] ?? '', ['admin', 'coordinator', 'tecnico'], true)) {
                 throw new ApiException(403, 'forbidden');
             }
             $components['people']->detail($id(), $actor);

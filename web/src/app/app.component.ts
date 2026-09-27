@@ -17,6 +17,7 @@ export class AppComponent {
   readonly notifications = inject(NotificationsService);
   readonly sessionReady = signal(false);
   readonly activeModule = signal('home');
+  readonly publicWelcome = computed(() => this.activeModule() === 'bienvenido');
   readonly courseDetailOpen = signal(false);
   readonly accountMenuOpen = signal(false);
   readonly notificationOpen = signal(false);
@@ -48,6 +49,7 @@ export class AppComponent {
     this.accountMenuOpen.set(false);if(module!=='home')this.courseDetailOpen.set(false);
     void this.router.navigateByUrl(paths[module]??'/cursos');
   }
+  openProfile(): void { this.accountMenuOpen.set(false); void this.router.navigateByUrl('/perfil'); }
   onRouteActivate(component:unknown): void {
     const closable=component as {close?:{subscribe:(listener:()=>void)=>unknown}};
     closable.close?.subscribe(()=>this.open('home'));

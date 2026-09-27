@@ -1,0 +1,2 @@
+ALTER TABLE courses
+    ADD COLUMN IF NOT EXISTS qr_link VARCHAR(500) NULL AFTER description;

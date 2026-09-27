@@ -6,23 +6,23 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
-import { LucideBan, LucideBookOpen, LucideCalendarDays, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideClock3, LucideFileText } from '@lucide/angular';
+import { LucideBan, LucideBookOpen, LucideCalendarDays, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideClock3, LucideFileText } from '@lucide/angular'; import * as QRCode from 'qrcode';
 import { Course, CourseInput, CourseSections, CoursesApiService } from './courses-api.service';
 import { CourseDetailComponent } from './course-detail.component';
 
 @Component({ selector: 'pana-courses-home', standalone: true, imports: [FormsModule, StepDialogComponent, SkeletonLoaderComponent, CourseDetailComponent, LucideBan, LucideBookOpen, LucideCalendarDays, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash, LucideUsersRound, LucideClock3, LucideFileText], templateUrl: './courses-home.component.html', styleUrl: './courses-home.component.scss' })
 export class CoursesHomeComponent implements OnInit {
-  readonly detailChange=output<boolean>();
+  readonly detailChange=output<boolean>(); readonly window = window;
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router); private routeCourseId:number|null=null;
   private readonly api = inject(CoursesApiService); readonly auth = inject(AuthService);
   readonly greetingName=computed(()=>((this.auth.user()?.first_name??this.auth.user()?.email??'').trim().split(/\s+/)[0]));
   courseIntro(): string { const roles=this.auth.user()?.roles??[]; if (roles.includes('coordinator')) return 'Crea nuevos cursos para que los beneficiarios se inscriban.'; if (roles.includes('tecnico')) return 'Gestiona los cursos creados por tu coordinador.'; return 'Explora cursos de voluntariado en el Patronato Municipal de Santo Domingo.'; }
   readonly courses = signal<(Course & { enrolled?: boolean })[]>([]); readonly tecnicos = signal<{ id: number; name: string }[]>([]);
-  readonly statusFilter=signal<'active'|'inactive'|'all'>('active'); readonly enrollmentFilter=signal<'enrolled'|'not_enrolled'>('enrolled'); readonly togglingCourse=signal<number|null>(null);
+  readonly statusFilter=signal<'active'|'inactive'|'all'>('active'); readonly enrollmentFilter=signal<'enrolled'|'not_enrolled'>('enrolled'); readonly enrollmentLocked=signal(false); readonly togglingCourse=signal<number|null>(null);
   readonly pendingMode=signal(false); readonly pendingTasks=signal<(CourseSections['activities'][number]&{course_id:number;course_name:string})[]>([]);
   readonly coursesLoaded=signal(false);
   readonly pendingLoading=signal(false); readonly pendingError=signal(''); readonly uploadingTask=signal<number|null>(null);
-  readonly visibleCourses=computed(()=>this.isLearner() ? this.courses().filter(course=>this.enrollmentFilter()==='enrolled' ? course.enrolled : !course.enrolled) : this.courses().filter(course=>this.statusFilter()==='all'||course.status===this.statusFilter()));
+  readonly visibleCourses=computed(()=>this.isLearner() ? (this.enrollmentLocked() ? this.courses().filter(course=>course.enrolled) : this.courses().filter(course=>this.enrollmentFilter()==='enrolled' ? course.enrolled : !course.enrolled)) : this.courses().filter(course=>this.statusFilter()==='all'||course.status===this.statusFilter()));
   readonly activeCount=computed(()=>this.courses().filter(course=>course.status==='active').length);
   readonly inactiveCount=computed(()=>this.courses().filter(course=>course.status==='inactive').length);
   readonly allCount=computed(()=>this.courses().length);
@@ -36,19 +36,20 @@ export class CoursesHomeComponent implements OnInit {
     const query = this.tecnicoQuery.trim().toLocaleLowerCase();
     return this.tecnicos().filter(tecnico => !query || tecnico.name.toLocaleLowerCase().includes(query));
   });
-  readonly selected = signal<Course | null>(null); readonly dialog = signal(false); readonly step = signal(0);
-  readonly error = signal(''); readonly saving = signal(false); form: CourseInput = this.blank();
-  private loadingStartedAt = 0;
+  readonly selected = signal<Course | null>(null); readonly dialog = signal(false); readonly step = signal(0); readonly qrPreview = signal(''); readonly coverFile = signal<File | null>(null); readonly coverPreview = signal('assets/login-pana.png'); readonly coverVersion = signal(Date.now());
+  readonly error = signal(''); readonly saving = signal(false); readonly copiedLink = signal(false); readonly draftCourseId = signal<number | null>(null); form: CourseInput = this.blank(); private loadingStartedAt = 0;
   ngOnInit(): void { this.route.paramMap.subscribe(params=>{const value=Number(params.get('courseId'));this.routeCourseId=value>0?value:null;if(this.coursesLoaded())this.selectRouteCourse();});this.load(); }
   canCreate(): boolean { return this.auth.user()?.roles.includes('coordinator') ?? false; }
+  isDetailRoute(): boolean { return this.routeCourseId !== null; }
   isLearner(): boolean { const roles=this.auth.user()?.roles??[]; return roles.includes('student')||roles.includes('beneficiary'); }
   canManageCourseFilters(): boolean { const roles=this.auth.user()?.roles??[]; return roles.includes('admin')||roles.includes('coordinator'); }
   canSeePending(): boolean { const roles = this.auth.user()?.roles ?? []; return !roles.includes('admin') && !roles.includes('coordinator'); }
   canEnroll(): boolean { return this.auth.user()?.roles.includes('beneficiary') ?? false; }
   canManage(_course: Course): boolean { return this.auth.hasPermission('courses.manage.all') || (this.auth.hasPermission('courses.manage') && (this.auth.user()?.roles.includes('coordinator') ?? false)); }
-  load(): void { this.loadingStartedAt=Date.now(); this.api.list().subscribe({next:r=>this.api.available().subscribe({next:a=>this.finishLoad([...r.courses.map(c=>({...c,enrolled:true})),...a.courses.filter(c=>!r.courses.some(x=>x.id===c.id)).map(c=>({...c,enrolled:false}))]),error:()=>this.finishLoad(r.courses.map(c=>({...c,enrolled:true})))}),error:()=>{this.finishLoad([]);this.error.set('No se pudieron cargar los cursos.');this.pendingError.set('No se pudieron cargar las tareas pendientes.');}}); }
-  private finishLoad(courses:(Course & { enrolled?: boolean })[]): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt)); setTimeout(()=>{this.courses.set(courses);this.coursesLoaded.set(true);this.pendingLoading.set(false);this.selectRouteCourse();if(this.pendingMode())this.loadPending();},wait); }
+  load(): void { this.error.set(''); this.loadingStartedAt=Date.now(); if(this.isLearner()){this.enrollmentFilter.set('not_enrolled');this.api.available().subscribe({next:r=>this.finishLoad(r.courses.map(c=>({...c,enrolled:Boolean(c.enrolled)}))),error:()=>{this.finishLoad([]);this.error.set('No se pudieron cargar los cursos disponibles.');}});return;} this.api.list().subscribe({next:r=>this.finishLoad(r.courses.map(c=>({...c,enrolled:true}))),error:()=>{this.finishLoad([]);this.error.set('No se pudieron cargar los cursos.');this.pendingError.set('No se pudieron cargar las tareas pendientes.');}}); }
+  private finishLoad(courses:(Course & { enrolled?: boolean })[]): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt)); setTimeout(()=>{this.courses.set(courses);this.enrollmentLocked.set(this.isLearner() && courses.some(course=>course.enrolled));this.coursesLoaded.set(true);this.pendingLoading.set(false);this.selectRouteCourse();if(this.pendingMode())this.loadPending();},wait); }
   enroll(course: Course & { enrolled?: boolean }): void { this.api.enroll(course.id).subscribe({next:()=>this.load(),error:()=>this.error.set('No se pudo completar la inscripción. El curso puede estar lleno o inactivo.')}); }
+  enrollOnce(course: Course & { enrolled?: boolean }): void { if(this.enrollmentLocked())return; this.api.enroll(course.id).subscribe({next:()=>{this.courses.update(items=>items.map(item=>({...item,enrolled:item.id===course.id})));this.enrollmentLocked.set(true);},error:(error)=>{const code=error?.error?.error??'';this.error.set(code==='already_enrolled'?'Ya tienes una inscripcion activa en otro curso.':'No se pudo completar la inscripcion. El curso puede estar lleno o inactivo.');}}); }
   togglePending(): void { this.pendingMode.update(value=>!value); if(this.pendingMode()){if(this.coursesLoaded())this.loadPending();else this.pendingLoading.set(true);} }
   loadPending(): void {
     if(!this.coursesLoaded()){this.pendingLoading.set(true);return;}
@@ -83,11 +84,11 @@ export class CoursesHomeComponent implements OnInit {
     this.form = { ...this.blank(), start_date: today, end_date: this.thirtyDaysLater(today) };
     this.openDialog();
   }
-  edit(course: Course): void { this.selected.set(course); this.form = { name: course.name, description: course.description ?? '', start_date: course.start_date, end_date: course.end_date, status: course.status, tecnico_user_ids: [...course.tecnico_user_ids], max_participants: course.max_participants, participant_ids: [...course.participant_ids] }; this.openDialog(); }
-  closeDialog(): void { this.dialog.set(false); this.selected.set(null); }
-  openDialog(): void { this.step.set(0); this.tecnicoQuery = ''; this.dialog.set(true);
+  edit(course: Course): void { this.selected.set(course); this.form = { name: course.name, description: course.description ?? '', qr_link: course.qr_link ?? '', start_date: course.start_date, end_date: course.end_date, status: course.status, tecnico_user_ids: [...course.tecnico_user_ids], max_participants: course.max_participants, participant_ids: [...course.participant_ids] }; this.openDialog(); }
+  closeDialog(): void { this.dialog.set(false); this.error.set(''); this.selected.set(null); this.coverFile.set(null); this.draftCourseId.set(null); }
+  openDialog(): void { this.step.set(0); this.tecnicoQuery = ''; this.qrPreview.set(''); this.coverFile.set(null); this.draftCourseId.set(null); this.error.set(''); this.coverPreview.set(this.selected()?.cover_available ? this.courseCoverUrl(this.selected()!) : 'assets/login-pana.png'); this.dialog.set(true); if(!this.selected())void this.loadDefaultCover();
     this.api.tecnicos().subscribe({ next: r => this.tecnicos.set(r.tecnicos), error: () => this.error.set('No se pudieron cargar los técnicos.') });
-    this.api.participants().subscribe({ next: r => this.participants.set(r.participants), error: () => this.error.set('No se pudieron cargar los participantes.') }); }
+  }
   studentResults(): { id: number; name: string; profile: string }[] {
     const query=this.participantQuery.trim().toLocaleLowerCase();
     if (query.length < 2) return [];
@@ -107,7 +108,14 @@ export class CoursesHomeComponent implements OnInit {
     const ids = this.form.tecnico_user_ids;
     this.form.tecnico_user_ids = ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id];
   }
-  view(course: Course & { enrolled?: boolean }): void { if(this.canEnroll()&&!course.enrolled)return; this.selected.set(course); this.detailChange.emit(true); void this.router.navigate(['/cursos',course.id]); }
+  onCover(event: Event): void { const file=(event.target as HTMLInputElement).files?.[0] ?? null; this.coverFile.set(file); if(file)this.coverPreview.set(URL.createObjectURL(file)); }
+  private async loadDefaultCover(): Promise<void> { try { const response=await fetch('assets/login-pana.png'); const blob=await response.blob(); this.coverFile.set(new File([blob],'login-pana.png',{type:blob.type||'image/png'})); } catch { this.error.set('No se pudo cargar la portada predeterminada.'); } }
+  hasCover(): boolean { return !!this.coverFile() || !!this.selected()?.cover_available; }
+  private refreshQrCode(id: number): void { const link=`${window.location.origin}/bienvenido?id=${id}`; this.form.qr_link=link; this.qrPreview.set(''); void QRCode.toDataURL(link,{width:240,margin:2}).then(data=>{if(this.form.qr_link===link)this.qrPreview.set(data);}); }
+  courseCoverUrl(course: Course): string { return course.cover_available ? `${this.api.publicCoverUrl(course.id)}&v=${this.coverVersion()}` : 'assets/login-pana.png'; }
+  onCoverError(event: Event): void { const image = event.target as HTMLImageElement; if (!image.src.endsWith('/assets/login-pana.png')) image.src = 'assets/login-pana.png'; }
+  copyLink(): void { if(!this.form.qr_link)return; void navigator.clipboard.writeText(this.form.qr_link).then(()=>{this.copiedLink.set(true);setTimeout(()=>this.copiedLink.set(false),1800);}); }
+  view(course: Course & { enrolled?: boolean }): void { if(this.isLearner()&&!course.enrolled)return; this.selected.set(course); this.detailChange.emit(true); void this.router.navigate(['/cursos',course.id]); }
   formatDateRange(start: string, end: string): string {
     const parse = (value: string): { year: number; month: number; day: number } | null => {
       const [year, month, day] = value.split('-').map(Number);
@@ -129,22 +137,14 @@ export class CoursesHomeComponent implements OnInit {
   toggle(course: Course): void { if (course.status === 'active') this.api.deactivate(course.id).subscribe({ next: () => this.load(), error: () => this.error.set('No se pudo desactivar el curso.') }); }
   remove(course: Course): void { if (globalThis.confirm(`¿Eliminar el curso "${course.name}"? Se marcará como inactivo.`)) this.toggle(course); }
   canContinue(): boolean { return !!this.form.name.trim() && this.form.name.length <= 150 && !!this.form.description.trim() && !!this.form.max_participants; }
-  private validCreationDates(): boolean {
-    if (this.selected()) return true;
-    const today = this.localDate();
-    return this.form.start_date >= today && this.form.end_date >= this.form.start_date;
-  }
+  private validCreationDates(): boolean { return !!this.selected() || (this.form.start_date >= this.localDate() && this.form.end_date >= this.form.start_date); }
   valid(): boolean { return this.canContinue() && !!this.form.start_date && !!this.form.end_date && this.form.end_date >= this.form.start_date
-    && this.validCreationDates() && this.form.tecnico_user_ids.length > 0 && this.form.participant_ids.length <= (this.form.max_participants ?? 0); }
-  canAdvance(): boolean {
-    if (this.step() === 0) return this.canContinue();
-    return !!this.form.start_date && !!this.form.end_date && this.form.end_date >= this.form.start_date && this.validCreationDates();
-  }
-  continue(): void { if (this.canAdvance()) this.step.update(v => Math.min(v + 1, 2)); }
-  previous(): void { this.step.update(v => Math.max(v - 1, 0)); }
-  save(): void { if (!this.valid() || this.saving()) return; this.saving.set(true); const current = this.selected();
-    const request = current ? this.api.update(current.id, this.form) : this.api.create(this.form);
-    request.subscribe({ next: () => { this.saving.set(false); this.dialog.set(false); this.selected.set(null); this.load(); }, error: () => { this.saving.set(false); this.error.set('No se pudo guardar el curso. Revisa los campos y las fechas.'); } }); }
-  private blank(): CourseInput { return { name: '', description: '', start_date: '', end_date: '', status: 'active', tecnico_user_ids: [], max_participants: null, participant_ids: [] }; }
+    && this.validCreationDates() && this.form.tecnico_user_ids.length > 0 && this.form.participant_ids.length <= (this.form.max_participants ?? 0) && /^https?:\/\/[^\s]+$/i.test(this.form.qr_link.trim()) && this.form.qr_link.length <= 500; }
+  canAdvance(): boolean { const step=this.step(); return step===0 ? this.canContinue() && !!this.form.start_date && !!this.form.end_date && this.form.end_date>=this.form.start_date && this.validCreationDates() : step===1 ? this.form.tecnico_user_ids.length>0 : this.hasCover(); }
+  continue(): void { if(!this.canAdvance())return; if(this.step()===1){this.prepareQr();return;} this.step.update(v=>v+1); }
+  private prepareQr(): void { this.saving.set(true); const stored=this.selected()?.id??this.draftCourseId(); const ready=(id:number)=>{this.draftCourseId.set(id);this.refreshQrCode(id);this.saving.set(false);this.step.set(2);}; if(stored)ready(stored);else this.api.create({...this.form,qr_link:'https://pana.local/pending'}).subscribe({next:result=>ready(result.id),error:()=>{this.saving.set(false);this.error.set('No se pudo crear el curso.');}}); }
+  previous(): void { this.step.update(v => Math.max(v - 1, 0)); } save(): void { const id=this.selected()?.id??this.draftCourseId(); if (!id || !this.valid() || this.saving()) return; this.saving.set(true);
+    const complete=()=>{this.coverVersion.update(value=>value+1);this.saving.set(false);this.dialog.set(false);this.selected.set(null);this.load();}; const upload=()=>{const file=this.coverFile(); if(file)this.api.uploadCover(id,file).subscribe({next:complete,error:()=>{this.saving.set(false);this.error.set('No se pudo subir la portada.');}});else complete();}; this.api.update(id,this.form).subscribe({next:upload,error:(error)=>{this.saving.set(false);const code=error?.error?.error??error?.error?.message??'';const messages:Record<string,string>={invalid_participant:'Uno de los participantes asignados ya no esta disponible.',invalid_tecnicos:'Revisa los tecnicos asignados.',invalid_course:'Revisa los datos del curso.'};this.error.set(messages[code]??'No se pudo guardar el curso. Revisa los datos ingresados.');}}); }
+  private blank(): CourseInput { return { name: '', description: '', qr_link: '', start_date: '', end_date: '', status: 'active', tecnico_user_ids: [], max_participants: null, participant_ids: [] }; }
   private selectRouteCourse(): void { if(this.routeCourseId===null){this.selected.set(null);this.detailChange.emit(false);return;} const course=this.courses().find(item=>item.id===this.routeCourseId)??null;this.selected.set(course);this.detailChange.emit(!!course);if(!course){this.error.set('No se encontró el curso solicitado.');void this.router.navigateByUrl('/cursos',{replaceUrl:true});} }
 }

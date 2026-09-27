@@ -18,4 +18,5 @@ final class CourseController
     public function update(array $data,array $actor): void { $this->courses->update($data,$actor); echo json_encode(['status'=>'updated']); }
     public function deactivate(int $id,array $actor): void { $this->courses->deactivate($id,$actor); echo json_encode(['status'=>'inactive']); }
     public function setStatus(int $id,array $data,array $actor): void { $this->courses->setStatus($id,(string)($data['status']??''),$actor); echo json_encode(['status'=>'updated']); }
+    public function uploadCover(int $id,mixed $file,array $actor): void { $this->courses->uploadCover($id,$file,$actor); http_response_code(201); echo json_encode(['status'=>'uploaded']); }
 }

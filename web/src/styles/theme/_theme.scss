@@ -23,15 +23,25 @@ html {
 :root {
   --pana-ink: #202124;
   --pana-muted: #5f6f84;
+  --pana-surface: #fff;
+  --pana-page: #f8fafd;
   --pana-blue: #1a73e8;
   --pana-blue-dark: #174ea6;
   --pana-blue-soft: #e8f0fe;
-  --pana-purple: #6a1b9a;
-  --pana-purple-soft: #f1e8ff;
-  --pana-purple-softer: #f8f2ff;
-  --pana-purple-track: #d9c2f2;
+  --pana-purple: #188038;
+  --pana-purple-soft: #e6f4ea;
+  --pana-purple-softer: #f3fbf5;
+  --pana-purple-track: #c6e6cd;
   --pana-pink: #ad1457;
   --pana-pink-soft: #fff4f7;
+  --pana-date: var(--pana-purple);
+  --pana-date-soft: var(--pana-purple-softer);
+  --pana-danger: #b3261e;
+  --pana-danger-soft: #fce8e6;
+  --pana-danger-hover: #f7d4d0;
+  --pana-remove: #5f6f84;
+  --pana-remove-soft: #f1f3f4;
+  --pana-remove-hover: #e4e7eb;
   --pana-radius-sm: 8px;
   --pana-radius-md: 12px;
   --pana-radius-lg: 18px;
@@ -44,6 +54,10 @@ html {
   --pana-peach: #fcefe9;
   --pana-outline: #d7e2f2;
   --pana-navbar-outline: #e4e7ed;
+  --pana-empty-outline: var(--pana-purple-track);
+  --pana-empty-icon-bg: var(--pana-purple-soft);
+  --pana-empty-icon: var(--pana-purple);
+  --pana-empty-text: var(--pana-ink);
 }
 
 * { box-sizing: border-box; }

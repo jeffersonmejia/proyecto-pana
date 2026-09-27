@@ -8,7 +8,7 @@ use App\Validators\CourseInputValidator;
 use App\Services\ActivityService;
 final class CourseService
 {
-    public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities) {}
+    public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers) {}
     public function all(array $actor): array { return $this->courses->all($actor); }
     public function available(array $actor): array { return $this->courses->available($actor); }
     public function enroll(int $id,array $actor): void
@@ -16,7 +16,7 @@ final class CourseService
         if (!in_array($actor['roles'][0] ?? '', ['beneficiary','student'], true)) throw new ApiException(403,'permission_denied');
         try { $this->courses->enroll($id,(int)$actor['id']); }
         catch(\RuntimeException $error) {
-            $map=['course_unavailable'=>[404,'course_not_available'],'participant_not_found'=>[422,'participant_not_found'],'course_full'=>[409,'course_full']];
+            $map=['course_unavailable'=>[404,'course_not_available'],'participant_not_found'=>[422,'participant_not_found'],'already_enrolled'=>[409,'already_enrolled'],'course_full'=>[409,'course_full']];
             [$status,$code]=$map[$error->getMessage()]??[500,'course_enrollment_failed']; throw new ApiException($status,$code);
         }
     }
@@ -30,7 +30,7 @@ final class CourseService
             $people = $details['participants']; $days = $this->courseDays($course['start_date'], $course['end_date']);
             $expected = $days * count($people); $attended = array_sum(array_map(static fn (array $person): int => (int) $person['attendance_count'], $people));
             $details['attendance_percentage'] = $expected > 0 ? min(100, (int) round($attended * 100 / $expected)) : 0;
-            $details['participants'] = []; $details['attendance'] = [];
+            $details['participants'] = [];
             $details['activity_logs'] = []; $details['evaluations'] = [];
             $details['documents'] = array_values(array_filter($details['documents'], static fn (array $file): bool => $file['entity_type'] === 'activity'));
         }
@@ -62,7 +62,10 @@ final class CourseService
     }
     public function update(array $input,array $actor): void
     {
-        $id=$this->validator->id($input['id']??null); $this->one($id,$actor); $data=$this->validated($input); $this->assertAssignments($data); $this->courses->update($id,$data);
+        $id=$this->validator->id($input['id']??null); $current=$this->one($id,$actor); $data=$this->validated($input);
+        $currentParticipants=array_map('intval',$current['participant_ids']??[]);
+        $submittedParticipants=array_map('intval',$data['participant_ids']); sort($currentParticipants); sort($submittedParticipants);
+        $this->assertAssignments($data,$currentParticipants===$submittedParticipants); $this->courses->update($id,$data);
     }
     public function deactivate(int $id,array $actor): void { $this->one($id,$actor); $this->courses->deactivate($id); }
     public function setStatus(int $id,string $status,array $actor): void
@@ -71,10 +74,11 @@ final class CourseService
         if(!in_array($status,['active','inactive'],true)) throw new ApiException(422,'invalid_course_status');
         $this->courses->setStatus($id,$status);
     }
+    public function uploadCover(int $id,mixed $file,array $actor): void { $this->covers->upload($id,$file,$actor); }
     private function validated(array $input): array { return $this->validator->course($input); }
-    private function assertAssignments(array $data): void
+    private function assertAssignments(array $data,bool $keepExistingParticipants=false): void
     {
     foreach ($data['tecnico_user_ids'] as $tecnicoId) if (!$this->courses->tecnicoExists($tecnicoId)) throw new ApiException(422,'invalid_tecnicos');
-        foreach($data['participant_ids'] as $id) if(!$this->courses->participantExists($id)) throw new ApiException(422,'invalid_participant');
+        if (!$keepExistingParticipants) foreach($data['participant_ids'] as $id) if(!$this->courses->participantExists($id)) throw new ApiException(422,'invalid_participant');
     }
 }

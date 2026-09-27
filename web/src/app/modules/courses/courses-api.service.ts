@@ -3,25 +3,27 @@ import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
 export interface Course {
-  id: number; name: string; description: string | null; start_date: string; end_date: string;
-  status: 'active' | 'inactive'; max_participants: number | null; tecnico_user_ids: number[];
+  id: number; name: string; description: string | null; qr_link: string | null; start_date: string; end_date: string;
+  status: 'active' | 'inactive'; cover_available: boolean; enrolled?: boolean; max_participants: number | null; tecnico_user_ids: number[];
   tecnico_name: string; tutor_name?: string; participant_count: number; participant_names: string | null;
   participant_ids: number[];
 }
 export interface CourseInput {
-  name: string; description: string; start_date: string; end_date: string;
+  name: string; description: string; qr_link: string; start_date: string; end_date: string;
   status: 'active' | 'inactive'; tecnico_user_ids: number[]; max_participants: number | null;
   participant_ids: number[];
 }
 export interface CourseSections {
   course: Course;
   attendance_percentage?: number;
-  participants: { id: number; ci: string; phone: string | null; has_disability: string | null; disability_type: string | null; education: string | null; birth_city: string | null; first_name: string; last_name: string; birth_date: string | null; name: string; profile: string; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
+  attendance: { id: number; attendance_date: string; check_in: string | null; check_out: string | null }[];
+  participants: { id: number; ci: string; phone: string | null; sector: string | null; self_identification: string | null; has_disability: string | null; disability_type: string | null; education: string | null; birth_city: string | null; first_name: string; last_name: string; birth_date: string | null; name: string; profile: string; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
   activities: { id: number; title: string; description: string | null; start_at: string; end_at: string; status: string; responsible: string; participants: string | null }[];
   activity_logs: { id: number; activity_title: string; event_type: string; details: string; created_at: string; participant_id: number | null; participant_name: string | null; actor_email: string | null }[];
   evaluations: { id: number; evaluation_type: string; evaluated_on: string; satisfaction_score: number | null; observations: string | null; first_name: string; last_name: string; average_score: number | null }[];
   documents: { id: number; entity_type: string; entity_id: number; original_name: string; mime_type: string; file_size: number; created_at: string; uploader: string | null }[];
 }
+export interface PublicCourse { id: number; name: string; description: string | null; cover_available: boolean; }
 @Injectable({ providedIn: 'root' })
 export class CoursesApiService {
   private readonly http = inject(HttpClient);
@@ -29,6 +31,9 @@ export class CoursesApiService {
   list() { return this.http.get<{ courses: Course[] }>(this.url); }
   available() { return this.http.get<{ courses: Course[] }>(`${this.url}/available`); }
   enroll(id:number) { return this.http.post(`${this.url}/enroll?id=${id}`,{}); }
+  uploadCover(id: number, file: File) { const form = new FormData(); form.append('file', file); return this.http.post(`${this.url}/cover?id=${id}`, form); }
+  publicWelcome(id: number) { return this.http.get<{ course: PublicCourse }>(`${environment.apiBaseUrl}/public/courses/welcome`, { params: { id } }); }
+  publicCoverUrl(id: number) { return `${environment.apiBaseUrl}/public/courses/cover?id=${id}`; }
   sections(id: number,attendanceDate:string) { return this.http.get<CourseSections>(`${this.url}/sections`, { params: { id,attendance_date:attendanceDate } }); }
   createTask(courseId: number,input: { title: string; description: string; responsible: string; start_at: string; end_at: string; status: string; participant_ids: number[] }) {
     return this.http.post<{ id: number }>(`${this.url}/tasks`,input,{params:{course_id:courseId}});

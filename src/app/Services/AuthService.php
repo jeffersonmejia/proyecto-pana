@@ -81,6 +81,19 @@ final class AuthService
         }
     }
 
+    public function profile(int $userId): array
+    {
+        return $this->users->profile($userId) ?? throw new ApiException(404, 'profile_not_found');
+    }
+
+    public function updateProfile(int $userId, array $input, string $role): array
+    {
+        $profile = $this->profileInput($input);
+        try { $this->users->updateProfile($userId, $profile, $role === 'beneficiary'); }
+        catch (\PDOException $error) { if ($error->getCode() === '23000') throw new ApiException(409, 'email_already_exists'); throw $error; }
+        return $this->profile($userId);
+    }
+
     public function activeUser(int $userId): ?array
     {
         $user = $this->users->findActiveById($userId);
@@ -126,5 +139,17 @@ final class AuthService
             hash_hmac('sha256', $email, $secret),
             hash_hmac('sha256', $ipAddress !== '' ? $ipAddress : 'unknown', $secret),
         ];
+    }
+
+    private function profileInput(array $input): array
+    {
+        $text = static function (string $key, int $max) use ($input): string { $value=$input[$key]??''; if(!is_string($value)||trim($value)===''||strlen($value)>$max) throw new ApiException(422,'invalid_profile'); return trim($value); };
+        $optional = static function (string $key, int $max) use ($input): ?string { $value=$input[$key]??''; if(!is_string($value)||strlen($value)>$max) throw new ApiException(422,'invalid_profile'); return trim($value)===''?null:trim($value); };
+        $birth=$optional('birth_date',10); if($birth!==null&&!preg_match('/^\d{4}-\d{2}-\d{2}$/',$birth)) throw new ApiException(422,'invalid_profile');
+        return ['first_name'=>$text('first_name',120),'last_name'=>$text('last_name',120),'phone'=>$optional('phone',30),
+            'email'=>strtolower($text('email',254)),'birth_date'=>$birth,'address'=>$optional('address',255),'observations'=>$optional('observations',5000),
+            'birth_province'=>$optional('birth_province',120),'birth_city'=>$optional('birth_city',120),'gender'=>$optional('gender',40),
+            'self_identification'=>$optional('self_identification',80),'has_disability'=>$optional('has_disability',10),
+            'disability_type'=>$optional('disability_type',100),'sector'=>$optional('sector',150),'education'=>$optional('education',150)];
     }
 }

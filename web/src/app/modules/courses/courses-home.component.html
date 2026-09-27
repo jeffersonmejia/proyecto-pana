@@ -1,74 +1,15 @@
 <section class="courses-home" [class.detail-mode]="selected() && !dialog()" aria-label="Cursos">
   @if (selected() && !dialog()) { <pana-course-detail [course]="selected()!" (back)="closeView()" /> }
-  @else {
-  <header class="heading"><div><h2 id="courses-title">Hola, {{ greetingName() }}</h2><p>{{ courseIntro() }}</p></div>
-    <div class="heading-actions">@if (!pendingMode()) { @if (canManageCourseFilters()) { <div class="course-filter" role="group" aria-label="Filtrar cursos por estado">
-      <button type="button" [class.selected]="statusFilter()==='active'" [attr.aria-pressed]="statusFilter()==='active'" (click)="statusFilter.set('active')"><svg lucideCheck [size]="14"></svg>Activos ({{ activeCount() }})</button>
-      <button type="button" [class.selected]="statusFilter()==='inactive'" [attr.aria-pressed]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')"><svg lucideBan [size]="14"></svg>Inactivos ({{ inactiveCount() }})</button>
-      <button type="button" [class.selected]="statusFilter()==='all'" [attr.aria-pressed]="statusFilter()==='all'" (click)="statusFilter.set('all')"><svg lucideList [size]="14"></svg>Todos ({{ allCount() }})</button>
-    </div> } @else { <div class="course-filter enrollment-filter" role="group" aria-label="Filtrar cursos por inscripción">
-      <button type="button" [class.selected]="enrollmentFilter()==='enrolled'" [attr.aria-pressed]="enrollmentFilter()==='enrolled'" (click)="enrollmentFilter.set('enrolled')"><svg lucideCheck [size]="14"></svg>Inscritos ({{ enrolledCount() }})</button>
-      <button type="button" [class.selected]="enrollmentFilter()==='not_enrolled'" [attr.aria-pressed]="enrollmentFilter()==='not_enrolled'" (click)="enrollmentFilter.set('not_enrolled')"><svg lucideBan [size]="14"></svg>No inscritos ({{ notEnrolledCount() }})</button>
-    </div> } }
-      @if (canCreate()) { <button class="primary" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg> Crear curso</button> }
-      @if (canSeePending()) { <button class="pending-toggle" type="button" [class.active]="pendingMode()" (click)="togglePending()"><svg lucideClock3 [size]="17"></svg>{{ pendingMode()?'Ver cursos':'Ver pendientes' }}</button> }</div>
-  </header>
-  @if (pendingMode()) {
-    @if (pendingError()) { <p class="error" role="alert">{{ pendingError() }}</p> }
-    @if (pendingLoading()) { <p class="empty">Cargando tareas pendientes…</p> }
-    @else if (pendingTasks().length) { <section class="pending-timeline" aria-label="Tareas pendientes"><ol>
-      @for (task of pendingTasks(); track task.id) { <li><article class="pending-task"><span class="timeline-marker"><svg lucideFileText [size]="18"></svg></span>
-        <div class="pending-task-main"><span class="pending-course">{{ task.course_name }}</span><h3>{{ task.title }}</h3><p>{{ task.description || 'Sin descripción.' }}</p><div class="pending-meta"><span><svg lucideClock3 [size]="15"></svg>Entrega {{ remaining(task.end_at) }}</span><time>{{ task.end_at }}</time></div></div>
-        @if (canSubmitEvidence()) { <label class="pending-submit"><svg lucideFileText [size]="17"></svg>{{ uploadingTask()===task.id?'Subiendo…':'Agregar evidencia' }}<input type="file" accept="image/jpeg,image/png,video/mp4,video/webm,application/pdf" aria-label="Agregar evidencia" (change)="submitPending(task,$event)" [disabled]="uploadingTask()!==null"></label> }
-      </article></li> }
-    </ol></section> }
-    @else { <div class="empty"><span class="course-icon"><svg lucideClock3 [size]="23"></svg></span><p>No tienes tareas pendientes.</p></div> }
-  } @else {
-  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-  @if (!coursesLoaded()) {
-    <div class="grid skeleton-grid" aria-label="Cargando cursos" aria-busy="true">
-      @for (item of [1, 2, 3, 4]; track item) { <article class="course-card course-skeleton"><div class="card-top"><pana-skeleton variant="circle"></pana-skeleton><pana-skeleton variant="text" width="62px"></pana-skeleton></div><pana-skeleton variant="title" width="78%"></pana-skeleton><div class="details"><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton><pana-skeleton variant="block"></pana-skeleton></div></article> }
-    </div>
-  } @else if (visibleCourses().length) {
-    <div class="grid">@for (course of visibleCourses(); track course.id) {
-      <article class="course-card" role="link" tabindex="0" [attr.aria-label]="'Abrir curso ' + course.name" (click)="view(course)" (keydown.enter)="view(course)">
-        <div class="course-heading"><h3>{{ course.name }}</h3><div class="card-controls">
-          @if (canEnroll() && !course.enrolled) { <button class="primary" type="button" (click)="$event.stopPropagation(); enroll(course)">Inscribirme</button> }
-          @if (canManage(course)) { <button class="course-toggle" type="button" role="switch" [attr.aria-checked]="course.status==='active'" [attr.aria-label]="course.status==='active'?'Desactivar curso':'Activar curso'" [disabled]="togglingCourse()!==null" (click)="$event.stopPropagation(); toggleStatus(course)" (keydown.enter)="$event.stopPropagation()">
-            <span class="toggle-track" [class.on]="course.status==='active'"><span></span></span><span class="toggle-label">{{ course.status==='active'?'Activo':'Inactivo' }}</span></button> }
-          @else { <span class="status" [class.inactive]="course.status === 'inactive'">{{ course.status === 'active' ? 'Activo' : 'Inactivo' }}</span> }
-          @if (canManage(course)) { <button class="icon-action" type="button" aria-label="Editar curso" title="Editar" (click)="$event.stopPropagation(); edit(course)" (keydown.enter)="$event.stopPropagation()"><svg lucidePencil [size]="17"></svg></button>
-            @if (course.status === 'active') { <button class="icon-action danger" type="button" aria-label="Eliminar curso" title="Eliminar" (click)="$event.stopPropagation(); remove(course)" (keydown.enter)="$event.stopPropagation()"><svg lucideTrash [size]="17"></svg></button> } }
-        </div></div>
-        <div class="details"><span class="date-range"><strong><svg lucideCalendarDays [size]="14"></svg>Fechas</strong><span>{{ formatDateRange(course.start_date, course.end_date) }}</span></span>
-          <span class="participants-metric"><strong><svg lucideUsersRound [size]="14"></svg>Participantes</strong><span class="participant-progress" role="progressbar" [attr.aria-valuenow]="course.participant_count" [attr.aria-valuemin]="0" [attr.aria-valuemax]="course.max_participants || 0"><span [style.width.%]="participantProgress(course)"></span></span><span class="participant-count">{{ course.participant_count }}{{ course.max_participants ? ' / ' + course.max_participants : '' }}</span></span></div>
-      </article>
-    }</div>
-  } @else if (courses().length) { <div class="empty"><span class="course-icon"><svg lucideBookOpen [size]="23"></svg></span><p>No hay cursos para este filtro.</p></div>
-  } @else { <div class="empty"><span class="course-icon"><svg lucideBookOpen [size]="23"></svg></span><p>No hay cursos disponibles.</p>
-    @if (canCreate()) { <span>Crea el primer curso para comenzar.</span> }</div> }
+  @else { <header class="heading"><div><h2>Hola, {{ greetingName() }}</h2><p>{{ courseIntro() }}</p></div><div class="heading-actions">@if (canManageCourseFilters()) { <div class="course-filter" role="group" aria-label="Filtrar cursos por estado"><button type="button" [class.selected]="statusFilter()==='active'" (click)="statusFilter.set('active')"><svg lucideCheck [size]="14"></svg>Activos ({{ activeCount() }})</button><button type="button" [class.selected]="statusFilter()==='inactive'" (click)="statusFilter.set('inactive')"><svg lucideBan [size]="14"></svg>Inactivos ({{ inactiveCount() }})</button><button type="button" [class.selected]="statusFilter()==='all'" (click)="statusFilter.set('all')"><svg lucideList [size]="14"></svg>Todos ({{ allCount() }})</button></div> } @if (canCreate()) { <button class="primary" type="button" (click)="create()"><svg lucidePlus [size]="18"></svg>Crear curso</button> }</div></header>
+    @if (error() && !dialog()) { <p class="error" role="alert">{{ error() }}</p> }
+    @if (!coursesLoaded()) { <div class="grid skeleton-grid">@for (item of [1,2,3,4]; track item) { <article class="course-card course-skeleton"><pana-skeleton variant="title"></pana-skeleton></article> }</div> }
+    @else if (visibleCourses().length) { <div class="grid">@for (course of visibleCourses(); track course.id) { <article class="course-card" role="link" tabindex="0" (click)="view(course)" (keydown.enter)="view(course)"><img class="course-cover" [src]="courseCoverUrl(course)" alt="Portada del curso" loading="lazy" decoding="async" (error)="onCoverError($event)"><div class="course-heading"><h3>{{ course.name }}</h3><div class="card-controls">@if (canEnroll() && !course.enrolled) { <button class="primary enroll-button" type="button" (click)="$event.stopPropagation(); enrollOnce(course)" [disabled]="enrollmentLocked() || course.enrolled" [attr.aria-label]="course.enrolled ? 'Inscrito' : enrollmentLocked() ? 'No disponible' : 'Inscribirme'"><svg lucidePlus [size]="15"></svg>{{ course.enrolled ? 'Inscrito' : enrollmentLocked() ? 'No disponible' : 'Inscribirme' }}</button> } @if (canManage(course)) { <button class="course-toggle" type="button" role="switch" [attr.aria-checked]="course.status==='active'" [attr.aria-label]="course.status==='active'?'Desactivar curso':'Activar curso'" (click)="$event.stopPropagation(); toggleStatus(course)"><span class="toggle-track" [class.on]="course.status==='active'"><span></span></span><span class="toggle-label">{{ course.status==='active'?'Activo':'Inactivo' }}</span></button><button class="icon-action" type="button" aria-label="Editar curso" (click)="$event.stopPropagation(); edit(course)"><svg lucidePencil [size]="17"></svg></button>@if (course.status === 'active') { <button class="icon-action danger" type="button" aria-label="Eliminar curso" (click)="$event.stopPropagation(); remove(course)"><svg lucideTrash [size]="17"></svg></button> } } @else if (!isLearner()) { <span class="status" [class.inactive]="course.status === 'inactive'">{{ course.status === 'active' ? 'Activo' : 'Inactivo' }}</span> }</div></div><div class="details"><span class="date-range"><strong><svg lucideCalendarDays [size]="14"></svg>Fechas</strong><span>{{ formatDateRange(course.start_date, course.end_date) }}</span></span><span class="participants-metric"><strong><svg lucideUsersRound [size]="14"></svg>Participantes</strong><span class="participant-count">{{ course.participant_count }} / {{ course.max_participants }}</span><span class="participant-progress" role="progressbar" [attr.aria-valuenow]="course.participant_count" aria-valuemin="0" [attr.aria-valuemax]="course.max_participants ?? 0"><span [style.width.%]="participantProgress(course)"></span></span></span></div></article> }</div> }
+    @else { <div class="empty"><p>No hay cursos disponibles.</p></div> }
   }
-  }
-  @if (dialog()) { <pana-step-dialog [title]="selected() ? 'Editar curso' : 'Crear curso'" [steps]="['Información del curso','Fechas','Selección de técnicos']"
-    [step]="step()" [saving]="saving()" [canContinue]="canAdvance()" [canSave]="valid()" (close)="closeDialog()"
-    (previous)="previous()" (next)="continue()" (save)="save()">
-    <div class="form-step" [hidden]="step() !== 0"><label>Nombre<input name="name" [(ngModel)]="form.name" required maxlength="150"></label>
-      <label>Descripción<textarea name="description" [(ngModel)]="form.description" required maxlength="1000"></textarea></label>
-      <label>Cupo máximo<select name="capacity" [(ngModel)]="form.max_participants" required><option [ngValue]="null" disabled>Selecciona un límite</option>@for (capacity of capacities; track capacity) { <option [ngValue]="capacity">{{ capacity }}</option> }</select></label></div>
-    <div class="form-step" [hidden]="step() !== 1"><div class="dates"><label>Fecha de inicio<input name="start" type="date" [(ngModel)]="form.start_date" [attr.min]="creationDateMin()" required></label>
-      <label>Fecha de finalización<input name="end" type="date" [(ngModel)]="form.end_date" [attr.min]="form.start_date || creationDateMin()" required></label></div>
-    </div>
-    <div class="form-step" [hidden]="step() !== 2">
-      <section class="tecnico-picker" aria-label="Selección de técnicos">
-        <label class="tecnico-search" for="tecnico-search">Buscar técnicos<input id="tecnico-search" name="tecnico-search" [(ngModel)]="tecnicoQuery" autocomplete="off" placeholder="Escribe un nombre"></label>
-        <p class="selection-count">{{ form.tecnico_user_ids.length }} técnicos seleccionados</p>
-        <div class="tecnico-table-scroll" role="region" aria-label="Técnicos disponibles" tabindex="0">
-          <table class="tecnico-table"><thead><tr><th scope="col">Seleccionar</th><th scope="col">Técnico</th></tr></thead>
-            <tbody>@for (tecnico of filteredTecnicos(); track tecnico.id) { <tr><td><input type="checkbox" [name]="'tecnico-' + tecnico.id" [checked]="form.tecnico_user_ids.includes(tecnico.id)" (change)="toggleTecnico(tecnico.id)" [attr.aria-label]="'Seleccionar a ' + tecnico.name"></td><td>{{ tecnico.name }}</td></tr>
-            } @empty { <tr><td class="no-tecnicos" colspan="2">No hay técnicos que coincidan.</td></tr> }</tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+  @if (dialog()) { <pana-step-dialog [title]="selected() ? 'Editar curso' : 'Crear curso'" [steps]="['Informaci&#243;n y fechas','Selecci&#243;n de t&#233;cnicos','Portada y c&#243;digo QR']" [step]="step()" [saving]="saving()" [canContinue]="canAdvance()" [canSave]="valid()" (close)="closeDialog()" (previous)="previous()" (next)="continue()" (save)="save()">
+    <div class="form-step" [hidden]="step() !== 0"><label>Nombre<input name="name" [(ngModel)]="form.name" required maxlength="150"></label><label>Descripcion<textarea name="description" [(ngModel)]="form.description" required maxlength="1000"></textarea></label><label>Cupo maximo<select name="capacity" [(ngModel)]="form.max_participants" required><option [ngValue]="null" disabled>Selecciona un limite</option>@for (capacity of capacities; track capacity) { <option [ngValue]="capacity">{{ capacity }}</option> }</select></label><div class="dates"><label>Fecha de inicio<input name="start" type="date" [(ngModel)]="form.start_date" [attr.min]="creationDateMin()" required></label><label>Fecha de finalizacion<input name="end" type="date" [(ngModel)]="form.end_date" [attr.min]="form.start_date || creationDateMin()" required></label></div></div>
+    <div class="form-step" [hidden]="step() !== 1"><section class="tecnico-picker"><label class="tecnico-search" for="tecnico-search">Buscar tecnicos<input id="tecnico-search" name="tecnico-search" [(ngModel)]="tecnicoQuery" placeholder="Escribe un nombre"></label><p class="selection-count">{{ form.tecnico_user_ids.length }} tecnicos seleccionados</p><div class="tecnico-table-scroll"><table class="tecnico-table"><thead><tr><th>Seleccionar</th><th>Tecnico</th></tr></thead><tbody>@for (tecnico of filteredTecnicos(); track tecnico.id) { <tr><td><input type="checkbox" [checked]="form.tecnico_user_ids.includes(tecnico.id)" (change)="toggleTecnico(tecnico.id)"></td><td>{{ tecnico.name }}</td></tr> } @empty { <tr><td colspan="2">No hay tecnicos que coincidan.</td></tr> }</tbody></table></div></section></div>
+    <div class="form-step cover-qr-step" [hidden]="step() !== 2"><section class="cover-step"><p class="form-hint">Esta imagen se mostrara como portada de la bienvenida publica.</p><div class="media-box cover-box"><img class="cover-preview" [src]="coverPreview()" alt="Vista previa de la portada"></div><label class="cover-upload">Seleccionar portada<input type="file" accept="image/jpeg,image/png,image/webp" (change)="onCover($event)"></label></section><section class="qr-step"><p class="form-hint">Descarga el codigo QR para compartirlo.</p>@if (qrPreview()) { <div class="media-box qr-box"><img [src]="qrPreview()" alt="Codigo QR del curso"></div><a class="qr-download" [href]="qrPreview()" download="curso-qr.png">Descargar PNG</a> }</section></div>
+    @if (error()) { <p class="dialog-error" role="alert">{{ error() }}</p> }
   </pana-step-dialog> }
 </section>

@@ -1,9 +1,8 @@
 <main class="login-layout" aria-label="Acceso a PANA">
-  <figure class="login-art"><img src="assets/login-pana.png" alt="Personas trabajando juntas para impulsar la inclusion social"></figure>
+  <figure class="login-art"><img src="assets/login-pana.png" alt="Personas trabajando juntas para impulsar la inclusión social"></figure>
   <section class="login-side" aria-labelledby="login-title">
     <div class="login-panel">
-      <h2 class="login-title">Ingreso al sistema</h2>
-      <header class="login-brand"><h1 id="login-title" aria-label="Acceso a PANA"><img src="assets/logo-santo-domingo.svg" alt="Patronato Municipal de Santo Domingo"></h1><p class="intro">Inicia sesión en PANA con las credenciales asignadas a tu cuenta.</p></header>
+      <div class="login-heading"><h2 class="login-title">¡Bienvenido a Pana!</h2><header class="login-brand"><h1 id="login-title" aria-label="Acceso a PANA"><img src="assets/logo-santo-domingo.svg" alt="Patronato Municipal de Santo Domingo"></h1></header></div>
       <form (ngSubmit)="submit()">
         <label for="email">Correo electrónico</label>
         <span class="input-shell"><svg lucideMail [size]="18" aria-hidden="true"></svg><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required></span>

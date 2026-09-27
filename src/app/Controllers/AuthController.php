@@ -44,6 +44,16 @@ final class AuthController
         echo json_encode(['user' => $user]);
     }
 
+    public function profile(array $user): void
+    {
+        echo json_encode(['profile' => $this->auth->profile((int) $user['id'])]);
+    }
+
+    public function updateProfile(array $user, array $payload): void
+    {
+        echo json_encode(['profile' => $this->auth->updateProfile((int) $user['id'], $payload, (string) ($user['roles'][0] ?? ''))]);
+    }
+
     private function sendSession(array $session): void
     {
         $this->setRefreshCookie($session['refresh_cookie'], time() + ($this->config->refreshDays * 86400));

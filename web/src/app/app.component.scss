@@ -13,15 +13,15 @@
 .notification-trigger { position: relative; width: 36px; height: 36px; padding: 6px; border-radius: 50%; background: #f1f5fb; color: #52657c; }
 .notification-trigger:hover, .notification-trigger[aria-expanded="true"] { background: #d5e4fa; color: #174ea6; }
 .notification-count { position: absolute; top: -3px; right: -3px; min-width: 16px; padding: 1px 4px; border-radius: 999px; background: #d93025; color: #fff; font-size: .65rem; line-height: 15px; }
-.notification-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; width: min(340px, calc(100vw - 28px)); max-height: 420px; overflow: auto; border: 1px solid #d7e2f2; border-radius: 18px; background: #fff; color: #202124; }
+.notification-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; width: min(340px, calc(100vw - 28px)); max-height: 420px; overflow: auto; border: 1px solid var(--pana-purple); border-radius: var(--pana-radius-lg); background: #fff; color: #202124; }
 .notification-popover header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; border-bottom: 1px solid #e8eef7; }
-.notification-popover header button { border: 0; background: transparent; color: #1a73e8; font: inherit; font-size: .75rem; cursor: pointer; }
+.notification-popover header button { border: 0; background: transparent; color: var(--pana-purple); font: inherit; font-size: .75rem; cursor: pointer; }
 .notification-header-actions { display: flex; align-items: center; gap: 10px; }
 .notification-item { display: grid; width: 100%; gap: 3px; padding: 12px 16px; border: 0; border-bottom: 1px solid #eef2f7; background: #fff; color: #344054; text-align: left; cursor: pointer; }
-.notification-item > svg { grid-row: span 2; align-self: start; margin-top: 1px; color: #1a73e8; }
+.notification-item > svg { grid-row: span 2; align-self: start; margin-top: 1px; color: var(--pana-purple); }
 .notification-copy { display: grid; gap: 3px; }
 .notification-copy > span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.notification-item.unread { background: #f3f7ff; }
+.notification-item.unread { background: var(--pana-purple-softer); }
 .notification-item strong { display: -webkit-box; overflow: hidden; color: #202124; font-size: .82rem; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
 .notification-item span, .notification-item small { font-size: .76rem; line-height: 1.35; }
 .notification-item small, .notification-empty { color: #6b7b90; }
@@ -52,9 +52,10 @@
 .account-trigger:hover, .account-trigger[aria-expanded="true"] { background: #e4e7eb; color: #3c4043; }
 .account-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 4; display: grid; gap: 5px; width: min(260px, calc(100vw - 28px)); padding: 16px; border: 1px solid #d7e2f2; border-radius: 18px; background: #fff; color: #202124; }
 .account-popover strong { overflow: hidden; font-size: .9rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.account-role { color: #5f6f84; font-size: .78rem; }
+.account-role { display: flex; align-items: center; gap: 6px; margin: 0 2px 2px; color: #6b7280; font-size: .74rem; }
 .popover-logout { min-height: 40px; margin-top: 9px; padding: 8px 15px; border: 1px solid var(--pana-purple); border-radius: var(--pana-radius-pill); background: var(--pana-purple); color: #fff; font: inherit; font-size: .8rem; font-weight: 600; text-align: center; cursor: pointer; }
-.popover-logout:hover, .popover-logout:focus-visible { background: #58147f; }
+.popover-profile { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 8px 10px; border: 0; border-radius: var(--pana-radius-md); background: transparent; color: var(--pana-ink); font: inherit; font-size: .84rem; text-align: left; cursor: pointer; }.popover-profile:hover { background: var(--pana-purple-softer); color: var(--pana-purple); }
+.popover-logout:hover, .popover-logout:focus-visible { background: #146c2f; }
 .popover-logout:focus-visible { outline: 2px solid var(--pana-purple); outline-offset: 2px; }
 .main-content { min-height: calc(100vh - 68px); margin: 0; padding: 20px clamp(24px, 5vw, 72px) 72px; background: #f6f8fc; }
 .main-content.course-open { padding-top: 18px; }
@@ -78,8 +79,8 @@
 .topbar-actions { position: static; gap: 2px; margin-left: auto; padding: 0; border: 0; border-radius: 0; background: transparent; }
 .topbar-link { min-height: 40px; border-radius: 12px; }
 .courses-link.active { border-color: transparent; background: var(--pana-purple-soft); color: var(--pana-purple); }
-.courses-link:not(.active) { color: #52657c; }
-.courses-link:not(.active):hover { border-color: #dbe7f6; background: #f5f8fc; color: #174ea6; }
+.courses-link:not(.active) { color: var(--pana-muted); }
+.courses-link:not(.active):hover { border-color: var(--pana-purple-track); background: var(--pana-purple-softer); color: var(--pana-purple); }
 .notification-trigger { width: 40px; height: 40px; padding: 0; border-color: transparent; border-radius: var(--pana-radius-md); background: #fff; color: var(--pana-purple); }
 .notification-trigger:hover, .notification-trigger[aria-expanded="true"] { border-color: transparent; background: var(--pana-purple-soft); color: var(--pana-purple); }
 .notification-count { top: 2px; right: 2px; min-width: 16px; padding: 1px 4px; border: 2px solid #fff; line-height: 14px; }
@@ -88,3 +89,4 @@
 .account-trigger > svg:first-child, .account-trigger .chevron { color: inherit; }
 @media (max-width: 560px) { .topbar-actions { gap: 2px; padding: 0; }.topbar-link { min-height: 38px; border-radius: 11px; }.courses-link { padding-inline: 10px; }.notification-trigger { width: 38px; height: 38px; }.account-trigger { min-width: 0; padding-inline: 9px; } }
 .events-link { order: 2; }.admin-link { order: 3; }.notification-menu { order: 4; }.account-menu { order: 5; }
+.account-popover { width: min(180px, calc(100vw - 28px)); padding: 10px; gap: 0; }
