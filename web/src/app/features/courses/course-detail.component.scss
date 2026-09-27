@@ -41,8 +41,8 @@ h1 { font-size: clamp(1.15rem, 1.8vw, 1.4rem); letter-spacing: -.03em; overflow-
 .attendance-table-scroll { width: 100%; overflow-x: auto; overflow-y: visible; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
 .attendance-coordinator-view + .section-content:has(.attendance-table) { display: none; }
 .attendance-coordinator-table { min-width: 960px; }
-.attendance-sort-button { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
-.attendance-sort-button span { color: var(--pana-primary); font-size: 1rem; line-height: 1; }
+.attendance-sort-button { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.attendance-sort-button svg { flex: 0 0 auto; color: var(--pana-muted); }
 .attendance-sort-button:hover { color: var(--pana-primary); }
 .attendance-table { width: 100%; min-width: 870px; border-collapse: collapse; text-align: left; }
 .attendance-table th, .attendance-table td { padding: 11px 13px; border-bottom: 1px solid var(--pana-divider); }
@@ -105,7 +105,10 @@ tr:last-child td { border-bottom: 0; }
 .participant-table-compact .participant-link { color: var(--pana-primary); }
 .participant-table-compact th:nth-child(6) { font-size: 0; }
 .participant-table-compact th:nth-child(6)::after { content: 'Teléfono'; font-size: .8rem; }
-.profile-chip { display: inline-flex; padding: 4px 9px; border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary); font-size: .82rem; }
+.participant-table-profile th, .participant-table-phone th, .participant-table-compact th { background: var(--pana-surface-subtle); color: var(--pana-muted-strong); }
+.participant-table-profile td, .participant-table-phone td, .participant-table-compact td { color: var(--pana-text); }
+.participant-table-profile .participant-link, .participant-table-phone .participant-link, .participant-table-compact .participant-link { color: var(--pana-text); }
+.profile-chip { display: inline-flex; padding: 4px 9px; border-radius: var(--pana-radius); background: var(--pana-surface-subtle); color: var(--pana-muted-strong); font-size: .82rem; }
 .attendance-status { display: inline-flex; padding: 4px 8px; border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary); font-size: .78rem; white-space: nowrap; }
 .attendance-status.absent { background: var(--pana-danger-soft); color: var(--pana-danger); }
 .attendance-status.excused { background: var(--pana-surface)4e5; color: var(--pana-warning); }

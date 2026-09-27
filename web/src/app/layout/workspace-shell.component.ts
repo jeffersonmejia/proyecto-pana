@@ -26,8 +26,7 @@ export class WorkspaceShellComponent {
   readonly displayShortName = computed(() => {
     const user=this.auth.user();
     const name=user?.first_name?.trim().split(/\s+/)[0]??'';
-    const surname=user?.last_name?.trim().split(/\s+/)[0]??'';
-    return [name,surname].filter(Boolean).join(' ')||user?.email||'';
+    return name||user?.email||'';
   });
   readonly displayRole = computed(() => {
  const labels: Record<string,string>={admin:'Informático',coordinator:'Coordinador',tecnico:'Técnico',student:'Estudiante',volunteer:'Voluntario',beneficiary:'Beneficiario'};

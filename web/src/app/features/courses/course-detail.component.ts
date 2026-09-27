@@ -9,13 +9,13 @@ import { StepDialogComponent } from '../../shared/step-dialog.component';
 import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
-import { LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye } from '@lucide/angular';
+import { LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp } from '@lucide/angular';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
@@ -42,7 +42,7 @@ export class CourseDetailComponent implements OnInit {
   readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>!q||p.name.toLocaleLowerCase().includes(q));});
   readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
   readonly attendanceSort=signal<'participant'|'technician'>('participant'); readonly attendanceSortDirection=signal<'asc'|'desc'>('asc');
-  readonly attendancePageRows=computed(()=>{const people=[...(this.data()?.participants??[])];const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?a.name:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?b.name:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
+  readonly attendancePageRows=computed(()=>{const people=[...(this.data()?.participants??[])];const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?`${a.last_name} ${a.first_name}`:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?`${b.last_name} ${b.first_name}`:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
   readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null);
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
   readonly taskDialog=signal(false); readonly taskStep=signal(0);
