@@ -1,5 +1,5 @@
 <section class="notifications-page" aria-labelledby="notifications-title">
-  <header class="notifications-heading"><button type="button" (click)="back()">Volver</button><h2 id="notifications-title"><svg lucideBell [size]="21"></svg>Notificaciones</h2><span>{{ notifications.unread() }} sin leer</span></header>
+  <header class="notifications-heading"><button type="button" (click)="back()"><svg lucideArrowLeft [size]="18"></svg><span>Volver</span></button><h2 id="notifications-title"><svg lucideBell [size]="21"></svg>Notificaciones</h2><span>{{ notifications.unread() }} sin leer</span></header>
   @if (items().length === 0) { <p class="notifications-empty">No tienes notificaciones.</p> }
   @for (item of items(); track item.id) { <button class="notification-card" [class.unread]="!item.read_at" type="button" (click)="open(item)"><svg lucideSparkles [size]="20"></svg><span><strong>{{ shortText(item.title, 80) }}</strong><small>{{ shortText(item.message, 220) }}</small><time>{{ timeAgo(item.created_at) }}</time></span></button> }
 </section>

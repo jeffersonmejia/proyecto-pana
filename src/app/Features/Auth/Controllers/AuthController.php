@@ -51,7 +51,9 @@ final class AuthController
 
     public function updateProfile(array $user, array $payload): void
     {
-        echo json_encode(['profile' => $this->auth->updateProfile((int) $user['id'], $payload, (string) ($user['roles'][0] ?? ''))]);
+        $roles = (array) ($user['roles'] ?? []);
+        $role = array_values(array_intersect(['admin', 'coordinator', 'tecnico', 'beneficiary'], $roles))[0] ?? '';
+        echo json_encode(['profile' => $this->auth->updateProfile((int) $user['id'], $payload, $role)]);
     }
 
     private function sendSession(array $session): void

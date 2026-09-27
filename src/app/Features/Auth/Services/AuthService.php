@@ -88,7 +88,13 @@ final class AuthService
 
     public function updateProfile(int $userId, array $input, string $role): array
     {
+        if (in_array($role, ['admin', 'coordinator', 'tecnico'], true)) {
+            $input['email'] = $this->profile($userId)['email'];
+        }
         $profile = $this->profileInput($input);
+        if ($profile['phone'] !== null && $this->users->phoneExists($profile['phone'], $userId)) {
+            throw new ApiException(409, 'phone_already_exists');
+        }
         try { $this->users->updateProfile($userId, $profile, $role === 'beneficiary'); }
         catch (\PDOException $error) { if ($error->getCode() === '23000') throw new ApiException(409, 'email_already_exists'); throw $error; }
         return $this->profile($userId);
@@ -145,8 +151,9 @@ final class AuthService
     {
         $text = static function (string $key, int $max) use ($input): string { $value=$input[$key]??''; if(!is_string($value)||trim($value)===''||strlen($value)>$max) throw new ApiException(422,'invalid_profile'); return trim($value); };
         $optional = static function (string $key, int $max) use ($input): ?string { $value=$input[$key]??''; if(!is_string($value)||strlen($value)>$max) throw new ApiException(422,'invalid_profile'); return trim($value)===''?null:trim($value); };
+        $phone=$optional('phone',10); if($phone!==null&&!preg_match('/^\d{10}$/',$phone)) throw new ApiException(422,'invalid_profile_phone');
         $birth=$optional('birth_date',10); if($birth!==null&&!preg_match('/^\d{4}-\d{2}-\d{2}$/',$birth)) throw new ApiException(422,'invalid_profile');
-        return ['first_name'=>$text('first_name',120),'last_name'=>$text('last_name',120),'phone'=>$optional('phone',30),
+        return ['first_name'=>$text('first_name',120),'last_name'=>$text('last_name',120),'phone'=>$phone,
             'email'=>strtolower($text('email',254)),'birth_date'=>$birth,'address'=>$optional('address',255),'observations'=>$optional('observations',5000),
             'birth_province'=>$optional('birth_province',120),'birth_city'=>$optional('birth_city',120),'gender'=>$optional('gender',40),
             'self_identification'=>$optional('self_identification',80),'has_disability'=>$optional('has_disability',10),

@@ -39,6 +39,14 @@ final class UserRepository
         $statement->execute([$id]);
     }
 
+    public function phoneExists(string $phone, int $exceptId): bool
+    {
+        $statement = $this->connection->prepare('SELECT 1 FROM users u LEFT JOIN people p ON p.user_id=u.id '
+            . 'WHERE COALESCE(u.phone,p.phone)=? AND u.id<>? LIMIT 1');
+        $statement->execute([$phone, $exceptId]);
+        return $statement->fetchColumn() !== false;
+    }
+
     public function profile(int $id): ?array
     {
         $query = $this->connection->prepare('SELECT u.id,u.ci,u.first_name,u.last_name,u.phone,u.email, '

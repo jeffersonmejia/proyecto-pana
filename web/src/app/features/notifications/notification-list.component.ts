@@ -1,11 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideBell, LucideSparkles } from '@lucide/angular';
+import { LucideArrowLeft, LucideBell, LucideSparkles } from '@lucide/angular';
 import { notificationTimeAgo, NotificationItem, NotificationsService } from '../../core/notifications/notifications.service';
 
 @Component({
   selector: 'pana-notification-list', standalone: true,
-  imports: [LucideBell, LucideSparkles],
+  imports: [LucideArrowLeft, LucideBell, LucideSparkles],
   templateUrl: './notification-list.component.html', styleUrl: './notification-list.component.scss',
 })
 export class NotificationListComponent {
