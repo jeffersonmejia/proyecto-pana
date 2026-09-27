@@ -1,0 +1,22 @@
+.pana-page {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+}
+
+.pana-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.pana-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.pana-surface {
+  border: 1px solid var(--pana-outline);
+  border-radius: var(--pana-radius);
+  background: var(--pana-surface);
+}

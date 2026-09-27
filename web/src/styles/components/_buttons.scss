@@ -1,0 +1,21 @@
+:where(.primary-button, .secondary-button, .primary, .enroll-button, .save-button) {
+  border-radius: var(--pana-radius);
+  font: inherit;
+  cursor: pointer;
+}
+
+:where(.primary-button, .primary, .enroll-button, .save-button) {
+  border-color: var(--pana-primary);
+  background: var(--pana-primary);
+  color: var(--pana-surface);
+}
+
+:where(.secondary-button) {
+  border-color: var(--pana-primary);
+  background: var(--pana-surface);
+  color: var(--pana-primary-dark);
+}
+
+:where(.primary-button, .primary, .enroll-button, .save-button):hover {
+  background: var(--pana-primary-dark);
+}

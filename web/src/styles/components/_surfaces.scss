@@ -1,0 +1,24 @@
+:where(.table-wrap, .admin-section, .criteria-panel, .profile-card, .notifications-page, .event-card, .event-dialog) {
+  border-color: var(--pana-outline);
+  border-radius: var(--pana-radius);
+  background: var(--pana-surface);
+}
+
+:where(.table-wrap) {
+  overflow: auto;
+}
+
+:where(.empty, .event-empty, .notifications-empty) {
+  color: var(--pana-muted);
+  text-align: center;
+}
+
+:where(.notice) {
+  border-radius: var(--pana-radius);
+  background: var(--pana-primary-soft);
+  color: var(--pana-primary-dark);
+}
+
+:where(.error, .event-error) {
+  color: var(--pana-danger);
+}

@@ -1,0 +1,18 @@
+:host { display: block; }
+.notifications-page { width: min(100%, 760px); box-sizing: border-box; margin: 28px auto; padding: 24px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
+.notifications-heading { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--pana-navbar-outline); }
+.notifications-heading h2 { display: inline-flex; align-items: center; gap: 8px; justify-self: center; margin: 0; color: var(--pana-ink); font-size: 1.25rem; font-weight: 650; }
+.notifications-heading h2 svg { color: var(--pana-primary); }
+.notifications-heading button { justify-self: start; border: 0; background: transparent; color: var(--pana-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.notifications-heading button:hover, .notifications-heading button:focus-visible { color: var(--pana-primary-dark); }
+.notifications-heading span { justify-self: end; color: var(--pana-muted); font-size: .78rem; }
+.notification-card { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 12px; width: 100%; padding: 16px 4px; border: 0; border-bottom: 1px solid var(--pana-navbar-outline); background: var(--pana-surface); color: var(--pana-muted); text-align: left; cursor: pointer; }
+.notification-card:hover, .notification-card:focus-visible { background: var(--pana-primary-softer); }
+.notification-card.unread { background: var(--pana-primary-softer); }
+.notification-card > svg { margin-top: 2px; color: var(--pana-primary); }
+.notification-card span { display: grid; gap: 5px; }
+.notification-card strong { color: var(--pana-ink); font-size: .9rem; font-weight: 650; }
+.notification-card small, .notification-card time { color: var(--pana-muted); font-size: .8rem; line-height: 1.4; }
+.notification-card time { color: var(--pana-muted); font-size: .72rem; }
+.notifications-empty { margin: 0; padding: 28px 0 8px; color: var(--pana-muted); text-align: center; }
+@media (max-width: 600px) { .notifications-page { margin: 18px auto; padding: 16px; } .notifications-heading { grid-template-columns: auto 1fr auto; } .notifications-heading h2 { justify-self: start; } }

@@ -1,0 +1,21 @@
+:where(.people-page, .attendance-page, .activities-page, .evaluation-page, .reports-page, .admin-page, .roles-page, .profile-page) {
+  label {
+    color: var(--pana-text);
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    border-color: var(--pana-input-outline);
+    border-radius: var(--pana-radius);
+    background: var(--pana-surface);
+    color: var(--pana-ink);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid var(--pana-focus);
+    border-color: var(--pana-primary);
+  }
+}

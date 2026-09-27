@@ -49,9 +49,22 @@ spl_autoload_register(static function (string $class): void {
     }
 
     $relativeClass = substr($class, strlen($prefix));
-    $file = dirname(__DIR__) . '/app/' . str_replace('\\', '/', $relativeClass) . '.php';
-    if (is_file($file)) {
-        require $file;
+    $appRoot = dirname(__DIR__) . '/app';
+    $directFile = $appRoot . '/' . str_replace('\\', '/', $relativeClass) . '.php';
+    if (is_file($directFile)) {
+        require $directFile;
+        return;
+    }
+
+    $classFile = basename(str_replace('\\', '/', $relativeClass)) . '.php';
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($appRoot, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($files as $file) {
+        if ($file->getFilename() === $classFile) {
+            require $file->getPathname();
+            return;
+        }
     }
 });
 

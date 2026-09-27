@@ -1,12 +1,18 @@
 @use '@angular/material' as mat;
+@use '../abstracts/tokens';
+@use '../base/reset';
+@use '../components/buttons';
+@use '../components/forms';
+@use '../components/surfaces';
+@use '../utilities/layout';
 
 @include mat.core();
 
 $pana-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$azure-palette,
-    tertiary: mat.$azure-palette,
+    primary: mat.$green-palette,
+    tertiary: mat.$green-palette,
   ),
   typography: (
     brand-family: 'Inter, Arial, sans-serif',
@@ -22,59 +28,37 @@ html {
 
 :root {
   --pana-ink: #202124;
+  --pana-text: #344054;
   --pana-muted: #5f6f84;
+  --pana-muted-strong: #52657c;
   --pana-surface: #fff;
-  --pana-page: #f8fafd;
-  --pana-blue: #1a73e8;
-  --pana-blue-dark: #174ea6;
-  --pana-blue-soft: #e8f0fe;
-  --pana-purple: #188038;
-  --pana-purple-soft: #e6f4ea;
-  --pana-purple-softer: #f3fbf5;
-  --pana-purple-track: #c6e6cd;
-  --pana-pink: #ad1457;
-  --pana-pink-soft: #fff4f7;
-  --pana-date: var(--pana-purple);
-  --pana-date-soft: var(--pana-purple-softer);
+  --pana-surface-subtle: #f7f8f7;
+  --pana-page: #fff;
+  --pana-primary: #188038;
+  --pana-primary-dark: #146c2f;
+  --pana-primary-soft: #e6f4ea;
+  --pana-primary-softer: #f3fbf5;
+  --pana-primary-track: #c6e6cd;
+  --pana-outline: #d7e2d9;
+  --pana-input-outline: #c8d6c9;
+  --pana-divider: #edf1ed;
+  --pana-focus: #8abf9b;
+  --pana-gray: #5f6368;
+  --pana-gray-soft: #f1f3f4;
+  --pana-gray-hover: #e4e7eb;
+  --pana-warning: #8d5a00;
+  --pana-warning-soft: #fef7e0;
   --pana-danger: #b3261e;
   --pana-danger-soft: #fce8e6;
   --pana-danger-hover: #f7d4d0;
   --pana-remove: #5f6f84;
   --pana-remove-soft: #f1f3f4;
-  --pana-remove-hover: #e4e7eb;
-  --pana-radius-sm: 8px;
-  --pana-radius-md: 12px;
-  --pana-radius-lg: 18px;
-  --pana-radius-xl: 24px;
-  --pana-radius-pill: 999px;
-  --pana-radius-circle: 50%;
-  --pana-violet: var(--pana-purple);
-  --pana-lavender: var(--pana-purple-soft);
-  --pana-mint: #e8f3ee;
-  --pana-peach: #fcefe9;
-  --pana-outline: #d7e2f2;
-  --pana-navbar-outline: #e4e7ed;
-  --pana-empty-outline: var(--pana-purple-track);
-  --pana-empty-icon-bg: var(--pana-purple-soft);
-  --pana-empty-icon: var(--pana-purple);
+  --pana-remove-hover: var(--pana-gray-hover);
+  --pana-date: var(--pana-primary);
+  --pana-date-soft: var(--pana-primary-softer);
+  --pana-empty-outline: var(--pana-primary-track);
+  --pana-empty-icon-bg: var(--pana-primary-soft);
+  --pana-empty-icon: var(--pana-primary);
   --pana-empty-text: var(--pana-ink);
-}
-
-* { box-sizing: border-box; }
-
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  background: #f8fafd;
-  color: var(--pana-ink);
-  font-family: 'Inter', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-button, a { -webkit-tap-highlight-color: transparent; }
-button, a, .status-card { transition: background-color 180ms ease, color 180ms ease, transform 180ms ease; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  --pana-radius: 12px;
 }
