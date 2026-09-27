@@ -1,12 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideArrowLeft, LucideSave, LucideUserRound } from '@lucide/angular';
+import { LucideSave, LucideUserRound } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfileApiService, ProfileData } from './profile-api.service';
 import { ECUADOR_LOCATIONS } from '../auth/signup/data/ecuador-locations';
 
-@Component({ selector: 'pana-profile', standalone: true, imports: [FormsModule, LucideArrowLeft, LucideSave, LucideUserRound], templateUrl: './profile-form.component.html', styleUrl: './profile.component.scss' })
+@Component({ selector: 'pana-profile', standalone: true, imports: [FormsModule, LucideSave, LucideUserRound], templateUrl: './profile-form.component.html', styleUrl: './profile.component.scss' })
 export class ProfileComponent {
   readonly auth = inject(AuthService); private readonly api = inject(ProfileApiService); private readonly router = inject(Router);
   readonly locations = ECUADOR_LOCATIONS;

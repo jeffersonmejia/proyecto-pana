@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 export interface AttendanceRecord {
   id: number; participant_id: number; attendance_date: string; status: 'present' | 'absent' | 'excused';
   check_in: string | null; check_out: string | null; note: string | null; total_minutes: number | null;
-  hours: number | null; first_name: string; last_name: string;
+  hours: number | null; first_name: string; last_name: string; technician_name: string | null;
 }
 export interface AttendanceInput {
   participant_id: number; attendance_date: string; status: string; check_in: string; check_out: string;

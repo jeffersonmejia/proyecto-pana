@@ -1,0 +1,26 @@
+:host { display: contents; }
+.dialog-scrim { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--pana-ink) 40%, transparent); }
+.dialog { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; width: min(900px, 100%); max-height: min(860px, 94vh); overflow: hidden; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-ink); }
+.dialog.wide { width: min(1200px, 100%); }
+.dialog header, .dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; }
+.dialog header { border-bottom: 1px solid var(--pana-outline); }
+.dialog h2, .dialog p { margin: 0; }
+.dialog h2 { font-size: 1.35rem; }
+.dialog p { margin-top: 4px; color: var(--pana-muted); font-size: .9rem; }
+.icon-button { width: 40px; min-height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--pana-muted); cursor: pointer; }
+.dialog-steps { padding: 12px 24px 10px; border-bottom: 1px solid var(--pana-outline); }
+.dialog-stepper { display: flex; align-items: flex-start; width: 100%; overflow-x: auto; }
+.dialog-step-item { display: grid; flex: 1 1 0; justify-items: center; gap: 5px; min-width: 100px; color: var(--pana-muted); text-align: center; }
+.dialog-step-dot { display: grid; width: 28px; height: 28px; place-items: center; border: 2px solid var(--pana-outline); border-radius: 50%; background: var(--pana-surface); color: var(--pana-muted); font-size: .75rem; font-weight: 600; }
+.dialog-step-item.active .dialog-step-dot { border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface); }
+.dialog-step-item.completed .dialog-step-dot { border-color: var(--pana-primary); background: var(--pana-primary-soft); color: var(--pana-primary); }
+.dialog-step-name { font-size: .72rem; line-height: 1.2; }
+.dialog-step-item.active .dialog-step-name, .dialog-step-item.completed .dialog-step-name { color: var(--pana-primary); font-weight: 600; }
+.dialog-step-line { flex: 1 1 20px; min-width: 12px; height: 2px; margin-top: 13px; background: var(--pana-outline); }
+.dialog-step-line.completed { background: var(--pana-primary); }
+.dialog-body { min-height: 0; overflow: auto; padding: 24px; }
+.dialog footer { justify-content: flex-end; border-top: 1px solid var(--pana-outline); }
+.primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 8px 18px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-primary); font: inherit; cursor: pointer; }
+.primary { min-width: 118px; border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface); }
+.dialog button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 650px) { .dialog-scrim { padding: 0; }.dialog { width: 100%; max-height: 100vh; border-radius: var(--pana-radius); }.dialog header, .dialog-steps, .dialog-body, .dialog footer { padding-inline: 16px; }.dialog-step-item { min-width: 88px; } }

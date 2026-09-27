@@ -26,7 +26,7 @@ final class CourseDetailsRepository
     }
     private function attendance(int $id,string $scope): array
     {
-        $sql="SELECT ar.id,ar.attendance_date,ar.check_in,ar.check_out FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' WHERE {$scope} ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 200";
+        $sql="SELECT ar.id,ar.participant_id,ar.attendance_date,ar.check_in,ar.check_out,COALESCE(NULLIF(TRIM(CONCAT(technician.first_name,' ',technician.last_name)),' '),technician.email) technician_name FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' LEFT JOIN users technician ON technician.id=ar.created_by WHERE {$scope} ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 200";
         return $this->query($sql,[$id]);
     }
     private function evaluations(int $id,string $scope,array $actor): array

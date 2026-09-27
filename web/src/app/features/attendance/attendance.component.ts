@@ -3,11 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { PaginatorComponent } from '../../shared/paginator.component';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
-import { LucideClock3, LucidePencil, LucidePlus } from '@lucide/angular';
+import { LucideClock3, LucidePlus } from '@lucide/angular';
 import { AttendanceApiService, AttendanceEvent, AttendanceInput, AttendanceRecord, PageInfo } from './attendance-api.service';
 
 @Component({ selector: 'pana-attendance', standalone: true,
-  imports: [FormsModule, PaginatorComponent, StepDialogComponent, LucideClock3, LucidePencil, LucidePlus],
+  imports: [FormsModule, PaginatorComponent, StepDialogComponent, LucideClock3, LucidePlus],
   templateUrl: './attendance.component.html', styleUrl: './attendance.component.scss' })
 export class AttendanceComponent implements OnInit {
   private readonly api = inject(AttendanceApiService);
@@ -21,6 +21,7 @@ export class AttendanceComponent implements OnInit {
   readonly history = signal<AttendanceEvent[]>([]);
   readonly error = signal(''); readonly saving = signal(false); readonly dialogOpen = signal(false); readonly step = signal(0);
   participantSearch = ''; participantId: number | '' = ''; from = ''; to = ''; status = 'all';
+  shift: 'morning' | 'afternoon' = 'morning';
   form: AttendanceInput = this.emptyForm();
 
   ngOnInit(): void { this.loadPeople(); this.load(); }
@@ -35,9 +36,11 @@ export class AttendanceComponent implements OnInit {
   changePage(page: number): void { this.pageInfo.update((current) => ({ ...current, page })); this.load(); }
   edit(record?: AttendanceRecord): void {
     this.selected.set(record ?? null); this.history.set([]); this.step.set(0); this.dialogOpen.set(true);
+    this.shift = record?.check_in?.startsWith('14:30') ? 'afternoon' : 'morning';
     this.form = record ? { participant_id: record.participant_id, attendance_date: record.attendance_date,
       status: record.status, check_in: record.check_in?.slice(0, 5) ?? '', check_out: record.check_out?.slice(0, 5) ?? '',
       note: record.note ?? '', correction_reason: '' } : this.emptyForm();
+    if (!record) this.applyShift();
     if (record) this.api.history(record.id).subscribe((result) => this.history.set(result.history));
   }
   canContinue(): boolean { return !!this.form.participant_id && !!this.form.attendance_date; }
@@ -45,6 +48,7 @@ export class AttendanceComponent implements OnInit {
     && !(this.form.status !== 'present' && (!!this.form.check_in || !!this.form.check_out))
     && (!this.selected() || !!this.form.correction_reason?.trim()); }
   next(): void { if (this.canContinue()) this.step.update((value) => Math.min(1, value + 1)); }
+  applyShift(): void { this.form.check_in = this.shift === 'morning' ? '08:30' : '14:30'; this.form.check_out = this.shift === 'morning' ? '12:30' : '16:30'; }
   save(): void {
     if (this.saving() || !this.canSave()) return;
     this.saving.set(true); const selected = this.selected();

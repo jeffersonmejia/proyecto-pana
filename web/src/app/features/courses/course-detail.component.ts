@@ -41,7 +41,8 @@ export class CourseDetailComponent implements OnInit {
   readonly participantQuery=signal('');
   readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>!q||p.name.toLocaleLowerCase().includes(q));});
   readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
-  readonly attendancePageRows=computed(()=>{const people=this.data()?.participants??[];const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
+  readonly attendanceSort=signal<'participant'|'technician'>('participant'); readonly attendanceSortDirection=signal<'asc'|'desc'>('asc');
+  readonly attendancePageRows=computed(()=>{const people=[...(this.data()?.participants??[])];const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?a.name:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?b.name:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
   readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null);
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
   readonly taskDialog=signal(false); readonly taskStep=signal(0);
@@ -53,6 +54,7 @@ export class CourseDetailComponent implements OnInit {
   private finishLoad(value:CourseSections|null,afterLoad?:()=>void): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt));setTimeout(()=>{if(value)this.data.set(value);this.loading.set(false);afterLoad?.();},wait); }
   setAttendanceDate(date:string): void { if(!date)return; this.attendanceDate.set(date);this.attendancePage.set(1);this.attendanceError.set('');this.reload(); }
   changeAttendancePage(page:number): void { this.attendancePage.set(page); }
+  sortAttendance(field:'participant'|'technician'): void { if(this.attendanceSort()===field)this.attendanceSortDirection.update(value=>value==='asc'?'desc':'asc'); else { this.attendanceSort.set(field); this.attendanceSortDirection.set('asc'); } this.attendancePage.set(1); }
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
   changeParticipantPage(page:number): void { this.participantPage.set(page); }
   openPerson(id:number): void { void this.router.navigate(['/cursos', this.course().id, 'participantes', id]); }
@@ -149,5 +151,6 @@ export class CourseDetailComponent implements OnInit {
   private coursePeriodDays(): number { const start=new Date(`${this.course().start_date}T00:00:00`); const end=new Date(`${this.course().end_date}T00:00:00`); const days=Math.floor((end.getTime()-start.getTime())/86400000)+1; return Number.isFinite(days)&&days>0?days:0; }
   attendancePercent(): number { const data=this.data(); if(this.isBeneficiary())return Number(data?.attendance_percentage??0); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
   attendanceDuration(checkIn:string|null,checkOut:string|null): string { if(!checkIn||!checkOut)return '—'; const start=new Date(`1970-01-01T${checkIn}`),end=new Date(`1970-01-01T${checkOut}`); const minutes=Math.max(0,Math.round((end.getTime()-start.getTime())/60000)); return `${Math.floor(minutes/60)}h ${minutes%60}m`; }
+  technicianFor(participantId:number): string|null { const date=this.attendanceDate(); return this.data()?.attendance.find(row=>row.participant_id===participantId&&row.attendance_date===date)?.technician_name ?? null; }
   tabCount(tab: CourseTab): number { const data=this.data(); if(!data)return 0; if(tab==='participants')return data.participants.length; if(tab==='attendance')return this.attendancePercent(); if(tab==='activities')return data.activities.length; if(tab==='evaluations')return data.evaluations.length; return 0; }
 }

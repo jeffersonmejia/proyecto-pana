@@ -119,15 +119,18 @@ final class AttendanceRepository
 
     private function selectSql(): string
     {
-        return 'SELECT a.*,p.first_name,p.last_name,TIMESTAMPDIFF(MINUTE,a.check_in,a.check_out) total_minutes '
+        return 'SELECT a.*,p.first_name,p.last_name,technician.first_name technician_first_name,'
+            . 'technician.last_name technician_last_name,TIMESTAMPDIFF(MINUTE,a.check_in,a.check_out) total_minutes '
             . 'FROM attendance_records a JOIN participants t ON t.person_id=a.participant_id '
-            . 'JOIN people p ON p.id=a.participant_id';
+            . 'JOIN people p ON p.id=a.participant_id LEFT JOIN users technician ON technician.id=a.created_by';
     }
 
     private function mapRecord(array $row): array
     {
         $row['total_minutes'] = $row['total_minutes'] === null ? null : (int) $row['total_minutes'];
         $row['hours'] = $row['total_minutes'] === null ? null : round($row['total_minutes'] / 60, 2);
+        $row['technician_name'] = trim(($row['technician_first_name'] ?? '') . ' ' . ($row['technician_last_name'] ?? ''));
+        if ($row['technician_name'] === '') $row['technician_name'] = null;
         return $row;
     }
 
