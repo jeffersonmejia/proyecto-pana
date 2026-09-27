@@ -568,11 +568,14 @@ export class RegistrationFacade {
   }
   submit(): void {
     if (this.busy()) return;
+    console.log("[PANA registration] submit clicked", { terms: this.data.terms, days: this.data.days, schedules: this.data.schedules });
     this.updateAge();
     this.errorField.set("");
     const validation = this.submitValidator.validate(this.data, this.hasValidFullName());
+    console.log("[PANA registration] submit validation", { validation, age: this.data.age, validFullName: this.hasValidFullName(), days: this.data.days, schedules: this.data.schedules, terms: this.data.terms });
     if (validation) { this.errorField.set(validation.field); this.error.set(validation.message); return; }
     const payload = this.payloadMapper.map(this.data, this.fullPhone(), this.fullEmail());
+    console.log("[PANA registration] payload", { phoneLength: payload.phone.length, email: payload.email, days: payload.days, schedules: payload.schedules, terms: payload.terms });
     this.busy.set(true);
     this.error.set("");
     this.api.create(payload).subscribe({
@@ -610,7 +613,7 @@ export class RegistrationFacade {
                   : "id",
             );
           }
-          if (!this.errorField()) this.errorField.set("id");
+          if (!this.errorField() && this.step() < this.steps.length - 1) this.errorField.set("id");
           this.error.set(this.messageFor(failure));
           this.busy.set(false);
         }, 500);
