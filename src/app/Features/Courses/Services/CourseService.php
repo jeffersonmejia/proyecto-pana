@@ -10,8 +10,8 @@ use PDOException;
 final class CourseService
 {
     public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers) {}
-    public function all(array $actor): array { return $this->courses->all($actor); }
-    public function available(array $actor): array { return $this->courses->available($actor); }
+    public function all(array $actor,bool $isEvent=false): array { return $this->courses->all($actor,$isEvent); }
+    public function available(array $actor,bool $isEvent=false): array { return $this->courses->available($actor,$isEvent); }
     public function enroll(int $id,array $actor): void
     {
         if (!in_array($actor['roles'][0] ?? '', ['beneficiary','student'], true)) throw new ApiException(403,'permission_denied');
@@ -50,6 +50,9 @@ final class CourseService
         $task=$this->activities->create($input,(int)$actor['id'],$actor); $this->courses->linkActivity($course,(int)$task['id']);
         return (int)$task['id'];
     }
+    public function updateTask(int $course,int $activity,array $input,array $actor): void { $this->assertTask($course,$activity,$actor); $input['id']=$activity; $this->activities->update($input,(int)$actor['id'],$actor); }
+    public function setTaskStatus(int $course,int $activity,string $status,array $actor): void { $this->assertTask($course,$activity,$actor); $this->activities->setStatus($activity,$status,(int)$actor['id'],$actor); }
+    public function deleteTask(int $course,int $activity,array $actor): void { $this->assertTask($course,$activity,$actor); $this->activities->delete($activity,$actor); }
     public function assertTask(int $course,int $activity,array $actor): void
     {
         $this->one($course,$actor);
@@ -73,6 +76,7 @@ final class CourseService
         catch (PDOException $error) { if ($error->getCode() === '23000') throw new ApiException(409,'course_name_exists'); throw $error; }
     }
     public function deactivate(int $id,array $actor): void { $this->one($id,$actor); $this->courses->deactivate($id); }
+    public function delete(int $id,array $actor): void { $this->one($id,$actor); $this->courses->delete($id); }
     public function setStatus(int $id,string $status,array $actor): void
     {
         $this->one($id,$actor);

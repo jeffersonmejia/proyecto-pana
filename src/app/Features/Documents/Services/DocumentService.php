@@ -59,13 +59,21 @@ final class DocumentService
         if ($name === '') throw new ApiException(422, 'invalid_file_name');
         $stored = bin2hex(random_bytes(16)) . '.' . self::MIME_EXTENSIONS[$mime];
         $path = $this->remotePath($type, (int) $id, $stored);
-        $this->storage->uploadFile($file['tmp_name'], $path);
+        $legacy = dirname(__DIR__, 4) . '/storage/documents/' . $stored;
+        $remote = $type !== 'activity';
+        try { if ($remote) $this->storage->uploadFile($file['tmp_name'], $path); }
+        catch (ApiException) { $remote = false; }
+        if (!$remote) {
+            if (!is_dir(dirname($legacy)) && !mkdir(dirname($legacy), 0770, true) && !is_dir(dirname($legacy))) throw new ApiException(500, 'storage_unavailable');
+            if (!copy($file['tmp_name'], $legacy)) throw new ApiException(500, 'storage_unavailable');
+        }
         try {
             $documentId = $this->documents->create(['entity_type' => $type, 'entity_id' => (int) $id,
                 'original_name' => $name, 'stored_name' => $stored, 'mime_type' => $mime, 'file_size' => (int) $file['size']], $actor);
             return ['id' => $documentId];
         } catch (\Throwable $error) {
-            try { $this->storage->delete($path); } catch (\Throwable) { }
+            if ($remote) { try { $this->storage->delete($path); } catch (\Throwable) { } }
+            elseif (is_file($legacy)) unlink($legacy);
             throw $error;
         }
     }
@@ -73,7 +81,7 @@ final class DocumentService
     public function download(int $id, array $actor): array
     {
         $document = $this->documents->find($id, $actor) ?? throw new ApiException(404, 'document_not_found');
-        $legacy = dirname(__DIR__, 3) . '/src/storage/documents/' . basename($document['stored_name']);
+        $legacy = dirname(__DIR__, 4) . '/storage/documents/' . basename($document['stored_name']);
         if (is_file($legacy)) return ['document' => $document, 'stream' => fopen($legacy, 'rb'), 'size' => filesize($legacy)];
         $file = $this->storage->download($this->remotePath($document['entity_type'], (int) $document['entity_id'], $document['stored_name']));
         return ['document' => $document] + $file;
@@ -82,7 +90,7 @@ final class DocumentService
     public function delete(int $id, array $actor): void
     {
         $document = $this->documents->find($id, $actor) ?? throw new ApiException(404, 'document_not_found');
-        $legacy = dirname(__DIR__, 3) . '/src/storage/documents/' . basename($document['stored_name']);
+        $legacy = dirname(__DIR__, 4) . '/storage/documents/' . basename($document['stored_name']);
         if (is_file($legacy)) unlink($legacy);
         else $this->storage->delete($this->remotePath($document['entity_type'],
             (int) $document['entity_id'], $document['stored_name']));

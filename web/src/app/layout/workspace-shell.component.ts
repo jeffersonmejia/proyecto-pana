@@ -29,8 +29,10 @@ export class WorkspaceShellComponent {
     return name||user?.email||'';
   });
   readonly displayRole = computed(() => {
- const labels: Record<string,string>={admin:'Informático',coordinator:'Coordinador',tecnico:'Técnico',student:'Estudiante',volunteer:'Voluntario',beneficiary:'Beneficiario'};
-    const role=this.auth.user()?.roles[0]??''; return labels[role]??role;
+    const role=this.auth.user()?.roles[0]??'';
+    const feminine=['femenino','mujer'].includes((this.auth.user()?.gender??'').toLocaleLowerCase());
+    const labels: Record<string,string>={admin:feminine?'Administradora':'Administrador',coordinator:feminine?'Coordinadora':'Coordinador',tecnico:'Técnico',student:'Estudiante',volunteer:'Voluntario',beneficiary:feminine?'Beneficiaria':'Beneficiario'};
+    return labels[role]??role;
   });
   readonly timeAgo = notificationTimeAgo;
   shortNotificationText(value: string, limit: number): string { return value.length > limit ? `${value.slice(0, limit - 1).trimEnd()}…` : value; }

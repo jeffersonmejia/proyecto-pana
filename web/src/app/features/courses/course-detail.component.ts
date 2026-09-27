@@ -9,13 +9,13 @@ import { StepDialogComponent } from '../../shared/step-dialog.component';
 import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
-import { LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp } from '@lucide/angular';
+import { LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload } from '@lucide/angular';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-@Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBookOpen, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+  @Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
@@ -35,7 +35,6 @@ export class CourseDetailComponent implements OnInit {
     {id:'activities',label:'Actividades'},{id:'evaluations',label:'Evaluaciones'}];
   readonly visibleTabs = computed(() => this.isBeneficiary() ? this.tabs.filter(tab => tab.id === 'activities' || tab.id === 'attendance') : this.tabs);
   readonly attendanceHours=computed(()=>{const hours=(this.data()?.participants??[]).reduce((sum,row)=>sum+Number(row.attendance_minutes??0),0)/60;return Number.isInteger(hours)?String(hours):hours.toFixed(1);});
-  readonly evidenceCount=computed(()=>((this.data()?.documents??[]).filter(file=>file.entity_type==='activity').length));
   readonly completedTasks=computed(()=>((this.data()?.activities??[]).filter(task=>task.status==='completed').length));
   capacityPercent(): number { const limit=Number(this.course().max_participants??0); return limit>0 ? Math.min(100,Math.round(Number(this.course().participant_count??0)*100/limit)) : 0; }
   readonly participantQuery=signal('');
@@ -43,9 +42,9 @@ export class CourseDetailComponent implements OnInit {
   readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
   readonly attendanceSort=signal<'participant'|'technician'>('participant'); readonly attendanceSortDirection=signal<'asc'|'desc'>('asc');
   readonly attendancePageRows=computed(()=>{const people=[...(this.data()?.participants??[])];const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?`${a.last_name} ${a.first_name}`:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?`${b.last_name} ${b.first_name}`:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
-  readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null);
+  readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null); readonly taskAttachmentDragging=signal(false); taskAttachment: File|null=null;
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
-  readonly taskDialog=signal(false); readonly taskStep=signal(0);
+  readonly taskDialog=signal(false); readonly taskStep=signal(0); readonly taskEditing=signal<number|null>(null); readonly taskEditingStatus=signal('planned'); readonly taskExistingAttachment=signal<CourseSections['documents'][number]|null>(null); readonly taskToDelete=signal<CourseSections['activities'][number]|null>(null); readonly taskActionSaving=signal(false); readonly taskStatusFilter=signal<'active'|'inactive'|'all'>('active');
   readonly expandedTask=signal<number|null>(null); readonly draggingTask=signal<number|null>(null);
   readonly activityPage=signal(false);
   taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[] as number[]};
@@ -105,12 +104,26 @@ export class CourseDetailComponent implements OnInit {
   canManageTasks(): boolean { return this.auth.hasPermission('courses.manage.all')||this.auth.hasPermission('courses.manage'); }
   canSubmitEvidence(): boolean { return this.auth.hasPermission('activities.submit_evidence')||this.auth.hasPermission('documents.manage'); }
   toggleTaskParticipant(id:number,checked:boolean): void { this.taskForm.participant_ids=checked?[...new Set([...this.taskForm.participant_ids,id])]:this.taskForm.participant_ids.filter(v=>v!==id); }
-  openTaskDialog(): void { this.taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[]};this.taskStep.set(0);this.taskError.set('');this.taskDialog.set(true); }
+  openTaskDialog(): void { const participants=this.data()?.participants??[]; this.taskEditing.set(null); this.taskExistingAttachment.set(null); this.taskEditingStatus.set('planned'); this.taskForm={title:'',description:'',responsible:this.course().tecnico_name?.trim()||'Coordinación del curso',start_at:this.taskStartMin(),end_at:'',participant_ids:participants.map(person=>person.id)};this.taskAttachment=null;this.taskStep.set(0);this.taskError.set('');this.taskDialog.set(true); }
+  openTaskEdit(task:CourseSections['activities'][number],people:CourseSections['participants']): void { this.taskEditing.set(task.id); this.taskExistingAttachment.set(this.documentsForTask(task.id)[0]??null); this.documentsApi.list('activity',task.id).subscribe({next:page=>this.taskExistingAttachment.set(page.documents[0]??null)}); this.taskEditingStatus.set(task.status); this.taskForm={title:task.title,description:task.description??'',responsible:task.responsible,start_at:this.taskDateInput(task.start_at),end_at:this.taskDateInput(task.end_at),participant_ids:people.map(person=>person.id)};this.taskAttachment=null;this.taskError.set('');this.taskDialog.set(true); }
+  taskDateInput(value:string): string { return value.replace(' ','T').slice(0,16); }
+  visibleTasks(tasks:CourseSections['activities']): CourseSections['activities'] { const filter=this.taskStatusFilter(); return filter==='all'?tasks:tasks.filter(task=>filter==='inactive'?task.status==='cancelled':task.status!=='cancelled'); }
+  taskCount(filter:'active'|'inactive'|'all',tasks:CourseSections['activities']): number { return this.visibleTasksFor(filter,tasks).length; }
+  private visibleTasksFor(filter:'active'|'inactive'|'all',tasks:CourseSections['activities']): CourseSections['activities'] { return filter==='all'?tasks:tasks.filter(task=>filter==='inactive'?task.status==='cancelled':task.status!=='cancelled'); }
   closeTaskDialog(): void { if(!this.taskSaving())this.taskDialog.set(false); }
   nextTaskStep(): void { if(this.taskForm.title.trim())this.taskStep.set(1); }
   previousTaskStep(): void { this.taskStep.set(0); }
   canContinueTask(): boolean { return !!this.taskForm.title.trim()&&this.taskForm.title.length<=150; }
-  canSaveTask(people:CourseSections['participants']): boolean { return !!this.taskForm.responsible.trim()&&!!this.taskForm.start_at&&!!this.taskForm.end_at&&this.taskForm.end_at>this.taskForm.start_at&&this.taskForm.participant_ids.length>0&&this.taskForm.participant_ids.length<=people.length; }
+  taskStartMin(): string { return `${this.today()}T00:00`; }
+  taskEndMax(): string { return `${this.course().end_date}T23:59`; }
+  onTaskStartChange(value:string): void { this.taskForm.start_at=value; if(this.taskForm.end_at&&this.taskForm.end_at<value)this.taskForm.end_at=''; }
+  selectTaskAttachment(event:Event): void { const input=event.target as HTMLInputElement; this.setTaskAttachment(input.files?.[0]??null); input.value=''; }
+  taskAttachmentDragOver(event:DragEvent): void { event.preventDefault(); this.taskAttachmentDragging.set(true); }
+  taskAttachmentDragLeave(): void { this.taskAttachmentDragging.set(false); }
+  taskAttachmentDrop(event:DragEvent): void { event.preventDefault(); this.taskAttachmentDragging.set(false); this.setTaskAttachment(event.dataTransfer?.files?.[0]??null); }
+  removeTaskAttachment(): void { this.taskAttachment=null; }
+  private setTaskAttachment(file:File|null): void { if(!file)return; if(!this.isEvidenceFile(file)||file.size>50*1024*1024){this.taskError.set('Adjunta un PDF, imagen o video de hasta 50 MB.');return;} this.taskAttachment=file;this.taskError.set(''); }
+  canSaveTask(people:CourseSections['participants']): boolean { return this.canContinueTask()&&!!this.taskForm.start_at&&!!this.taskForm.end_at&&this.taskForm.start_at>=this.taskStartMin()&&this.taskForm.end_at>this.taskForm.start_at&&this.taskForm.end_at<=this.taskEndMax()&&people.length>0; }
   allTaskParticipantsSelected(people:CourseSections['participants']): boolean { return people.length>0&&this.taskForm.participant_ids.length===people.length; }
   toggleAllTaskParticipants(checked:boolean,people:CourseSections['participants']): void { this.taskForm.participant_ids=checked?people.map(person=>person.id):[]; }
   taskStatus(status:string): string { return ({planned:'Planificada',in_progress:'En curso',completed:'Completada',cancelled:'Cancelada'} as Record<string,string>)[status]??status; }
@@ -125,15 +138,21 @@ export class CourseDetailComponent implements OnInit {
     const due=new Date(endAt.replace(' ','T')).getTime(), remaining=due-Date.now();
     if(!Number.isFinite(due))return 'Fecha de entrega pendiente'; if(remaining<=0)return 'Entrega vencida';
     const days=Math.floor(remaining/86400000), hours=Math.floor((remaining%86400000)/3600000);
-    return days?`Entrega en ${days} d ${hours} h`:`Entrega en ${Math.max(1,hours)} h`;
+    return days?`Entrega en ${days}d ${hours}h`:`Entrega en ${Math.max(1,hours)}h`;
   }
   onTaskDragOver(id:number,event:DragEvent): void { event.preventDefault(); this.draggingTask.set(id); }
   onTaskDragLeave(id:number): void { if(this.draggingTask()===id)this.draggingTask.set(null); }
   onTaskDrop(id:number,event:DragEvent): void { event.preventDefault(); this.draggingTask.set(null); const file=event.dataTransfer?.files[0]; if(file)this.submitEvidence(id,file); }
-  createTask(course:CourseSections): void {
+  toggleTaskStatus(task:CourseSections['activities'][number]): void { if(this.taskActionSaving())return; const status=task.status==='cancelled'?'planned':'cancelled'; this.taskActionSaving.set(true); this.api.setTaskStatus(this.course().id,task.id,status).subscribe({next:()=>{this.taskActionSaving.set(false);this.reload();},error:()=>{this.taskActionSaving.set(false);this.taskError.set('No se pudo cambiar el estado de la tarea.');}}); }
+  requestTaskDelete(task:CourseSections['activities'][number]): void { if(!this.taskActionSaving())this.taskToDelete.set(task); }
+  closeTaskDelete(): void { if(!this.taskActionSaving())this.taskToDelete.set(null); }
+  confirmTaskDelete(): void { const task=this.taskToDelete(); if(!task||this.taskActionSaving())return; this.taskActionSaving.set(true); this.api.deleteTask(this.course().id,task.id).subscribe({next:()=>{this.taskActionSaving.set(false);this.taskToDelete.set(null);this.reload();},error:()=>{this.taskActionSaving.set(false);this.taskError.set('No se pudo eliminar la tarea.');this.taskToDelete.set(null);}}); }
+  saveTask(course:CourseSections): void {
     if(this.taskSaving()||!this.canContinueTask()||!this.canSaveTask(course.participants)) return;
     this.taskSaving.set(true); this.taskError.set('');
-    this.api.createTask(this.course().id,{...this.taskForm,status:'planned'}).subscribe({next:()=>{this.taskSaving.set(false);this.taskDialog.set(false);this.taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[]};this.reload();},error:()=>{this.taskSaving.set(false);this.taskError.set('No se pudo crear la actividad. Verifica las asignaciones del curso.');}});
+    const participantIds=this.taskForm.participant_ids.length?this.taskForm.participant_ids:course.participants.map(person=>person.id); const id=this.taskEditing(); const input={...this.taskForm,participant_ids:participantIds,status:id?this.taskEditingStatus():'planned'};
+    const request=id?this.api.updateTask(this.course().id,id,input):this.api.createTask(this.course().id,input);
+    request.subscribe({next:result=>{const activityId=id??result.id; const finish=()=>{this.taskSaving.set(false);this.taskDialog.set(false);this.taskAttachment=null;this.taskEditing.set(null);this.taskExistingAttachment.set(null);this.taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[]};this.reload();}; const uploadError=(error:any)=>{this.taskSaving.set(false);const code=error?.error?.error??'';const messages:Record<string,string>={nextcloud_storage_not_configured:'El almacenamiento de archivos no está configurado.',nextcloud_storage_unavailable:'No se pudo conectar con el almacenamiento de archivos.',nextcloud_credentials_rejected:'Las credenciales del almacenamiento de archivos fueron rechazadas.',unsupported_file_type:'El tipo de archivo no está permitido.',invalid_upload:'El archivo no llegó correctamente al servidor.'};this.taskError.set(`La actividad se guardó, pero ${messages[code]??'no se pudo subir el archivo adjunto.'}`);this.reload();}; if(this.taskAttachment)this.api.uploadEvidence(this.course().id,activityId,this.taskAttachment).subscribe({next:finish,error:uploadError}); else finish();},error:()=>{this.taskSaving.set(false);this.taskError.set('No se pudo guardar la actividad. Verifica los datos ingresados.');}});
   }
   uploadEvidence(task:number,event:Event): void {
     const file=(event.target as HTMLInputElement).files?.[0]; if(!file)return;

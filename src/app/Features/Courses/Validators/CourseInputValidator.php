@@ -12,6 +12,7 @@ final class CourseInputValidator
         $status = $input['status'] ?? 'active'; $tecnicos = $input['tecnico_user_ids'] ?? [];
         $capacity = $input['max_participants'] ?? null;
         $qrLink = trim((string)($input['qr_link'] ?? ''));
+        $isEvent = filter_var($input['is_event'] ?? false, FILTER_VALIDATE_BOOLEAN);
         if ($name === '' || $description === '' || strlen($name) > 150 || strlen($description) > 1000
             || !$this->date($start) || !$this->date($end) || $end < $start
             || !in_array($status, ['active','inactive'], true)) throw new ApiException(422,'invalid_course');
@@ -24,7 +25,7 @@ final class CourseInputValidator
         foreach ($participants as $participant) if (filter_var($participant,FILTER_VALIDATE_INT) === false || (int)$participant < 1) throw new ApiException(422,'invalid_participants');
         $participants = array_values(array_unique(array_map('intval',$participants)));
         return ['name'=>$name,'description'=>$description,'start_date'=>$start,'end_date'=>$end,'status'=>$status,
-            'tecnico_user_ids'=>array_values(array_unique(array_map('intval',$tecnicos))),'max_participants'=>(int)$capacity,'participant_ids'=>$participants,'qr_link'=>$qrLink];
+            'tecnico_user_ids'=>array_values(array_unique(array_map('intval',$tecnicos))),'max_participants'=>(int)$capacity,'participant_ids'=>$participants,'qr_link'=>$qrLink,'is_event'=>$isEvent];
     }
     public function id(mixed $id): int
     {

@@ -25,8 +25,9 @@ final class UserRepository
     public function findActiveById(int $id): ?array
     {
         $statement = $this->connection->prepare(
-            'SELECT id,ci,first_name,last_name,phone,email,is_active,last_login_at '
-            . 'FROM users WHERE id = :id AND is_active = 1 LIMIT 1'
+            'SELECT u.id,u.ci,u.first_name,u.last_name,u.phone,u.email,u.is_active,u.last_login_at, '
+            . '(SELECT br.gender FROM beneficiary_registrations br WHERE br.user_id=u.id ORDER BY br.id DESC LIMIT 1) gender '
+            . 'FROM users u WHERE u.id = :id AND u.is_active = 1 LIMIT 1'
         );
         $statement->execute(['id' => $id]);
         $user = $statement->fetch();

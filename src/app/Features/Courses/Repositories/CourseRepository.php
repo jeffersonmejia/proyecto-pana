@@ -5,17 +5,17 @@ use PDO;
 final class CourseRepository
 {
     public function __construct(private PDO $db) {}
-    public function all(array $actor): array
+    public function all(array $actor,bool $isEvent=false): array
     {
         [$scope,$params]=$this->scope($actor);
-        $q=$this->db->prepare($this->select()." WHERE {$scope} GROUP BY c.id ORDER BY c.start_date,c.name");
+        $q=$this->db->prepare($this->select()." WHERE c.es_evento=".(int)$isEvent." AND {$scope} GROUP BY c.id ORDER BY c.start_date,c.name");
         $q->execute($params); return array_map([$this,'mapCourse'],$q->fetchAll());
     }
-    public function available(array $actor): array
+    public function available(array $actor,bool $isEvent=false): array
     {
         $user=(int)($actor['id']??0); $person="(p2.user_id={$user} OR p2.ci=(SELECT ci FROM users WHERE id={$user}))"; $enrolled="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.course_id=c.id AND cp2.status='active' AND {$person})"; $hasAny="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.status='active' AND {$person})";
         $select=str_replace(' FROM courses c', ",CASE WHEN {$enrolled} THEN 1 ELSE 0 END enrolled FROM courses c", $this->select());
-        $q=$this->db->query($select." WHERE c.status='active' AND (NOT {$hasAny} OR {$enrolled}) GROUP BY c.id ORDER BY c.start_date,c.name");
+        $q=$this->db->query($select." WHERE c.es_evento=".(int)$isEvent." AND c.status='active' AND (NOT {$hasAny} OR {$enrolled}) GROUP BY c.id ORDER BY c.start_date,c.name");
         return array_map([$this,'mapCourse'],$q->fetchAll());
     }
     public function find(int $id,array $actor): ?array
@@ -35,20 +35,21 @@ final class CourseRepository
     public function create(array $data,int $actor,array $user): int
     {
         return $this->transaction(function() use($data,$actor,$user): int {
-            $q=$this->db->prepare('INSERT INTO courses (name,description,qr_link,start_date,end_date,status,max_participants,coordinator_user_id) VALUES (?,?,?,?,?,?,?,?)');
-            $q->execute([$data['name'],$data['description'],$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],($user['roles'][0]??'')==='coordinator'?$actor:null]);
+            $q=$this->db->prepare('INSERT INTO courses (name,description,es_evento,qr_link,start_date,end_date,status,max_participants,coordinator_user_id) VALUES (?,?,?,?,?,?,?,?,?)');
+            $q->execute([$data['name'],$data['description'],$data['is_event']?1:0,$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],($user['roles'][0]??'')==='coordinator'?$actor:null]);
             $id=(int)$this->db->lastInsertId(); $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']); return $id;
         });
     }
     public function update(int $id,array $data): void
     {
         $this->transaction(function() use($id,$data): void {
-            $q=$this->db->prepare('UPDATE courses SET name=?,description=?,qr_link=?,start_date=?,end_date=?,status=?,max_participants=? WHERE id=?');
-            $q->execute([$data['name'],$data['description'],$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$id]);
+            $q=$this->db->prepare('UPDATE courses SET name=?,description=?,es_evento=?,qr_link=?,start_date=?,end_date=?,status=?,max_participants=? WHERE id=?');
+            $q->execute([$data['name'],$data['description'],$data['is_event']?1:0,$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$id]);
             $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']);
         });
     }
     public function deactivate(int $id): void { $q=$this->db->prepare("UPDATE courses SET status='inactive' WHERE id=?"); $q->execute([$id]); }
+    public function delete(int $id): void { $q=$this->db->prepare('DELETE FROM courses WHERE id=?'); $q->execute([$id]); }
     public function setStatus(int $id,string $status): void { $q=$this->db->prepare('UPDATE courses SET status=? WHERE id=?'); $q->execute([$status,$id]); }
     public function setCover(int $id,string $stored,string $original,string $mime): void
     {
@@ -103,7 +104,7 @@ final class CourseRepository
     }
     private function select(): string
     {
-        return "SELECT c.id,c.name,c.description,c.qr_link,c.cover_stored_name IS NOT NULL cover_available,c.start_date,c.end_date,c.status,c.max_participants,(SELECT GROUP_CONCAT(ct.tecnico_user_id) FROM course_tecnicos ct WHERE ct.course_id=c.id) tecnico_user_ids_csv,(SELECT GROUP_CONCAT(CONCAT(tu.first_name,' ',tu.last_name) ORDER BY tu.last_name,tu.first_name SEPARATOR ', ') FROM course_tecnicos ct JOIN users tu ON tu.id=ct.tecnico_user_id WHERE ct.course_id=c.id) tecnico_name,COUNT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_count,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_ids_csv,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN CONCAT(p.first_name,' ',p.last_name) END ORDER BY p.last_name,p.first_name SEPARATOR ', ') participant_names FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id LEFT JOIN people p ON p.id=cp.person_id";
+        return "SELECT c.id,c.name,c.description,c.es_evento,c.qr_link,c.cover_stored_name IS NOT NULL cover_available,c.start_date,c.end_date,c.status,c.max_participants,(SELECT GROUP_CONCAT(ct.tecnico_user_id) FROM course_tecnicos ct WHERE ct.course_id=c.id) tecnico_user_ids_csv,(SELECT GROUP_CONCAT(CONCAT(tu.first_name,' ',tu.last_name) ORDER BY tu.last_name,tu.first_name SEPARATOR ', ') FROM course_tecnicos ct JOIN users tu ON tu.id=ct.tecnico_user_id WHERE ct.course_id=c.id) tecnico_name,COUNT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_count,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN cp.person_id END) participant_ids_csv,GROUP_CONCAT(DISTINCT CASE WHEN cp.status='active' THEN CONCAT(p.first_name,' ',p.last_name) END ORDER BY p.last_name,p.first_name SEPARATOR ', ') participant_names FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id LEFT JOIN people p ON p.id=cp.person_id";
     }
     private function mapCourse(array $course): array
     {

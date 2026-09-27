@@ -32,6 +32,11 @@
 .courses-link:not(.active) span, .events-link:not(.active) span, .admin-link:not(.active) span { display: none; }
 .courses-link:hover, .admin-link:hover { background: var(--pana-primary-softer); color: var(--pana-primary); }
 .courses-link.active, .admin-link.active { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); font-weight: 600; }
+.courses-link.active svg { color: var(--pana-muted-strong); }
+.courses-link svg, .events-link svg, .notification-trigger svg, .account-trigger svg { color: var(--pana-navbar-icon); }
+.courses-link.active svg { color: var(--pana-primary); }
+.events-link.active svg { color: var(--pana-primary); }
+.notification-trigger[aria-expanded="true"] svg { color: var(--pana-primary); }
 .preview-menu { position: relative; }
 .preview-link { width: max-content; min-width: 0; max-width: min(240px, calc(100vw - 260px)); min-height: 34px; padding: 5px 10px; border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary-dark); box-sizing: border-box; }
 .preview-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -84,9 +89,19 @@
 .notification-trigger { width: 40px; height: 40px; padding: 0; border-color: transparent; border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-primary); }
 .notification-trigger:hover, .notification-trigger[aria-expanded="true"] { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); }
 .notification-count { top: 2px; right: 2px; min-width: 16px; padding: 1px 4px; border: 2px solid var(--pana-surface); line-height: 14px; }
-.account-trigger { min-width: 124px; justify-content: space-between; padding: 6px 11px; border-color: var(--pana-primary); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-primary); }
+.account-trigger { min-width: 124px; justify-content: space-between; padding: 6px 11px; border-color: var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-gray-soft); color: var(--pana-gray); }
 .account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: var(--pana-primary); background: var(--pana-primary-soft); color: var(--pana-primary); }
-.account-trigger > svg:first-child, .account-trigger .chevron { color: inherit; }
+.account-trigger > svg:first-child, .account-trigger .chevron { color: var(--pana-gray); }
+.account-trigger:hover > svg:first-child, .account-trigger:hover .chevron, .account-trigger[aria-expanded="true"] > svg:first-child, .account-trigger[aria-expanded="true"] .chevron { color: var(--pana-primary); }
 @media (max-width: 560px) { .topbar-actions { gap: 2px; padding: 0; }.topbar-link { min-height: 38px; border-radius: var(--pana-radius); }.courses-link { padding-inline: 10px; }.notification-trigger { width: 38px; height: 38px; }.account-trigger { min-width: 0; padding-inline: 9px; } }
 .events-link { order: 2; }.admin-link { order: 3; }.notification-menu { order: 4; }.account-menu { order: 5; }
 .account-popover { width: min(240px, calc(100vw - 28px)); padding: 10px; gap: 0; }
+.account-avatar { display: inline-grid; flex: 0 0 auto; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--pana-gray-soft); color: var(--pana-gray); }
+.account-trigger .account-avatar { width: 20px; height: 20px; background: transparent; color: var(--pana-muted-strong); }
+.account-trigger:hover .account-avatar, .account-trigger[aria-expanded="true"] .account-avatar { background: transparent; color: var(--pana-primary); }
+.account-summary { display: flex; align-items: center; gap: 10px; padding: 6px 6px 12px; border-bottom: 1px solid var(--pana-divider); }
+.account-avatar-large { width: 52px; height: 52px; background: var(--pana-primary-soft); color: var(--pana-primary); }
+.account-summary > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.account-summary .account-role { display: block; margin: 0; color: var(--pana-muted); font-size: .78rem; }
+.profile-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--pana-gray-soft); color: var(--pana-gray); }
+.popover-profile:hover .profile-icon { background: var(--pana-primary-soft); color: var(--pana-primary); }

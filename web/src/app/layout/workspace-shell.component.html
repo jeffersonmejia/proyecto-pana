@@ -24,11 +24,12 @@
         }
         <div class="account-menu" #accountMenu (document:click)="closeAccountMenu($event, accountMenu)" (keydown.escape)="accountMenuOpen.set(false)">
           <button class="topbar-link account-trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="accountMenuOpen()" (click)="toggleAccount($event)">
-            <svg lucideUserRound [size]="16"></svg><span>{{ displayShortName() }}</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
+            <span class="account-avatar" aria-hidden="true"><svg lucideUserRound [size]="16"></svg></span><span>{{ displayShortName() }}</span><svg class="chevron" lucideChevronDown [size]="14"></svg>
           </button>
           @if (accountMenuOpen()) {
             <section class="account-popover" role="menu" aria-label="Mi cuenta">
-              <button class="popover-profile" type="button" role="menuitem" (click)="openProfile()"><svg lucideUserRound [size]="16"></svg><span>Perfil ({{ displayRole() }})</span></button>
+              <header class="account-summary"><span class="account-avatar account-avatar-large" aria-hidden="true"><svg lucideUserRound [size]="26"></svg></span><span><strong>{{ displayShortName() }}</strong><span class="account-role">{{ displayRole() }}</span></span></header>
+              <button class="popover-profile" type="button" role="menuitem" (click)="openProfile()"><span class="profile-icon" aria-hidden="true"><svg lucideUserRound [size]="18"></svg></span><span>Perfil</span></button>
               <button class="popover-logout" type="button" role="menuitem" (click)="logout()">Cerrar sesión</button>
             </section>
           }

@@ -38,7 +38,7 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
             $components['documents']->upload($_POST, $_FILES['file'] ?? null, $actor);
         },
         'POST /api/courses/evidence' => static function () use ($build,$authorizeAny): void {
-            $components=$build(); $actor=$authorizeAny($components,['documents.manage','activities.submit_evidence']);
+            $components=$build(); $actor=$authorizeAny($components,['documents.manage','activities.submit_evidence','courses.manage.all','courses.manage']);
             $course=filter_var($_POST['course_id']??null,FILTER_VALIDATE_INT); $activity=filter_var($_POST['entity_id']??null,FILTER_VALIDATE_INT);
             if(!$course||$course<1||!$activity||$activity<1) throw new ApiException(400,'invalid_id');
             $courses=new CourseRepository(database_connection());

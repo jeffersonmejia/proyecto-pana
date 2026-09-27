@@ -10,6 +10,7 @@ export interface AuthUser {
   last_name: string;
   phone: string | null;
   email: string;
+  gender?: string | null;
   last_login_at: string | null;
   roles: string[];
   permissions: string[];

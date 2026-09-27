@@ -9,6 +9,10 @@
 .course-filter button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 6px 11px; border: 0; border-radius: var(--pana-radius); background: transparent; color: var(--pana-muted-strong); font: inherit; font-size: .8rem; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
 .course-filter button:hover, .course-filter button:focus-visible { background: var(--pana-surface-subtle); }
 .course-filter button.selected { background: var(--pana-primary-soft); color: var(--pana-primary); font-weight: 600; }
+.course-filter button:not(.selected) span { display: none; }
+.course-filter button:not(.selected) svg { color: var(--pana-navbar-icon); }
+.event-mode .course-state:not(.error-state) p { font-size: 0; }
+.event-mode .course-state:not(.error-state) p::after { content: 'No hay eventos disponibles.'; color: var(--pana-empty-text); font-size: 1rem; font-weight: 700; }
 .course-filter button:focus-visible { outline: 2px solid var(--pana-primary); outline-offset: 2px; }.filter-count { min-width: 18px; padding: 1px 5px; border-radius: var(--pana-radius); background: var(--pana-primary-softer); color: var(--pana-primary); font-size: .7rem; font-variant-numeric: tabular-nums; text-align: center; }.course-filter button.selected .filter-count { background: var(--pana-primary-track); color: var(--pana-primary); }
 h2, h3, p { margin: 0; }
 h2 { font-size: 1.55rem; letter-spacing: -.025em; }
@@ -65,6 +69,13 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .icon-action.danger:hover, .icon-action.danger:focus-visible { background: var(--pana-remove-hover); }
 .empty { display: grid; justify-items: center; gap: 9px; padding: 44px 16px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-muted); text-align: center; }
 .empty p { color: var(--pana-empty-text); font-weight: 600; }
+.course-state { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.course-state svg { flex: 0 0 auto; color: var(--pana-muted); }
+.course-state.error-state svg, .course-state.error-state p { color: var(--pana-danger); }
+.course-refresh { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 6px 11px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-muted-strong); font: inherit; font-size: .8rem; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease; }
+.course-state .course-refresh svg { color: currentColor; }
+.course-refresh:hover:not(:disabled) { border-color: var(--pana-outline); background: var(--pana-surface); color: var(--pana-ink); }
+.course-refresh:disabled { opacity: .72; cursor: default; }
 .error { margin: 10px 0; color: var(--pana-danger); }
 .dialog-error { margin: 16px 0 0; color: var(--pana-danger); font-size: .82rem; font-weight: 600; line-height: 1.4; }
 .pending-timeline { max-width: 1050px; margin: 10px auto 0; }
@@ -85,6 +96,7 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .form-step[hidden] { display: none; }
 .form-step label { display: grid; gap: 6px; color: var(--pana-text); font-size: .9rem; }
 .form-step input, .form-step select, .form-step textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--pana-input-outline); border-radius: var(--pana-radius); background: white; color: var(--pana-ink); font: inherit; }
+.form-step select[name="capacity"] option:disabled { display: none; }
 .form-step textarea { min-height: 75px; resize: vertical; }
 .student-picker { display: grid; gap: 8px; min-width: 0; }
 .student-picker > label { color: var(--pana-text); font-size: .9rem; }
@@ -160,11 +172,26 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .tecnico-row:hover, .tecnico-row.selected { background: var(--pana-surface-subtle); }
 .tecnico-table th:first-child, .tecnico-table td:first-child { width: 110px; text-align: center; }
 .tecnico-table input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; min-height: 16px; accent-color: var(--pana-primary); }
+.select-all-technicos { cursor: pointer; }
+.course-confirm-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--pana-ink) 24%, transparent); }
+.course-confirm-modal { width: min(100%, 360px); padding: 20px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-text); }
+.course-confirm-modal h3 { margin: 0; color: var(--pana-ink); font-size: 1rem; line-height: 1.35; }
+.course-confirm-modal p { margin: 8px 0 18px; color: var(--pana-muted); font-size: .86rem; line-height: 1.4; }
+.course-confirm-modal footer { display: flex; justify-content: flex-end; gap: 10px; }
+.course-confirm-modal button { min-height: 36px; padding: 7px 14px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-muted-strong); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.course-confirm-modal .confirm-delete { border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface); }
+.course-confirm-modal button:hover { border-color: var(--pana-primary); color: var(--pana-primary); }
+.course-confirm-modal .confirm-delete:hover { border-color: var(--pana-primary-dark); background: var(--pana-primary-dark); color: var(--pana-surface); }
 .tecnico-table tr:last-child td { border-bottom: 0; }
 .no-tecnicos { color: var(--pana-muted) !important; text-align: center !important; }
 .filter-count { color: var(--pana-primary); }
 .course-filter button.selected .filter-count { color: var(--pana-primary); }
 .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.event-mode .dates { grid-template-columns: 1fr; }
+.event-mode .dates label:last-child { display: none; }
+.event-mode .dates label:first-child { font-size: 0; }
+.event-mode .dates label:first-child::before { content: 'Fecha del evento'; color: var(--pana-text); font-size: .9rem; }
+.event-mode .dates label:first-child input { font-size: .9rem; }
 .courses-home ::ng-deep pana-step-dialog .dialog footer { justify-content: flex-end; gap: 10px; }
 .form-step.cover-qr-step { gap: 32px; }
 .cover-qr-step .cover-step, .cover-qr-step .qr-step { gap: 10px; }

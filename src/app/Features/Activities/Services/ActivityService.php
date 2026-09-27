@@ -55,6 +55,19 @@ final class ActivityService
         }
     }
 
+    public function setStatus(int $id, string $status, int $actor, array $scope = []): void
+    {
+        if (!in_array($status, ['planned', 'in_progress', 'completed', 'cancelled'], true)) throw new ApiException(422, 'invalid_activity_status');
+        try { $this->activities->setStatus($id, $status, $actor, $scope); }
+        catch (RuntimeException $error) { if ($error->getMessage() === 'activity_not_found') throw new ApiException(404, 'activity_not_found'); throw $error; }
+    }
+
+    public function delete(int $id, array $scope = []): void
+    {
+        try { $this->activities->delete($id, $scope); }
+        catch (RuntimeException $error) { if ($error->getMessage() === 'activity_not_found') throw new ApiException(404, 'activity_not_found'); throw $error; }
+    }
+
     public function logs(int $id, array $scope = []): array
     {
         $this->one($id, $scope);

@@ -1,0 +1,2 @@
+ALTER TABLE courses
+    ADD COLUMN IF NOT EXISTS es_evento TINYINT(1) NOT NULL DEFAULT 0 AFTER description;

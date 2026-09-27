@@ -90,6 +90,25 @@ final class ActivityRepository
         });
     }
 
+    public function setStatus(int $id, string $status, int $actor, array $scopeActor = []): void
+    {
+        $this->transaction(function () use ($id, $status, $actor, $scopeActor): void {
+            if (!$this->find($id, $scopeActor)) throw new RuntimeException('activity_not_found');
+            $query = $this->connection->prepare('UPDATE activities SET status=? WHERE id=?');
+            $query->execute([$status, $id]);
+            $this->addLog($id, null, $actor, 'updated', 'Estado de la actividad actualizado.');
+        });
+    }
+
+    public function delete(int $id, array $scopeActor = []): void
+    {
+        $this->transaction(function () use ($id, $scopeActor): void {
+            if (!$this->find($id, $scopeActor)) throw new RuntimeException('activity_not_found');
+            $query = $this->connection->prepare('DELETE FROM activities WHERE id=?');
+            $query->execute([$id]);
+        });
+    }
+
     public function logs(int $id, array $actor = []): array
     {
         $scope = \App\Support\AccessScope::person('l.participant_id', $actor);

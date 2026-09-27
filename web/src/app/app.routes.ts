@@ -11,6 +11,7 @@ export const routes: Routes = [
   {path:'inscripcion/:step',canActivate:[guestGuard],loadComponent:()=>import('./features/auth').then(m=>m.RegistrationComponent)},
   {path:'cursos',canActivate:[authGuard,permissionGuard],data:{permissions:coursePermissions},loadComponent:()=>import('./features/courses').then(m=>m.CoursesHomeComponent)},
   {path:'eventos',canActivate:[authGuard,permissionGuard],data:{permissions:['events.read']},loadComponent:()=>import('./features/events').then(m=>m.EventsComponent)},
+  {path:'eventos/:courseId',canActivate:[authGuard,permissionGuard],data:{permissions:['events.read']},loadComponent:()=>import('./features/events').then(m=>m.EventsComponent)},
   {path:'notificaciones',canActivate:[authGuard],loadComponent:()=>import('./features/notifications').then(m=>m.NotificationListComponent)},
   {path:'notificaciones/:id',canActivate:[authGuard],loadComponent:()=>import('./features/notifications').then(m=>m.NotificationDetailComponent)},
   {path:'perfil',canActivate:[authGuard],loadComponent:()=>import('./features/profile').then(m=>m.ProfileComponent)},

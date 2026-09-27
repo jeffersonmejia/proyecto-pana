@@ -4,14 +4,14 @@ import { environment } from '../../../environments/environment';
 
 export interface Course {
   id: number; name: string; description: string | null; qr_link: string | null; start_date: string; end_date: string;
-  status: 'active' | 'inactive'; cover_available: boolean; enrolled?: boolean; max_participants: number | null; tecnico_user_ids: number[];
+  status: 'active' | 'inactive'; es_evento?: boolean; cover_available: boolean; enrolled?: boolean; max_participants: number | null; tecnico_user_ids: number[];
   tecnico_name: string; tutor_name?: string; participant_count: number; participant_names: string | null;
-  participant_ids: number[];
+  participant_ids: number[]; is_event?: boolean;
 }
 export interface CourseInput {
   name: string; description: string; qr_link: string; start_date: string; end_date: string;
   status: 'active' | 'inactive'; tecnico_user_ids: number[]; max_participants: number | null;
-  participant_ids: number[];
+  participant_ids: number[]; is_event?: boolean;
 }
 export interface CourseSections {
   course: Course;
@@ -28,8 +28,8 @@ export interface PublicCourse { id: number; name: string; description: string | 
 export class CoursesApiService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/courses`;
-  list() { return this.http.get<{ courses: Course[] }>(this.url); }
-  available() { return this.http.get<{ courses: Course[] }>(`${this.url}/available`); }
+  list(isEvent=false) { return this.http.get<{ courses: Course[] }>(this.url, { params: { type: isEvent ? 'event' : 'course' } }); }
+  available(isEvent=false) { return this.http.get<{ courses: Course[] }>(`${this.url}/available`, { params: { type: isEvent ? 'event' : 'course' } }); }
   enroll(id:number) { return this.http.post(`${this.url}/enroll?id=${id}`,{}); }
   uploadCover(id: number, file: File) { const form = new FormData(); form.append('file', file); return this.http.post(`${this.url}/cover?id=${id}`, form); }
   publicWelcome(id: number) { return this.http.get<{ course: PublicCourse }>(`${environment.apiBaseUrl}/public/courses/welcome`, { params: { id } }); }
@@ -38,6 +38,9 @@ export class CoursesApiService {
   createTask(courseId: number,input: { title: string; description: string; responsible: string; start_at: string; end_at: string; status: string; participant_ids: number[] }) {
     return this.http.post<{ id: number }>(`${this.url}/tasks`,input,{params:{course_id:courseId}});
   }
+  updateTask(courseId:number,taskId:number,input: { title: string; description: string; responsible: string; start_at: string; end_at: string; status: string; participant_ids: number[] }) { return this.http.put<{id:number}>(`${this.url}/tasks?id=${taskId}`,input,{params:{course_id:courseId}}); }
+  setTaskStatus(courseId:number,taskId:number,status:string) { return this.http.patch(`${this.url}/tasks/status?id=${taskId}`,{status},{params:{course_id:courseId}}); }
+  deleteTask(courseId:number,taskId:number) { return this.http.delete(`${this.url}/tasks?id=${taskId}`,{params:{course_id:courseId}}); }
   uploadEvidence(courseId: number,activityId: number,file: File) {
     const form=new FormData(); form.append('course_id',String(courseId)); form.append('entity_type','activity'); form.append('entity_id',String(activityId)); form.append('file',file);
     return this.http.post<{id:number}>(`${environment.apiBaseUrl}/courses/evidence`,form);
@@ -47,5 +50,5 @@ export class CoursesApiService {
   create(input: CourseInput) { return this.http.post<{ id: number }>(this.url, input); }
   update(id: number, input: CourseInput) { return this.http.put(`${this.url}?id=${id}`, { ...input, id }); }
   setStatus(id:number,status:'active'|'inactive') { return this.http.patch(`${this.url}/status?id=${id}`,{status}); }
-  deactivate(id: number) { return this.http.delete(`${this.url}?id=${id}`); }
+  delete(id: number) { return this.http.delete(`${this.url}?id=${id}`); }
 }
