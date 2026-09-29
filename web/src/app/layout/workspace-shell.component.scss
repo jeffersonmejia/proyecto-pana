@@ -28,14 +28,20 @@
 .notification-empty { margin: 0; padding: 18px 16px; font-size: .8rem; }
 .topbar-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 11px; border: 1px solid transparent; border-radius: var(--pana-radius); font: inherit; font-size: .81rem; font-weight: 550; white-space: nowrap; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
 .courses-link, .admin-link, .events-link { background: transparent; color: var(--pana-primary); }
-.events-link:hover, .events-link.active { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); }
+.events-link:hover, .events-link.active, .admin-link:hover, .admin-link.active { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); }
 .courses-link:not(.active) span, .events-link:not(.active) span, .admin-link:not(.active) span { display: none; }
 .courses-link:hover, .admin-link:hover { background: var(--pana-primary-softer); color: var(--pana-primary); }
 .courses-link.active, .admin-link.active { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); font-weight: 600; }
 .courses-link.active svg { color: var(--pana-muted-strong); }
-.courses-link svg, .events-link svg, .notification-trigger svg, .account-trigger svg { color: var(--pana-navbar-icon); }
+.courses-link svg, .events-link svg, .admin-link svg, .notification-trigger svg, .account-trigger svg { color: var(--pana-navbar-icon); }
 .courses-link.active svg { color: var(--pana-primary); }
 .events-link.active svg { color: var(--pana-primary); }
+.admin-link.active svg { color: var(--pana-primary); }
+.topbar-link.admin-link:not(.active) { background: var(--pana-surface-subtle) !important; color: var(--pana-pastel-blue-icon) !important; }
+.topbar-link.admin-link:hover,
+.topbar-link.admin-link.active,
+.topbar-link.admin-link:focus-visible { background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.topbar-link.admin-link svg { color: var(--pana-pastel-blue-icon) !important; }
 .notification-trigger[aria-expanded="true"] svg { color: var(--pana-primary); }
 .preview-menu { position: relative; }
 .preview-link { width: max-content; min-width: 0; max-width: min(240px, calc(100vw - 260px)); min-height: 34px; padding: 5px 10px; border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary-dark); box-sizing: border-box; }
@@ -58,10 +64,10 @@
 .account-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 4; display: grid; gap: 5px; width: min(260px, calc(100vw - 28px)); padding: 16px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-ink); }
 .account-popover strong { overflow: hidden; font-size: .9rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .account-role { display: flex; align-items: center; gap: 6px; margin: 0 2px 2px; color: var(--pana-muted); font-size: .74rem; }
-.popover-logout { min-height: 40px; margin-top: 9px; padding: 8px 15px; border: 1px solid var(--pana-primary); border-radius: var(--pana-radius); background: var(--pana-primary); color: var(--pana-surface); font: inherit; font-size: .8rem; font-weight: 600; text-align: center; cursor: pointer; }
+.popover-logout { min-height: 40px; margin-top: 9px; padding: 8px 15px; border: 1px solid var(--pana-pastel-green-bg); border-radius: var(--pana-radius); background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); font: inherit; font-size: .8rem; font-weight: 600; text-align: center; cursor: pointer; }
 .popover-profile { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 8px 10px; border: 0; border-radius: var(--pana-radius); background: transparent; color: var(--pana-ink); font: inherit; font-size: .84rem; text-align: left; cursor: pointer; }.popover-profile:hover { background: var(--pana-primary-softer); color: var(--pana-primary); }
-.popover-logout:hover, .popover-logout:focus-visible { background: var(--pana-primary-dark); }
-.popover-logout:focus-visible { outline: 2px solid var(--pana-primary); outline-offset: 2px; }
+.popover-logout:hover, .popover-logout:focus-visible { background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); }
+.popover-logout:focus-visible { outline: 2px solid var(--pana-pastel-green-icon); outline-offset: 2px; }
 .main-content { min-height: calc(100vh - 68px); margin: 0; padding: 20px clamp(24px, 5vw, 72px) 72px; background: var(--pana-page-soft); }
 .main-content.course-open { padding-top: 18px; }
 .session-loading { display: grid; min-height: 100vh; place-items: center; color: var(--pana-muted); }
@@ -90,8 +96,184 @@
 .notification-trigger:hover, .notification-trigger[aria-expanded="true"] { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); }
 .notification-count { top: 2px; right: 2px; min-width: 16px; padding: 1px 4px; border: 2px solid var(--pana-surface); line-height: 14px; }
 .account-trigger { min-width: 124px; justify-content: space-between; padding: 6px 11px; border-color: var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-gray-soft); color: var(--pana-gray); }
-.account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: var(--pana-primary); background: var(--pana-primary-soft); color: var(--pana-primary); }
+.account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: transparent; background: var(--pana-primary-soft); color: var(--pana-primary); }
+.account-trigger:focus-visible { outline: 2px solid var(--pana-outline); outline-offset: 1px; }
 .account-trigger > svg:first-child, .account-trigger .chevron { color: var(--pana-gray); }
+.courses-link.active { background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link:not(.active), .events-link:not(.active), .notification-trigger { border-color: transparent !important; background: transparent !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link:not(.active) svg, .events-link:not(.active) svg, .notification-trigger svg { color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { min-width: 148px; border-color: var(--pana-outline) !important; background: var(--pana-surface) !important; color: var(--pana-gray) !important; }
+.account-trigger .account-avatar, .account-trigger .account-avatar svg, .account-trigger > svg:first-child, .account-trigger .chevron { background: transparent !important; color: var(--pana-gray) !important; }
+.events-link:not(.active), .notification-trigger { color: var(--pana-muted-strong) !important; }
+.events-link:not(.active) svg, .notification-trigger svg { color: var(--pana-muted-strong) !important; }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { border: 0 !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.account-trigger .account-avatar, .account-trigger .account-avatar svg, .account-trigger > svg:first-child, .account-trigger .chevron { color: var(--pana-muted-strong) !important; }
+.events-link:not(.active) { border-color: transparent !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.events-link:not(.active) svg { color: var(--pana-muted-strong) !important; }
+.notification-trigger { border-color: transparent !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.notification-trigger svg { color: var(--pana-muted-strong) !important; }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { background: var(--pana-surface-subtle) !important; }
+.notification-menu .notification-trigger, .notification-menu .notification-trigger:hover, .notification-menu .notification-trigger[aria-expanded="true"] { width: 48px; height: 48px; border: 0 !important; border-radius: 16px; background: var(--pana-gray-soft) !important; color: var(--pana-muted-strong) !important; }
+.notification-menu .notification-trigger svg { color: var(--pana-muted-strong) !important; }
+.account-menu .account-trigger, .account-menu .account-trigger:hover, .account-menu .account-trigger[aria-expanded="true"] { min-width: 148px; min-height: 48px; border: 0 !important; border-radius: 16px; background: var(--pana-gray-soft) !important; color: var(--pana-muted-strong) !important; }
+.account-menu .account-trigger .account-avatar, .account-menu .account-trigger .account-avatar svg, .account-menu .account-trigger > svg:first-child, .account-menu .account-trigger .chevron { color: var(--pana-muted-strong) !important; }
+.topbar-link.courses-link, .topbar-link.events-link, .notification-menu .notification-trigger, .account-menu .account-trigger { border-radius: 14px !important; }
+.topbar-actions { gap: 6px; }
+.events-link, .notification-trigger { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 14px !important; }
+.account-trigger { min-width: 0 !important; min-height: 40px !important; height: 40px; padding: 6px 12px !important; border-radius: 14px !important; }
+.events-link, .notification-menu .notification-trigger { width: 40px !important; height: 40px !important; min-width: 40px; min-height: 40px; box-sizing: border-box; padding: 0 !important; }
+.courses-link:not(.active), .events-link:not(.active) { background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.courses-link:not(.active) svg, .events-link:not(.active) svg { color: var(--pana-muted-strong) !important; }
+.courses-link.active, .events-link.active { background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link.active span, .events-link.active span { display: inline !important; }
+.events-link.active { width: auto !important; min-width: 0; padding-inline: 12px !important; }
+.courses-link.active, .events-link.active { background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.courses-link.active svg, .events-link.active svg { color: var(--pana-muted-strong) !important; }
+
+/* Popup de perfil: superficie neutra y acción azul suave. */
+.account-menu .account-popover {
+  border: 1px solid var(--pana-outline) !important;
+  border-radius: 16px;
+  background: var(--pana-surface) !important;
+  color: var(--pana-ink) !important;
+  box-shadow: none !important;
+}
+
+.account-menu .account-summary {
+  border-bottom-color: var(--pana-divider) !important;
+}
+
+.account-menu .account-summary strong {
+  color: var(--pana-ink) !important;
+}
+
+.account-menu .account-summary .account-role {
+  color: var(--pana-muted-strong) !important;
+}
+
+.account-menu .account-avatar-large,
+.account-menu .profile-icon {
+  background: var(--pana-pastel-blue-bg) !important;
+  color: var(--pana-pastel-blue-icon) !important;
+}
+
+.account-menu .popover-profile,
+.account-menu .popover-profile:hover,
+.account-menu .popover-profile:focus-visible {
+  border-color: transparent !important;
+  background: var(--pana-surface) !important;
+  color: var(--pana-muted-strong) !important;
+}
+
+.account-menu .popover-profile:hover .profile-icon,
+.account-menu .popover-profile:focus-visible .profile-icon {
+  background: var(--pana-gray-soft) !important;
+  color: var(--pana-muted-strong) !important;
+}
+
+.account-menu .popover-logout,
+.account-menu .popover-logout:hover,
+.account-menu .popover-logout:focus-visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: transparent !important;
+  background: var(--pana-pastel-blue-bg) !important;
+  color: var(--pana-pastel-blue-icon) !important;
+}
+
+/* Neutralización final del contenido del popup. */
+.account-menu .account-avatar-large,
+.account-menu .profile-icon,
+.account-menu .popover-profile:hover .profile-icon,
+.account-menu .popover-profile:focus-visible .profile-icon {
+  background: var(--pana-gray-soft) !important;
+  color: var(--pana-muted-strong) !important;
+}
+
+.account-menu .account-avatar-large svg,
+.account-menu .profile-icon svg {
+  color: var(--pana-muted-strong) !important;
+}
+
+.account-menu .account-summary strong,
+.account-menu .popover-profile,
+.account-menu .popover-profile:hover,
+.account-menu .popover-profile:focus-visible {
+  color: var(--pana-ink) !important;
+}
+
+.account-menu .account-summary .account-role {
+  color: var(--pana-muted-strong) !important;
+}
+
+/* Transición compacta entre Cursos y Eventos. */
+.topbar-actions .courses-link,
+.topbar-actions .events-link {
+  box-sizing: border-box;
+  width: 40px;
+  min-width: 40px;
+  overflow: hidden;
+  padding-inline: 0 !important;
+  transition: width 260ms cubic-bezier(.2, .8, .2, 1), padding 260ms cubic-bezier(.2, .8, .2, 1), background-color 180ms ease, color 180ms ease;
+}
+
+.topbar-actions .courses-link.active {
+  width: 108px;
+  padding-inline: 12px !important;
+}
+
+.topbar-actions .events-link.active {
+  width: 100px !important;
+  min-width: 100px;
+  padding-inline: 12px !important;
+}
+
+.topbar-actions .courses-link span,
+.topbar-actions .events-link span {
+  display: inline-block !important;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: max-width 220ms cubic-bezier(.2, .8, .2, 1), opacity 140ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.topbar-actions .courses-link.active span,
+.topbar-actions .events-link.active span {
+  max-width: 68px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Reserva el espacio del grupo para que la expansión no mueva el navbar. */
+.topbar-actions {
+  min-width: 390px;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-actions .courses-link,
+  .topbar-actions .events-link,
+  .topbar-actions .courses-link span,
+  .topbar-actions .events-link span { transition: none; }
+}
+
+@media (max-width: 760px) {
+  .topbar-actions { min-width: 0; }
+}
+.topbar-link.courses-link, .topbar-link.events-link, .notification-menu .notification-trigger, .account-menu .account-trigger { border-radius: 10px !important; }
+.notification-popover { border-color: var(--pana-outline); background: var(--pana-surface); color: var(--pana-ink); }
+.notification-popover header { border-bottom-color: var(--pana-divider); }
+.notification-popover header strong { color: var(--pana-ink); }
+.notification-popover header button { color: var(--pana-muted-strong); }
+.notification-item, .notification-item.unread { border-bottom-color: var(--pana-divider); background: var(--pana-surface); color: var(--pana-muted-strong); }
+.notification-item > svg { background: var(--pana-gray-soft); color: var(--pana-muted-strong); }
+.notification-item strong { color: var(--pana-ink); }
+.notification-item small, .notification-empty { color: var(--pana-muted); }
+.topbar { border-bottom: 0 !important; }
+.events-link:not(.active), .admin-link:not(.active), .notification-menu .notification-trigger, .account-menu .account-trigger { border: 0 !important; background: var(--pana-surface-subtle) !important; }
 .account-trigger:hover > svg:first-child, .account-trigger:hover .chevron, .account-trigger[aria-expanded="true"] > svg:first-child, .account-trigger[aria-expanded="true"] .chevron { color: var(--pana-primary); }
 @media (max-width: 560px) { .topbar-actions { gap: 2px; padding: 0; }.topbar-link { min-height: 38px; border-radius: var(--pana-radius); }.courses-link { padding-inline: 10px; }.notification-trigger { width: 38px; height: 38px; }.account-trigger { min-width: 0; padding-inline: 9px; } }
 .events-link { order: 2; }.admin-link { order: 3; }.notification-menu { order: 4; }.account-menu { order: 5; }
@@ -105,3 +287,24 @@
 .account-summary .account-role { display: block; margin: 0; color: var(--pana-muted); font-size: .78rem; }
 .profile-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--pana-gray-soft); color: var(--pana-gray); }
 .popover-profile:hover .profile-icon { background: var(--pana-primary-soft); color: var(--pana-primary); }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: var(--pana-pastel-blue-bg) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger > svg:first-child, .account-trigger .chevron, .account-trigger .account-avatar, .account-trigger:hover > svg:first-child, .account-trigger:hover .chevron, .account-trigger[aria-expanded="true"] > svg:first-child, .account-trigger[aria-expanded="true"] .chevron { color: var(--pana-pastel-blue-icon) !important; }
+.account-avatar-large, .profile-icon, .popover-profile:hover .profile-icon { background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.popover-profile:hover { background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.popover-logout, .popover-logout:hover, .popover-logout:focus-visible { border-color: var(--pana-pastel-blue-bg) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link, .courses-link:hover, .courses-link.active, .events-link, .events-link:hover, .events-link.active, .notification-trigger, .notification-trigger:hover, .notification-trigger[aria-expanded="true"] { border-color: var(--pana-pastel-blue-bg) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link svg, .events-link svg, .notification-trigger svg { color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger .account-avatar svg { color: var(--pana-pastel-blue-icon) !important; }
+.courses-link, .courses-link:hover, .events-link, .events-link:hover, .notification-trigger, .notification-trigger:hover { border-color: transparent !important; background: transparent !important; color: var(--pana-pastel-blue-icon) !important; }
+.courses-link.active, .events-link.active, .notification-trigger[aria-expanded="true"] { border-color: var(--pana-pastel-blue-bg) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: var(--pana-outline) !important; background: var(--pana-surface) !important; color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger .account-avatar, .account-trigger:hover .account-avatar, .account-trigger[aria-expanded="true"] .account-avatar { background: transparent !important; color: var(--pana-pastel-blue-icon) !important; }
+.account-trigger, .account-trigger:hover, .account-trigger[aria-expanded="true"] { color: var(--pana-gray) !important; }
+.account-trigger .account-avatar svg, .account-trigger > svg:first-child, .account-trigger .chevron { color: var(--pana-gray) !important; }
+.courses-link.active, .events-link.active { border-color: transparent !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.courses-link.active svg, .events-link.active svg { color: var(--pana-muted-strong) !important; }
+.topbar-link.admin-link,
+.topbar-link.admin-link:hover,
+.topbar-link.admin-link.active,
+.topbar-link.admin-link:focus-visible { border-color: transparent !important; outline: none !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
+.topbar-link.admin-link svg { color: var(--pana-muted-strong) !important; }

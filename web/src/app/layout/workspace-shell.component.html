@@ -19,7 +19,7 @@
         </button>
         @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage') || auth.hasPermission('roles.manage')) {
           <button class="topbar-link admin-link" type="button" [class.active]="activeModule() === 'admin'" (click)="open('admin')">
-            <svg lucideUsersRound [size]="19"></svg><span>Administración</span>
+            <svg lucideShieldCheck [size]="18"></svg><span>Administración</span>
           </button>
         }
         <div class="account-menu" #accountMenu (document:click)="closeAccountMenu($event, accountMenu)" (keydown.escape)="accountMenuOpen.set(false)">
@@ -30,7 +30,7 @@
             <section class="account-popover" role="menu" aria-label="Mi cuenta">
               <header class="account-summary"><span class="account-avatar account-avatar-large" aria-hidden="true"><svg lucideUserRound [size]="26"></svg></span><span><strong>{{ displayShortName() }}</strong><span class="account-role">{{ displayRole() }}</span></span></header>
               <button class="popover-profile" type="button" role="menuitem" (click)="openProfile()"><span class="profile-icon" aria-hidden="true"><svg lucideUserRound [size]="18"></svg></span><span>Perfil</span></button>
-              <button class="popover-logout" type="button" role="menuitem" (click)="logout()">Cerrar sesión</button>
+              <button class="popover-logout" type="button" role="menuitem" (click)="logout()"><svg lucideLogOut [size]="17" aria-hidden="true"></svg><span>Cerrar sesión</span></button>
             </section>
           }
         </div>

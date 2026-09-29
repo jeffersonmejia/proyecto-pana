@@ -1,12 +1,20 @@
 :host { display: block; color: var(--pana-ink); }
 .administration { max-width: 1400px; margin: 0 auto; }
-.admin-tabs { display: flex; gap: 10px; max-width: 100%; overflow-x: auto; border-bottom: 1px solid var(--pana-outline); scrollbar-width: thin; }
-.admin-tabs button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 0 12px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--pana-muted-strong); font: inherit; font-size: .8rem; cursor: pointer; transition: color 140ms ease, background-color 140ms ease; }
-.admin-tabs button:hover { background: var(--pana-surface-subtle); color: var(--pana-primary-dark); }
-.admin-tabs button.active { border-bottom-color: var(--pana-primary); color: var(--pana-primary-dark); font-weight: 600; }
-.administration > pana-admin-users, .administration > pana-admin-roles, .administration > pana-people, .administration > pana-backups { display: block; margin-top: 18px; }
-.admin-skeleton { display: grid; gap: 18px; margin-top: 18px; }
-.admin-skeleton-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 42px; }
+.admin-layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); align-items: start; gap: 20px; }
+.admin-sidebar, .admin-sidebar-skeleton { display: grid; gap: 6px; padding: 14px 12px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
+.admin-sidebar header { padding: 2px 9px 12px; border-bottom: 1px solid var(--pana-divider); color: var(--pana-ink); font-size: .86rem; }
+.admin-sidebar button { display: flex; align-items: center; gap: 10px; min-height: 43px; padding: 9px 10px; border: 1px solid transparent; border-radius: var(--pana-radius); background: transparent; color: var(--pana-muted-strong); font: inherit; font-size: .81rem; text-align: left; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
+.admin-sidebar button svg { flex: 0 0 auto; }
+.admin-sidebar button span { min-width: 0; flex: 1; }
+.admin-sidebar button small { color: currentColor; font-size: .74rem; }
+.admin-sidebar button:hover { background: var(--pana-surface-subtle); color: var(--pana-muted-strong); }
+.admin-sidebar button.active { background: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); font-weight: 650; }
+.admin-content { min-width: 0; }
+.administration > .admin-layout .admin-content > pana-admin-users, .administration > .admin-layout .admin-content > pana-admin-roles, .administration > .admin-layout .admin-content > pana-people, .administration > .admin-layout .admin-content > pana-backups { display: block; }
+.admin-skeleton { display: grid; gap: 18px; }
+.admin-skeleton-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 42px; }
 .admin-skeleton-table { display: grid; gap: 18px; min-height: 245px; padding: 22px 18px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
-@media (max-width: 720px) { .admin-tabs button { min-height: 44px; padding: 0 9px; font-size: .74rem; } }
-@media (prefers-reduced-motion: reduce) { .admin-tabs button { transition: none; } }
+.admin-sidebar-skeleton { gap: 10px; min-height: 250px; }
+.admin-sidebar-skeleton pana-skeleton { min-height: 42px; }
+@media (max-width: 760px) { .admin-layout { grid-template-columns: 1fr; gap: 14px; }.admin-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }.admin-sidebar header { grid-column: 1 / -1; }.admin-sidebar button { min-width: 0; }.admin-sidebar-skeleton { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }.admin-sidebar-skeleton pana-skeleton:first-child { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .admin-sidebar button { transition: none; } }

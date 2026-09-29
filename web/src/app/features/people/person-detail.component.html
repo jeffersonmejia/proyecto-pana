@@ -1,7 +1,9 @@
 @if (loading()) { <p class="state">Cargando información…</p> }
 @if (error()) { <p class="notice" role="alert">{{ error() }}</p> }
 @if (detail(); as data) {
-  <main class="detail-page">
+  <div class="person-course-layout" [class.navigation-collapsed]="navigationCollapsed()">
+    <aside class="person-course-navigation" aria-label="Navegación del curso"><header class="course-navigation-header"><strong [title]="courseName()">{{ courseName() }}</strong><button class="course-navigation-toggle" type="button" (click)="toggleNavigation()" [attr.aria-label]="navigationCollapsed() ? 'Mostrar texto de navegación' : 'Ocultar texto de navegación'" [attr.aria-expanded]="!navigationCollapsed()">@if (navigationCollapsed()) { <svg lucidePanelLeftOpen [size]="18" aria-hidden="true"></svg> } @else { <svg lucidePanelLeftClose [size]="18" aria-hidden="true"></svg> }</button></header><button class="person-back-button" type="button" (click)="back()"><svg lucideHouse [size]="19"></svg><span>Inicio</span><span class="sidebar-tooltip" aria-hidden="true">Inicio</span></button><pana-course-section-nav [items]="navigationItems" active="participants" [collapsed]="navigationCollapsed()" (selected)="selectCourseSection($event)" /></aside>
+    <main class="detail-page">
     <button class="back-button" type="button" (click)="back()"><svg lucideArrowLeft [size]="18"></svg>Participantes del curso</button>
     <header class="profile-heading">
       <div class="profile-avatar"><svg lucideUser [size]="42"></svg></div>
@@ -23,5 +25,6 @@
         <section class="fact-group status-group"><h3 class="group-chip chip-green"><svg lucideCircleCheck [size]="16"></svg>Estado y cuenta</h3><div class="facts"><p><span class="fact-label"><svg lucideBuilding2 [size]="15"></svg>Ciudad de nacimiento</span><strong class="fact-chip">{{ data.person.birth_city || '—' }}</strong></p><p><span class="fact-label"><svg lucideMapPin [size]="15"></svg>Sector</span><strong class="fact-chip">{{ data.person.sector || '—' }}</strong></p><p><span class="fact-label"><svg lucideCalendarDays [size]="15"></svg>Fecha de nacimiento</span><strong class="fact-chip chip-blue">{{ birthDateWithAge(data.person.birth_date) }}</strong></p></div></section>
       </div>
     </section>
-  </main>
+    </main>
+  </div>
 }

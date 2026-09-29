@@ -6,11 +6,14 @@
       <form (ngSubmit)="submit()">
         <label for="email">Correo electrónico</label>
         <span class="input-shell"><svg lucideMail [size]="18" aria-hidden="true"></svg><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="username" required></span>
+        @if (submitAttempted() && !email.trim()) { <small class="field-hint">Ingresa tu correo</small> }
         <label for="password">Contraseña</label>
         <span class="input-shell password-shell"><svg lucideLockKeyhole [size]="18" aria-hidden="true"></svg><input id="password" name="password" class="password-input" [type]="passwordVisible() ? 'text' : 'password'" [(ngModel)]="password" autocomplete="current-password" required><button class="password-toggle" type="button" (click)="togglePassword()" [attr.aria-label]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'">@if (passwordVisible()) { <svg lucideEyeOff [size]="18"></svg> } @else { <svg lucideEye [size]="18"></svg> }</button></span>
         <label class="remember-option"><input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe"><span>Recordar contraseña</span></label>
+        @if (submitAttempted() && email.trim() && !password) { <small class="field-hint">Ingresa tu contraseña</small> }
         <p class="form-error" role="alert" [hidden]="!errorMessage()">{{ errorMessage() }}</p>
         <div class="login-actions"><button mat-flat-button type="submit" [disabled]="busy() || !email || !password"><svg lucideLogIn [size]="18"></svg>{{ busy() ? 'Validando...' : 'Iniciar sesión' }}</button><button mat-stroked-button type="button" class="registration-button" (click)="openRegistration()"><svg lucideUserPlus [size]="18"></svg><span>Inscríbete</span></button></div>
+        <div class="login-actions validation-actions"><button mat-flat-button type="submit" [disabled]="busy()"><svg lucideLogIn [size]="18"></svg>{{ busy() ? 'Validando...' : 'Iniciar sesión' }}</button><button mat-stroked-button type="button" class="registration-button" (click)="openRegistration()"><svg lucideUserPlus [size]="18"></svg><span>Inscríbete</span></button></div>
       </form>
     </div>
     <footer class="login-footer">Patronato Municipal de Santo Domingo 2026</footer>

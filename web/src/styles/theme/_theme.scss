@@ -87,3 +87,7 @@ html {
   --pana-empty-text: var(--pana-ink);
   --pana-radius: 12px;
 }
+
+body.pana-courses-loading {
+  overflow: hidden !important;
+}

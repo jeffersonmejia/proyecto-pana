@@ -37,7 +37,7 @@ final class CourseRepository
         return $this->transaction(function() use($data,$actor,$user): int {
             $q=$this->db->prepare('INSERT INTO courses (name,description,es_evento,qr_link,start_date,end_date,status,max_participants,coordinator_user_id) VALUES (?,?,?,?,?,?,?,?,?)');
             $q->execute([$data['name'],$data['description'],$data['is_event']?1:0,$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],($user['roles'][0]??'')==='coordinator'?$actor:null]);
-            $id=(int)$this->db->lastInsertId(); $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']); return $id;
+            $id=(int)$this->db->lastInsertId(); $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']); $this->syncWeeklyEvidence($id,$data['start_date'],$data['end_date'],(bool)$data['is_event']); return $id;
         });
     }
     public function update(int $id,array $data): void
@@ -45,12 +45,20 @@ final class CourseRepository
         $this->transaction(function() use($id,$data): void {
             $q=$this->db->prepare('UPDATE courses SET name=?,description=?,es_evento=?,qr_link=?,start_date=?,end_date=?,status=?,max_participants=? WHERE id=?');
             $q->execute([$data['name'],$data['description'],$data['is_event']?1:0,$data['qr_link'],$data['start_date'],$data['end_date'],$data['status'],$data['max_participants'],$id]);
-            $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']);
+            $this->syncTecnicos($id,$data['tecnico_user_ids']); $this->syncParticipants($id,$data['participant_ids']); $this->syncWeeklyEvidence($id,$data['start_date'],$data['end_date'],(bool)$data['is_event']);
         });
     }
     public function deactivate(int $id): void { $q=$this->db->prepare("UPDATE courses SET status='inactive' WHERE id=?"); $q->execute([$id]); }
     public function delete(int $id): void { $q=$this->db->prepare('DELETE FROM courses WHERE id=?'); $q->execute([$id]); }
     public function setStatus(int $id,string $status): void { $q=$this->db->prepare('UPDATE courses SET status=? WHERE id=?'); $q->execute([$status,$id]); }
+    public function weeklyEvidence(int $course): array
+    {
+        $q=$this->db->prepare("SELECT w.id,w.week_number,w.week_start,w.week_end,w.original_name,w.mime_type,w.file_size,w.created_at,u.first_name uploader_first_name,u.last_name uploader_last_name FROM course_weekly_evidences w LEFT JOIN users u ON u.id=w.uploaded_by WHERE w.course_id=? ORDER BY w.week_number"); $q->execute([$course]);
+        return array_map(static function(array $row): array { $row['id']=(int)$row['id']; $row['week_number']=(int)$row['week_number']; $row['file_size']=$row['file_size']===null?null:(int)$row['file_size']; $row['uploader']=trim(($row['uploader_first_name']??'').' '.($row['uploader_last_name']??'')) ?: null; unset($row['uploader_first_name'],$row['uploader_last_name']); return $row; },$q->fetchAll());
+    }
+    public function weeklyEvidenceOne(int $id,int $course): ?array { $q=$this->db->prepare('SELECT * FROM course_weekly_evidences WHERE id=? AND course_id=?'); $q->execute([$id,$course]); return $q->fetch()?:null; }
+    public function saveWeeklyEvidence(int $id,string $name,string $stored,string $mime,int $size,int $actor): void { $q=$this->db->prepare('UPDATE course_weekly_evidences SET original_name=?,stored_name=?,mime_type=?,file_size=?,uploaded_by=? WHERE id=?'); $q->execute([$name,$stored,$mime,$size,$actor,$id]); }
+    public function clearWeeklyEvidence(int $id): void { $q=$this->db->prepare('UPDATE course_weekly_evidences SET original_name=NULL,stored_name=NULL,mime_type=NULL,file_size=NULL,uploaded_by=NULL WHERE id=?'); $q->execute([$id]); }
     public function setCover(int $id,string $stored,string $original,string $mime): void
     {
         $q=$this->db->prepare('UPDATE courses SET cover_stored_name=?,cover_original_name=?,cover_mime_type=? WHERE id=?');
@@ -81,6 +89,18 @@ final class CourseRepository
     public function tecnicoExists(int $id): bool
     {
         $q=$this->db->prepare('SELECT 1 FROM tecnicos t JOIN users u ON u.id=t.user_id WHERE t.user_id=? AND t.is_active=1 AND u.is_active=1'); $q->execute([$id]); return (bool)$q->fetchColumn();
+    }
+    public function setTecnicoStatus(int $course,int $tecnico,string $status): void
+    {
+        $q=$this->db->prepare("UPDATE course_tecnicos SET status=? WHERE course_id=? AND tecnico_user_id=?");
+        $q->execute([$status,$course,$tecnico]);
+        if ($q->rowCount() < 1) throw new \RuntimeException('course_tecnico_not_found');
+    }
+    public function setParticipantStatus(int $course,int $person,string $status): void
+    {
+        $q=$this->db->prepare('UPDATE course_participants SET status=? WHERE course_id=? AND person_id=?');
+        $q->execute([$status,$course,$person]);
+        if ($q->rowCount() < 1) throw new \RuntimeException('course_participant_not_found');
     }
     public function participantExists(int $id): bool
     {
@@ -122,6 +142,12 @@ final class CourseRepository
         $q=$this->db->prepare('INSERT INTO course_tecnicos (course_id,tecnico_user_id) VALUES (?,?)');
         foreach($ids as $id) $q->execute([$course,$id]);
     }
+    private function syncWeeklyEvidence(int $course,string $start,string $end,bool $isEvent=false): void
+    {
+        $from=new \DateTimeImmutable($start); $to=new \DateTimeImmutable($end); $days=(int)$from->diff($to)->days+1; $weeks=$isEvent?1:max(1,(int)ceil($days/7)); $insert=$this->db->prepare('INSERT INTO course_weekly_evidences (course_id,week_number,week_start,week_end) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE week_start=VALUES(week_start),week_end=VALUES(week_end)');
+        for($week=1;$week<=$weeks;$week++){ $weekStart=$from->modify('+'.(($week-1)*7).' days'); $weekEnd=$weekStart->modify('+6 days'); if($weekEnd>$to)$weekEnd=$to; $insert->execute([$course,$week,$weekStart->format('Y-m-d'),$weekEnd->format('Y-m-d')]); }
+        $this->db->prepare('DELETE FROM course_weekly_evidences WHERE course_id=? AND week_number>?')->execute([$course,$weeks]);
+    }
     private function transaction(callable $callback): mixed
     {
         $this->db->beginTransaction(); try { $result=$callback(); $this->db->commit(); return $result; }
@@ -132,7 +158,7 @@ final class CourseRepository
         $role=$a['roles'][0]??''; $id=(int)($a['id']??0);
         if ($role==='admin') return ['1=1',[]];
         if ($role==='coordinator') return ['c.coordinator_user_id=?',[$id]];
-        if ($role==='tecnico') return ['c.tecnico_user_id=?',[$id]];
+        if ($role==='tecnico') return ['EXISTS (SELECT 1 FROM course_tecnicos ct_scope WHERE ct_scope.course_id=c.id AND ct_scope.tecnico_user_id=? AND ct_scope.status=\'active\')',[$id]];
         $person="(p.user_id={$id} OR p.ci=(SELECT ci FROM users WHERE id={$id}))";
         if ($role==='beneficiary') $person.=' AND EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1)';
         elseif ($role==='student') $person.=" AND EXISTS (SELECT 1 FROM students s JOIN users su ON su.id=s.user_id AND su.is_active=1 WHERE su.id={$id} AND s.is_active=1)";

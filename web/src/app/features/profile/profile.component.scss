@@ -14,3 +14,77 @@ footer { gap: 22px; }
 .profile-section { padding-top: 16px; }
 .profile-card { padding: 28px; border-radius: var(--pana-radius); overflow: hidden; }
 @media (max-width: 620px) { .profile-card { padding: 20px 16px; } }
+
+/* Perfil: neutros y azul de acción compartido. */
+.profile-page .profile-avatar {
+  background: var(--pana-pastel-blue-bg) !important;
+  color: var(--pana-pastel-blue-icon) !important;
+}
+
+.profile-page .profile-header,
+.profile-page .profile-section {
+  border-color: var(--pana-divider) !important;
+}
+
+.profile-page .profile-header p,
+.profile-page .profile-status,
+.profile-page .profile-feedback,
+.profile-page .profile-grid label {
+  color: var(--pana-muted-strong);
+}
+
+.profile-page .profile-grid input,
+.profile-page .profile-grid textarea,
+.profile-page .profile-grid select {
+  border-color: var(--pana-outline) !important;
+  background: var(--pana-surface) !important;
+}
+
+.profile-page .profile-grid input[readonly] {
+  background: var(--pana-gray-soft) !important;
+  color: var(--pana-muted-strong) !important;
+}
+
+.profile-page .profile-grid input:focus,
+.profile-page .profile-grid textarea:focus,
+.profile-page .profile-grid select:focus {
+  outline: 2px solid var(--pana-pastel-blue-bg) !important;
+  border-color: var(--pana-pastel-blue-icon) !important;
+}
+
+.profile-page .back-link,
+.profile-page .back-link:hover,
+.profile-page .back-link:focus-visible {
+  color: var(--pana-pastel-blue-icon) !important;
+}
+
+.profile-page .save-button {
+  border-color: var(--pana-pastel-blue-icon) !important;
+  background: var(--pana-pastel-blue-icon) !important;
+  color: var(--pana-surface) !important;
+}
+
+.profile-page .save-button:hover:not(:disabled) {
+  background: var(--pana-chip-blue-text) !important;
+}
+
+.profile-page .profile-feedback.success {
+  color: var(--pana-pastel-blue-icon) !important;
+}
+
+/* El perfil ya no muestra un regreso redundante en su encabezado. */
+.profile-page .back-link {
+  display: none !important;
+}
+
+.profile-page .field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--pana-muted-strong);
+}
+
+.profile-page .field-label svg {
+  flex: 0 0 auto;
+  color: var(--pana-muted-strong);
+}

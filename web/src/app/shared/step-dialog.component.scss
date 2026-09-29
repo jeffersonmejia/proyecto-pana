@@ -22,5 +22,6 @@
 .dialog footer { justify-content: flex-end; border-top: 1px solid var(--pana-outline); }
 .primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 8px 18px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-primary); font: inherit; cursor: pointer; }
 .primary { min-width: 118px; border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface); }
+.course-dialog .primary { border-color: var(--pana-pastel-blue-icon); background: var(--pana-pastel-blue-icon); color: var(--pana-surface); }
 .dialog button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 650px) { .dialog-scrim { padding: 0; }.dialog { width: 100%; max-height: 100vh; border-radius: var(--pana-radius); }.dialog header, .dialog-steps, .dialog-body, .dialog footer { padding-inline: 16px; }.dialog-step-item { min-width: 88px; } }

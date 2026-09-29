@@ -120,3 +120,458 @@ button.mat-mdc-unelevated-button { grid-column: 2; grid-row: 1; display: flex; a
   .intro { font-size: .9rem; }
 }
 .login-footer { margin-top: 28px !important; padding-bottom: 0 !important; }
+
+/* Login: superficie neutra y acciones con jerarquía azul */
+.login-layout {
+  display: block;
+  overflow: auto;
+  background: var(--pana-surface);
+}
+
+.login-art { display: none; }
+
+.login-side {
+  min-height: 100vh;
+  padding: clamp(44px, 8vh, 104px) clamp(24px, 9vw, 132px) 28px;
+  background: var(--pana-surface);
+}
+
+.login-panel {
+  width: min(100%, 1080px);
+  padding-top: 0;
+}
+
+.login-heading {
+  min-height: 0;
+  margin-bottom: clamp(42px, 7vh, 76px);
+  padding: 0;
+  gap: clamp(28px, 5vw, 72px);
+  background: transparent;
+}
+
+.login-title {
+  color: var(--pana-ink);
+  font-size: clamp(2rem, 3.2vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.login-brand { justify-content: flex-start; }
+h1 { flex-basis: 360px; }
+h1 img { width: 360px; max-height: 180px; }
+
+form {
+  gap: 8px;
+}
+
+label {
+  margin-top: 18px;
+  color: var(--pana-muted-strong);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
+  font-weight: 600;
+}
+
+.input-shell {
+  min-height: 64px;
+  border-bottom: 2px solid var(--pana-outline);
+}
+
+.input-shell svg,
+.password-toggle {
+  color: var(--pana-muted-strong);
+}
+
+input,
+input:focus-visible {
+  min-height: 62px;
+  padding: 12px 16px 12px 58px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--pana-ink);
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+}
+
+.password-toggle {
+  right: 8px;
+  width: 42px;
+  height: 42px;
+}
+
+.remember-option {
+  margin-top: 24px;
+  color: var(--pana-muted-strong);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+}
+
+.remember-option input {
+  width: 22px;
+  min-height: 22px;
+  padding: 0;
+  accent-color: var(--pana-primary);
+}
+
+.login-actions {
+  gap: 24px;
+  margin-top: 42px;
+}
+
+button.mat-mdc-unelevated-button,
+.registration-button.mat-mdc-outlined-button {
+  min-height: 74px;
+  border-radius: 28px;
+  font-size: clamp(1rem, 1.7vw, 1.45rem);
+}
+
+button.mat-mdc-unelevated-button {
+  background: var(--pana-primary);
+  color: var(--pana-surface);
+}
+
+.registration-button.mat-mdc-outlined-button {
+  order: -1;
+  border: 0 !important;
+  background: var(--pana-surface-subtle);
+  color: var(--pana-muted-strong);
+  --mdc-outlined-button-label-text-color: var(--pana-muted-strong);
+}
+
+.registration-button.mat-mdc-outlined-button:hover {
+  background: var(--pana-gray-soft);
+  color: var(--pana-muted-strong);
+  --mdc-outlined-button-label-text-color: var(--pana-muted-strong);
+}
+
+.login-footer {
+  width: min(100%, 1080px);
+  margin-top: 60px !important;
+  color: var(--pana-muted);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+}
+
+@media (max-width: 760px) {
+  .login-side { padding: 32px 22px 24px; }
+  .login-heading { align-items: flex-start; flex-direction: column; gap: 22px; margin-bottom: 34px; }
+  h1 { flex-basis: auto; }
+  h1 img { width: 230px; max-height: 120px; }
+  .login-title { font-size: 2rem; }
+  .login-actions { gap: 12px; }
+}
+
+/* Restaurar el layout anterior con la imagen lateral. */
+.login-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+}
+
+.login-art { display: block; }
+
+.login-side {
+  min-height: 100vh;
+  padding: clamp(28px, 4vw, 64px);
+}
+
+.login-panel {
+  width: min(100%, 440px);
+  padding-top: clamp(12px, 2vh, 24px);
+}
+
+.login-heading {
+  min-height: 120px;
+  margin-bottom: 18px;
+  padding: 10px 0;
+  gap: 8px;
+  background: var(--pana-surface);
+}
+
+.login-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h1 { flex-basis: 155px; }
+h1 img { width: 155px; max-height: 120px; }
+
+label {
+  margin-top: 5px;
+  color: var(--pana-ink);
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+form { gap: 7px; }
+
+.input-shell { min-height: 0; border-bottom: 0; }
+.input-shell svg { color: var(--pana-muted); }
+
+input,
+input:focus-visible {
+  min-height: 46px;
+  padding: 9px 12px 9px 42px;
+  border-radius: var(--pana-radius);
+  outline: 2px solid var(--pana-primary);
+  background: var(--pana-primary-softer);
+  font-size: inherit;
+}
+
+.input-shell input:not(:focus-visible) { outline: 0; }
+.password-toggle { right: 10px; width: 32px; height: 32px; }
+.remember-option { margin-top: 2px; color: var(--pana-muted); font-size: .82rem; }
+.remember-option input { width: 17px; min-height: 17px; padding: 0; accent-color: var(--pana-primary); }
+.login-actions { gap: 10px; margin-top: 7px; }
+
+button.mat-mdc-unelevated-button,
+.registration-button.mat-mdc-outlined-button {
+  min-height: 44px;
+  border-radius: var(--pana-radius);
+  font-size: inherit;
+}
+
+button.mat-mdc-unelevated-button { background: var(--pana-primary); }
+.registration-button.mat-mdc-outlined-button {
+  order: initial;
+  border: 2px solid var(--pana-primary) !important;
+  background: transparent;
+  color: var(--pana-primary);
+  --mdc-outlined-button-label-text-color: var(--pana-primary);
+}
+
+.login-footer {
+  width: min(100%, 410px);
+  margin-top: 28px !important;
+  font-size: .85rem;
+}
+
+@media (max-width: 760px) {
+  .login-layout { display: block; }
+  .login-art { display: none; }
+  .login-side { padding: 26px 22px 20px; }
+  .login-panel { width: min(100%, 440px); margin: 0 auto 32px; }
+  .login-heading { flex-direction: row; gap: 8px; margin-bottom: 18px; }
+  h1 { flex-basis: 96px; }
+  h1 img { width: 96px; max-height: 82px; }
+  .login-title { font-size: 1.25rem; }
+  .login-actions { gap: 10px; }
+}
+
+/* Panel derecho del login: estilo neutro con acción principal azul. */
+.login-layout > .login-side {
+  justify-content: center;
+  padding: clamp(32px, 5vw, 76px);
+  background: var(--pana-surface);
+}
+
+.login-layout > .login-side > .login-panel {
+  width: min(100%, 680px);
+  padding-top: 0;
+}
+
+.login-layout > .login-side .login-heading {
+  min-height: 0;
+  margin-bottom: clamp(24px, 3.5vh, 38px);
+  padding: 0;
+  gap: 0;
+  background: transparent;
+}
+
+.login-layout > .login-side .login-brand {
+  justify-content: flex-start;
+}
+
+.login-layout > .login-side h1 {
+  flex-basis: 190px;
+}
+
+.login-layout > .login-side h1 img {
+  width: 190px;
+  max-height: 108px;
+}
+
+.login-layout > .login-side .login-title {
+  color: var(--pana-ink);
+  font-size: clamp(1.35rem, 1.65vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.12;
+  white-space: nowrap;
+  margin-left: -10px;
+}
+
+.login-layout > .login-side form {
+  gap: 8px;
+}
+
+.login-layout > .login-side form > label {
+  margin-top: 12px;
+  color: var(--pana-muted-strong);
+  font-size: clamp(.9rem, 1.05vw, 1.05rem);
+  font-weight: 600;
+}
+
+.login-layout > .login-side .input-shell {
+  min-height: 52px;
+  border-bottom: 1px solid var(--pana-outline);
+}
+
+.login-layout > .login-side .input-shell svg,
+.login-layout > .login-side .password-toggle {
+  color: var(--pana-muted-strong);
+}
+
+.login-layout > .login-side input,
+.login-layout > .login-side input:focus-visible {
+  min-height: 50px;
+  padding: 9px 16px 9px 48px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--pana-ink);
+  font-size: clamp(.9rem, 1.05vw, 1.05rem);
+}
+
+.login-layout > .login-side .password-toggle {
+  right: 8px;
+  width: 40px;
+  height: 40px;
+}
+
+.login-layout > .login-side .remember-option {
+  margin-top: 16px;
+  color: var(--pana-muted-strong);
+  font-size: clamp(.9rem, 1.05vw, 1.05rem);
+}
+
+.login-layout > .login-side .remember-option input {
+  width: 22px;
+  min-height: 22px;
+  padding: 0;
+  accent-color: var(--pana-chip-blue-text);
+}
+
+.login-layout > .login-side .login-actions {
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.login-layout > .login-side .login-actions button {
+  min-height: 54px;
+  border-radius: 18px;
+  font-size: clamp(.9rem, 1.05vw, 1.05rem);
+}
+
+.login-layout > .login-side button.mat-mdc-unelevated-button {
+  background: var(--pana-chip-blue-text);
+  color: var(--pana-surface);
+}
+
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button {
+  order: initial;
+  border: 0 !important;
+  background: var(--pana-surface-subtle);
+  color: var(--pana-muted-strong);
+  --mdc-outlined-button-label-text-color: var(--pana-muted-strong);
+}
+
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover {
+  background: var(--pana-gray-soft);
+  color: var(--pana-muted-strong);
+  --mdc-outlined-button-label-text-color: var(--pana-muted-strong);
+}
+
+.login-layout > .login-side .login-footer {
+  width: min(100%, 680px);
+  margin-top: 30px !important;
+  color: var(--pana-muted);
+  font-size: clamp(.85rem, 1vw, 1rem);
+}
+
+@media (max-width: 760px) {
+  .login-layout > .login-side .login-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .login-layout > .login-side h1 {
+    flex-basis: auto;
+  }
+
+  .login-layout > .login-side h1 img {
+    width: 190px;
+    max-height: 108px;
+  }
+}
+
+.login-layout > .login-side .field-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--pana-danger);
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.login-layout > .login-side form > .login-actions:not(.validation-actions) {
+  display: none !important;
+}
+
+.login-layout > .login-side form > .validation-actions {
+  display: grid;
+}
+
+.login-layout > .login-side .validation-actions button {
+  cursor: pointer;
+}
+
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover,
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:focus-visible {
+  background: var(--pana-gray-soft) !important;
+  background-color: var(--pana-gray-soft) !important;
+  color: var(--pana-muted-strong) !important;
+  --mdc-outlined-button-label-text-color: var(--pana-muted-strong);
+  --mdc-outlined-button-hover-state-layer-color: transparent;
+  --mat-text-button-state-layer-color: transparent;
+}
+
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover::before,
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover .mat-mdc-button-persistent-ripple::before,
+.login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover .mat-mdc-button-persistent-ripple::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:focus-visible {
+  background: var(--pana-gray-soft) !important;
+  background-color: var(--pana-gray-soft) !important;
+  color: var(--pana-muted-strong) !important;
+  --mdc-outlined-button-hover-state-layer-color: transparent !important;
+  --mdc-outlined-button-focus-state-layer-color: transparent !important;
+  --mat-mdc-button-persistent-ripple-color: transparent !important;
+}
+
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover .mat-mdc-button-persistent-ripple,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover .mat-mdc-button-persistent-ripple::before,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:hover .mat-mdc-button-persistent-ripple::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:active,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button.cdk-program-focused,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:focus {
+  background: var(--pana-gray-hover) !important;
+  background-color: var(--pana-gray-hover) !important;
+  color: var(--pana-muted-strong) !important;
+  --mdc-outlined-button-hover-state-layer-color: transparent !important;
+  --mdc-outlined-button-focus-state-layer-color: transparent !important;
+  --mdc-outlined-button-pressed-state-layer-color: transparent !important;
+}
+
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:active .mat-mdc-button-persistent-ripple::before,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:active .mat-mdc-button-persistent-ripple::after,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:focus .mat-mdc-button-persistent-ripple::before,
+:host ::ng-deep .login-layout > .login-side .registration-button.mat-mdc-outlined-button:focus .mat-mdc-button-persistent-ripple::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}

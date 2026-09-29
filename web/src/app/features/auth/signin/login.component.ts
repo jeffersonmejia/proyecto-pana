@@ -23,6 +23,7 @@ export class LoginComponent {
   readonly passwordVisible = signal(false);
   readonly busy = signal(false);
   readonly errorMessage = signal('');
+  readonly submitAttempted = signal(false);
 
   constructor() {
     const rememberedEmail = localStorage.getItem('pana.remembered.email');
@@ -35,6 +36,8 @@ export class LoginComponent {
   }
 
   submit(): void {
+    this.submitAttempted.set(true);
+    if (!this.email.trim() || !this.password) return;
     this.busy.set(true);
     this.errorMessage.set('');
     this.auth.login(this.email, this.password).subscribe({

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, output, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LucideClipboardCheck, LucideDownload, LucideUsersRound } from '@lucide/angular';
+import { LucideClipboardCheck, LucideDownload, LucideShieldCheck, LucideUserRound, LucideUsersRound } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { PeopleComponent } from '../people/people.component';
 import { AdminRolesComponent } from './admin-roles.component';
@@ -11,7 +11,7 @@ import { AdminApiService } from './admin-api.service';
 import { BackupApiService } from './backup-api.service';
 
 type AdminSection='users'|'people'|'roles'|'backups';
-@Component({selector:'pana-access-admin',standalone:true,imports:[PeopleComponent,AdminRolesComponent,AdminUsersComponent,BackupsComponent,SkeletonLoaderComponent,LucideClipboardCheck,LucideDownload,LucideUsersRound],templateUrl:'./administration.component.html',styleUrl:'./administration.component.scss'})
+@Component({selector:'pana-access-admin',standalone:true,imports:[PeopleComponent,AdminRolesComponent,AdminUsersComponent,BackupsComponent,SkeletonLoaderComponent,LucideClipboardCheck,LucideDownload,LucideShieldCheck,LucideUserRound,LucideUsersRound],templateUrl:'./administration.component.html',styleUrl:'./administration.component.scss'})
 export class AdministrationComponent implements OnInit {
   readonly auth=inject(AuthService); readonly close=output<void>(); readonly active=signal<AdminSection>('users'); readonly sectionReady=signal(false); readonly usersCount=signal(0); readonly backupsCount=signal(0);
   private readonly adminApi=inject(AdminApiService); private readonly backupApi=inject(BackupApiService);

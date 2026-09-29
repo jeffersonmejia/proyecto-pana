@@ -1,15 +1,27 @@
 <section class="administration" aria-label="Administración">
-  <nav class="admin-tabs" role="tablist" aria-label="Secciones de administración">
-    @if (canUsers()) { <button type="button" role="tab" [class.active]="active()==='users'" [attr.aria-selected]="active()==='users'" (click)="select('users')"><svg lucideUsersRound [size]="18"></svg>Usuarios ({{ usersCount() }})</button> }
-    @if (canPeople()) { <button type="button" role="tab" [class.active]="active()==='people'" [attr.aria-selected]="active()==='people'" (click)="select('people')"><svg lucideUsersRound [size]="18"></svg>Personas</button> }
-    @if (canRoles()) { <button type="button" role="tab" [class.active]="active()==='roles'" [attr.aria-selected]="active()==='roles'" (click)="select('roles')"><svg lucideClipboardCheck [size]="18"></svg>Roles y permisos</button> }
-    @if (canBackups()) { <button type="button" role="tab" [class.active]="active()==='backups'" [attr.aria-selected]="active()==='backups'" (click)="select('backups')"><svg lucideDownload [size]="18"></svg>Respaldos ({{ backupsCount() }})</button> }
-  </nav>
-  @if (!sectionReady()) { <section class="admin-skeleton" aria-label="Cargando sección" aria-busy="true"><div class="admin-skeleton-toolbar"><pana-skeleton variant="title" width="230px"></pana-skeleton><pana-skeleton variant="text" width="120px"></pana-skeleton></div><div class="admin-skeleton-table"><pana-skeleton variant="title" width="34%"></pana-skeleton><pana-skeleton variant="text" width="92%"></pana-skeleton><pana-skeleton variant="text" width="86%"></pana-skeleton><pana-skeleton variant="text" width="78%"></pana-skeleton><pana-skeleton variant="text" width="88%"></pana-skeleton></div></section> }
-  @else {
-    @if (active()==='users'&&canUsers()) { <pana-admin-users /> }
-    @if (active()==='people'&&canPeople()) { <pana-people (close)="close.emit()" /> }
-    @if (active()==='roles'&&canRoles()) { <pana-admin-roles /> }
-    @if (active()==='backups'&&canBackups()) { <pana-backups /> }
-  }
+  <div class="admin-layout">
+    @if (!sectionReady()) {
+      <aside class="admin-sidebar-skeleton" aria-label="Cargando navegación" aria-busy="true">
+        <pana-skeleton variant="title" width="72%"></pana-skeleton>
+        @for (item of [1,2,3,4]; track item) { <pana-skeleton variant="block" width="100%"></pana-skeleton> }
+      </aside>
+    } @else {
+      <aside class="admin-sidebar" aria-label="Secciones de administración">
+        <header><strong>Administración</strong></header>
+        @if (canUsers()) { <button type="button" [class.active]="active()==='users'" [attr.aria-current]="active()==='users' ? 'page' : null" (click)="select('users')"><svg lucideUsersRound [size]="19"></svg><span>Usuarios</span><small>{{ usersCount() }}</small></button> }
+        @if (canPeople()) { <button type="button" [class.active]="active()==='people'" [attr.aria-current]="active()==='people' ? 'page' : null" (click)="select('people')"><svg lucideUserRound [size]="19"></svg><span>Personas</span></button> }
+        @if (canRoles()) { <button type="button" [class.active]="active()==='roles'" [attr.aria-current]="active()==='roles' ? 'page' : null" (click)="select('roles')"><svg lucideShieldCheck [size]="19"></svg><span>Roles y permisos</span></button> }
+        @if (canBackups()) { <button type="button" [class.active]="active()==='backups'" [attr.aria-current]="active()==='backups' ? 'page' : null" (click)="select('backups')"><svg lucideDownload [size]="19"></svg><span>Respaldos</span><small>{{ backupsCount() }}</small></button> }
+      </aside>
+    }
+    <section class="admin-content">
+      @if (!sectionReady()) { <section class="admin-skeleton" aria-label="Cargando sección" aria-busy="true"><div class="admin-skeleton-heading"><pana-skeleton variant="title" width="230px"></pana-skeleton><pana-skeleton variant="text" width="120px"></pana-skeleton></div><div class="admin-skeleton-table"><pana-skeleton variant="title" width="34%"></pana-skeleton><pana-skeleton variant="text" width="92%"></pana-skeleton><pana-skeleton variant="text" width="86%"></pana-skeleton><pana-skeleton variant="text" width="78%"></pana-skeleton><pana-skeleton variant="text" width="88%"></pana-skeleton></div></section> }
+      @else {
+        @if (active()==='users'&&canUsers()) { <pana-admin-users /> }
+        @if (active()==='people'&&canPeople()) { <pana-people (close)="close.emit()" /> }
+        @if (active()==='roles'&&canRoles()) { <pana-admin-roles /> }
+        @if (active()==='backups'&&canBackups()) { <pana-backups /> }
+      }
+    </section>
+  </div>
 </section>

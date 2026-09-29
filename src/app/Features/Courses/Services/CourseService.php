@@ -9,7 +9,7 @@ use App\Services\ActivityService;
 use PDOException;
 final class CourseService
 {
-    public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers) {}
+    public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers,private NextcloudStorageService $storage) {}
     public function all(array $actor,bool $isEvent=false): array { return $this->courses->all($actor,$isEvent); }
     public function available(array $actor,bool $isEvent=false): array { return $this->courses->available($actor,$isEvent); }
     public function enroll(int $id,array $actor): void
@@ -60,6 +60,21 @@ final class CourseService
     }
     public function tecnicos(): array { return $this->courses->tecnicos(); }
     public function participants(): array { return $this->courses->participants(); }
+    public function setTecnicoStatus(int $course,int $tecnico,string $status,array $actor): void
+    {
+        $this->one($course,$actor);
+        if (!in_array($status,['active','inactive'],true)) throw new ApiException(422,'invalid_tecnico_status');
+        try { $this->courses->setTecnicoStatus($course,$tecnico,$status); }
+        catch (\RuntimeException $error) { throw new ApiException(404,$error->getMessage()); }
+    }
+    public function setParticipantStatus(int $course,int $person,string $status,array $actor): void
+    {
+        if (!in_array($actor['roles'][0]??'', ['admin','coordinator','tecnico'], true)) throw new ApiException(403,'permission_denied');
+        $this->one($course,$actor);
+        if (!in_array($status,['active','inactive'],true)) throw new ApiException(422,'invalid_participant_status');
+        try { $this->courses->setParticipantStatus($course,$person,$status); }
+        catch (\RuntimeException $error) { throw new ApiException(404,$error->getMessage()); }
+    }
     public function create(array $input,array $actor): int
     {
         $data=$this->validated($input); $this->assertAssignments($data);
@@ -84,6 +99,25 @@ final class CourseService
         $this->courses->setStatus($id,$status);
     }
     public function uploadCover(int $id,mixed $file,array $actor): void { $this->covers->upload($id,$file,$actor); }
+    public function weeklyEvidence(int $course,array $actor): array { $this->one($course,$actor); return ['weeks'=>$this->courses->weeklyEvidence($course)]; }
+    public function uploadWeeklyEvidence(int $course,int $week,mixed $file,array $actor): void
+    {
+        if(($actor['roles'][0]??'')!=='tecnico') throw new ApiException(403,'permission_denied'); $this->one($course,$actor); $row=$this->courses->weeklyEvidence($course)[$week-1]??null;
+        if(!$row||(int)$row['week_number']!==$week) throw new ApiException(404,'course_week_not_found'); if(!is_array($file)||($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_uploaded_file($file['tmp_name']??'')) throw new ApiException(422,'invalid_upload'); if($file['size']>50*1024*1024) throw new ApiException(413,'file_too_large');
+        $mime=(new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']); if($mime!=='application/pdf') throw new ApiException(415,'pdf_only'); $name=basename(str_replace('\\','/',(string)($file['name']??''))); if($name==='') throw new ApiException(422,'invalid_file_name'); $stored=bin2hex(random_bytes(16)).'.pdf'; $path="Cursos/{$course}/Semanas/{$week}/{$stored}"; $legacy=dirname(__DIR__,4).'/storage/documents/'.$stored; $remote=true;
+        try{$this->storage->uploadFile($file['tmp_name'],$path);}catch(ApiException){$remote=false; if(!is_dir(dirname($legacy))&&!mkdir(dirname($legacy),0770,true)&&!is_dir(dirname($legacy)))throw new ApiException(500,'storage_unavailable'); if(!copy($file['tmp_name'],$legacy))throw new ApiException(500,'storage_unavailable');}
+        $previousStored=(string)($row['stored_name']??'');
+        try{$this->courses->saveWeeklyEvidence((int)$row['id'],$name,$stored,$mime,(int)$file['size'],(int)$actor['id']);}catch(\Throwable $error){if($remote){try{$this->storage->delete($path);}catch(\Throwable){}}elseif(is_file($legacy))unlink($legacy);throw $error;}
+        if($previousStored!==''&&$previousStored!==$stored){$previousLegacy=dirname(__DIR__,4).'/storage/documents/'.basename($previousStored);if(is_file($previousLegacy))unlink($previousLegacy);else try{$this->storage->delete("Cursos/{$course}/Semanas/{$week}/".basename($previousStored));}catch(\Throwable){} }
+    }
+    public function deleteWeeklyEvidence(int $course,int $id,array $actor): void
+    {
+        if(($actor['roles'][0]??'')!=='tecnico') throw new ApiException(403,'permission_denied'); $this->one($course,$actor); $row=$this->courses->weeklyEvidenceOne($id,$course); if(!$row) throw new ApiException(404,'course_evidence_not_found'); if($row['stored_name']){ $legacy=dirname(__DIR__,4).'/storage/documents/'.basename($row['stored_name']); if(is_file($legacy))unlink($legacy); else try{$this->storage->delete("Cursos/{$course}/Semanas/{$row['week_number']}/".basename($row['stored_name']));}catch(ApiException){} } $this->courses->clearWeeklyEvidence($id);
+    }
+    public function downloadWeeklyEvidence(int $course,int $id,array $actor): array
+    {
+        $this->one($course,$actor); $row=$this->courses->weeklyEvidenceOne($id,$course); if(!$row||!$row['stored_name']) throw new ApiException(404,'course_evidence_not_found'); $legacy=dirname(__DIR__,4).'/storage/documents/'.basename($row['stored_name']); if(is_file($legacy))return ['row'=>$row,'stream'=>fopen($legacy,'rb'),'size'=>filesize($legacy)]; $file=$this->storage->download("Cursos/{$course}/Semanas/{$row['week_number']}/".basename($row['stored_name'])); return ['row'=>$row]+$file;
+    }
     private function validated(array $input): array { return $this->validator->course($input); }
     private function assertAssignments(array $data,bool $keepExistingParticipants=false): void
     {

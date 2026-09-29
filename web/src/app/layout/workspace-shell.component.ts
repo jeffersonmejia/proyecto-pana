@@ -2,14 +2,14 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
-import { LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideSparkles, LucideUserRound, LucideUsersRound } from '@lucide/angular';
+import { LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideLogOut, LucideShieldCheck, LucideSparkles, LucideUserRound } from '@lucide/angular';
 import { notificationTimeAgo, NotificationsService } from '../core/notifications/notifications.service';
 import { AppModuleId, navigationPath } from '../core/navigation/app-navigation';
 
 @Component({
   selector: 'pana-root',
   standalone: true,
-  imports: [RouterOutlet, LucideUsersRound, LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideSparkles, LucideUserRound],
+  imports: [RouterOutlet, LucideBell, LucideBookOpen, LucideCalendarDays, LucideChevronDown, LucideLogOut, LucideShieldCheck, LucideSparkles, LucideUserRound],
   templateUrl: './workspace-shell.component.html',
   styleUrl: './workspace-shell.component.scss',
 })

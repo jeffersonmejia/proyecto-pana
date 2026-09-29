@@ -19,7 +19,7 @@ export interface AuthUser {
 export type PreviewRole = 'coordinator' | 'tecnico' | 'student' | 'beneficiary';
 const PREVIEW_PERMISSIONS: Record<PreviewRole, string[]> = {
   coordinator: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','reports.read','documents.read'],
-  tecnico: ['courses.read','people.read','people.manage','attendance.read','attendance.manage','activities.read','evaluations.read','reports.read','documents.read'],
+  tecnico: ['courses.read','events.read','people.read','people.manage','attendance.read','attendance.manage','activities.read','evaluations.read','reports.read','documents.read'],
   student: ['courses.read','people.read','attendance.read','activities.read','evaluations.read','documents.read'],
   beneficiary: ['courses.read','people.read','evaluations.read','documents.read'],
 };
