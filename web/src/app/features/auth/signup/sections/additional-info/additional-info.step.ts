@@ -10,7 +10,7 @@ export class AdditionalInfoStep implements RegistrationStep {
     const data = context.data;
     if (!this.section.phoneIsComplete(data.phone)) return { field: 'phone', message: 'Ingresa un telefono de exactamente 10 digitos.' };
     if (!data.motivation.trim()) return { field: 'motivation', message: 'Indica por que deseas participar.' };
-    if (data.role === 'student' && (!data.institution.trim() || !data.career.trim() || !data.level || !data.skills.trim() || !data.volunteer || (data.volunteer === 'Si' && !data.volunteerDetails.trim()))) return { field: 'role', message: 'Completa la informacion del estudiante.' };
+    if (data.role === 'student' && (!data.institution.trim() || !data.career.trim() || !data.level || !data.practiceHours || Number(data.practiceHours) < 1 || !data.skills.trim() || !data.volunteer || (data.volunteer === 'Si' && !data.volunteerDetails.trim()))) return { field: 'role', message: 'Completa la informacion del estudiante.' };
     return null;
   }
 }

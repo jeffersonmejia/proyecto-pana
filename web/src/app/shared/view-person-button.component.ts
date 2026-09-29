@@ -1,11 +1,12 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { LucideEye } from '@lucide/angular';
+import { AuthService } from '../core/auth/auth.service';
 
 @Component({
   selector: 'pana-view-person-button',
   standalone: true,
   imports: [LucideEye],
-  template: `<button type="button" class="view-person-button" aria-label="Ver participante" title="Ver participante" [disabled]="disabled()" (click)="pressed.emit()"><svg lucideEye [size]="16"></svg><span>Ver</span></button>`,
+  template: `<button type="button" class="view-person-button" aria-label="Ver participante" title="Ver participante" [disabled]="isDisabled()" (click)="pressed.emit()"><svg lucideEye [size]="16"></svg><span>Ver</span></button>`,
   styles: [`
     :host { display: inline-flex; }
     .view-person-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 6px 12px; border: 1px solid var(--pana-pastel-blue-bg); border-radius: var(--pana-radius); background: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
@@ -15,6 +16,8 @@ import { LucideEye } from '@lucide/angular';
   `],
 })
 export class ViewPersonButtonComponent {
+  private readonly auth = inject(AuthService);
   readonly disabled = input(false);
+  readonly isDisabled = computed(() => this.disabled() && !(this.auth.user()?.roles.includes('coordinator') ?? false));
   readonly pressed = output<void>();
 }

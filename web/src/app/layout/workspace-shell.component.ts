@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
@@ -23,6 +23,7 @@ export class WorkspaceShellComponent {
   readonly accountMenuOpen = signal(false);
   readonly notificationOpen = signal(false);
   private readonly router=inject(Router);
+  private notificationUserId = 0;
   readonly displayShortName = computed(() => {
     const user=this.auth.user();
     const name=user?.first_name?.trim().split(/\s+/)[0]??'';
@@ -38,7 +39,14 @@ export class WorkspaceShellComponent {
   shortNotificationText(value: string, limit: number): string { return value.length > limit ? `${value.slice(0, limit - 1).trimEnd()}…` : value; }
 
   constructor() {
-    this.auth.restoreSession().subscribe(ok => { this.sessionReady.set(true); if (ok) this.notifications.load(); });
+    effect(() => {
+      const user = this.auth.user();
+      if (!user) { this.notificationUserId = 0; return; }
+      if (this.notificationUserId === user.id) return;
+      this.notificationUserId = user.id;
+      this.notifications.load();
+    });
+    this.auth.restoreSession().subscribe(() => { this.sessionReady.set(true); });
     this.router.events.pipe(filter(event=>event instanceof NavigationEnd)).subscribe(event=>{
       const path=(event as NavigationEnd).urlAfterRedirects.split('?')[0].split('/').filter(Boolean);
       this.activeModule.set(path[0]==='cursos'?'home':path[0]==='administracion'?'admin':path[0]??'home');

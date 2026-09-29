@@ -16,8 +16,12 @@ final class PeopleRepository
 
     public function all(array $filters): array
     {
-        $where = ['(EXISTS (SELECT 1 FROM participants px WHERE px.person_id=p.id) '
-            . 'OR EXISTS (SELECT 1 FROM beneficiaries bx WHERE bx.person_id=p.id))'];
+        $personTypes = '(EXISTS (SELECT 1 FROM participants px WHERE px.person_id=p.id) '
+            . 'OR EXISTS (SELECT 1 FROM beneficiaries bx WHERE bx.person_id=p.id)';
+        if (!empty($filters['include_staff'])) {
+            $personTypes .= " OR EXISTS (SELECT 1 FROM users ux JOIN roles rx ON rx.id=ux.role_id AND rx.is_active=1 WHERE ux.id=p.user_id AND rx.code IN ('tecnico','technician'))";
+        }
+        $where = [$personTypes . ')'];
         $params = [];
         $scope = \App\Support\AccessScope::person('p.id', $filters['_scope'] ?? []);
         $where[] = $scope['sql'];
@@ -36,13 +40,20 @@ final class PeopleRepository
             $params += ['q_first' => $term, 'q_last' => $term, 'q_email' => $term, 'q_phone' => $term, 'q_ci' => $term];
         }
         if (!empty($filters['id'])) {
-            $where[] = 'p.id = :id';
-            $params['id'] = $filters['id'];
+            if (!empty($filters['include_staff'])) {
+                $where[] = '(p.id = :person_id OR p.user_id = :user_id)';
+                $params['person_id'] = $filters['id'];
+                $params['user_id'] = $filters['id'];
+            } else {
+                $where[] = 'p.id = :id';
+                $params['id'] = $filters['id'];
+            }
         }
         $sql = 'SELECT p.id,p.ci,p.first_name,p.last_name,p.email,p.phone,p.status,p.created_at,p.user_id, '
             . 'COALESCE(b.birth_date,br.birth_date) birth_date,COALESCE(b.address,br.address) address,b.observations,br.latitude,br.longitude,br.sector,br.birth_city, '
             . "GROUP_CONCAT(DISTINCT CASE WHEN pa.is_active=1 THEN 'participant' END) AS participant, "
-            . "GROUP_CONCAT(DISTINCT CASE WHEN b.is_active=1 THEN 'beneficiary' END) AS beneficiary "
+            . "GROUP_CONCAT(DISTINCT CASE WHEN b.is_active=1 THEN 'beneficiary' END) AS beneficiary, "
+            . "GROUP_CONCAT(DISTINCT CASE WHEN EXISTS (SELECT 1 FROM users ux JOIN roles rx ON rx.id=ux.role_id AND rx.is_active=1 WHERE ux.id=p.user_id AND rx.code IN ('tecnico','technician')) THEN 'technician' END) AS technician "
             . 'FROM people p LEFT JOIN participants pa ON pa.person_id = p.id '
             . 'LEFT JOIN beneficiaries b ON b.person_id = p.id '
             . 'LEFT JOIN beneficiary_registrations br ON br.person_id = p.id';
@@ -57,7 +68,7 @@ final class PeopleRepository
 
     public function find(int $id, array $actor = []): ?array
     {
-        return $this->all(['id' => $id, '_scope' => $actor])['items'][0] ?? null;
+        return $this->all(['id' => $id, '_scope' => $actor, 'include_staff' => true])['items'][0] ?? null;
     }
 
     public function create(array $person, int $actorId): int
@@ -141,10 +152,11 @@ final class PeopleRepository
         $row['types'] = array_values(array_filter([
             $row['participant'] ? 'participant' : null,
             $row['beneficiary'] ? 'beneficiary' : null,
+            $row['technician'] ? 'technician' : null,
         ]));
         $row['has_account'] = $row['user_id'] !== null;
         unset($row['user_id']);
-        unset($row['participant'], $row['beneficiary']);
+        unset($row['participant'], $row['beneficiary'], $row['technician']);
         return $row;
     }
 

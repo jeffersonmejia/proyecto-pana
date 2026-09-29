@@ -101,8 +101,8 @@ final class RegistrationRepository
         $universityId = (int) $this->connection->lastInsertId();
         $this->connection->prepare('INSERT INTO careers (university_id,name) VALUES (?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$universityId, $data['career']]);
         $careerId = (int) $this->connection->lastInsertId();
-        $query = $this->connection->prepare('INSERT INTO students (user_id,university_id,career_id,process_type,hours_required,start_date,is_active) VALUES (?,?,?,?,0,CURRENT_DATE,1)');
-        $query->execute([$userId, $universityId, $careerId, 'Estudiante']);
+        $query = $this->connection->prepare('INSERT INTO students (user_id,university_id,career_id,process_type,hours_required,start_date,is_active) VALUES (?,?,?,?,?,CURRENT_DATE,1)');
+        $query->execute([$userId, $universityId, $careerId, 'Estudiante', $data['practice_hours']]);
     }
 
     private function saveWelcomeNotification(int $userId, string $name, string $role): void

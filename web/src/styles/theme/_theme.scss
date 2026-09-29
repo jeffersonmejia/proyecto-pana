@@ -11,8 +11,8 @@
 $pana-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$green-palette,
-    tertiary: mat.$green-palette,
+    primary: mat.$blue-palette,
+    tertiary: mat.$blue-palette,
   ),
   typography: (
     brand-family: 'Inter, Arial, sans-serif',
@@ -37,15 +37,15 @@ html {
   --pana-surface-subtle: #f7f8f7;
   --pana-page: #fff;
   --pana-page-soft: #f7f8f7;
-  --pana-primary: #188038;
-  --pana-primary-dark: #146c2f;
-  --pana-primary-soft: #e6f4ea;
-  --pana-primary-softer: #f3fbf5;
-  --pana-primary-track: #c6e6cd;
-  --pana-outline: #d7e2d9;
-  --pana-input-outline: #c8d6c9;
-  --pana-divider: #edf1ed;
-  --pana-focus: #8abf9b;
+  --pana-primary: #1a73e8;
+  --pana-primary-dark: #185abc;
+  --pana-primary-soft: #e8f0fe;
+  --pana-primary-softer: #f3f7fe;
+  --pana-primary-track: #c6dafc;
+  --pana-outline: #d9e0e8;
+  --pana-input-outline: #cbd5e1;
+  --pana-divider: #edf1f5;
+  --pana-focus: #8ab4f8;
   --pana-gray: #5f6368;
   --pana-gray-soft: #f1f3f4;
   --pana-gray-hover: #e4e7eb;

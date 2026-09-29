@@ -20,6 +20,7 @@ export type RegistrationData = {
   career: string;
   education: string;
   level: string;
+  practiceHours: string;
   motivation: string;
   skills: string;
   volunteer: string;

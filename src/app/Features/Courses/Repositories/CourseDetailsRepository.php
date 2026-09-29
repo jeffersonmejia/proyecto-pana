@@ -22,6 +22,11 @@ final class CourseDetailsRepository
         $ids=array_values(array_filter(array_map(static fn(array $row): int => (int)$row['id'],$rows)));
         if(!$ids) return $rows;
         $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $studentHours=$this->query("SELECT p.id,MAX(s.hours_required) hours_required FROM people p JOIN students s ON (p.user_id=s.user_id OR p.ci=(SELECT ci FROM users WHERE id=s.user_id)) WHERE p.id IN ({$placeholders}) AND s.is_active=1 GROUP BY p.id",$ids);
+        $hoursByParticipant=[];
+        foreach($studentHours as $studentHour) $hoursByParticipant[(int)$studentHour['id']]=$studentHour['hours_required']===null?null:(int)$studentHour['hours_required'];
+        foreach($rows as &$row) $row['hours_required']=$hoursByParticipant[(int)$row['id']]??null;
+        unset($row);
         $totals=$this->query("SELECT ar.participant_id,COALESCE(SUM(TIMESTAMPDIFF(MINUTE,ar.check_in,ar.check_out)),0) attendance_minutes FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' JOIN courses c ON c.id=cp.course_id WHERE ar.participant_id IN ({$placeholders}) AND ar.attendance_date BETWEEN c.start_date AND c.end_date GROUP BY ar.participant_id",array_merge([$id],$ids));
         $totalByParticipant=[];
         foreach($totals as $total) $totalByParticipant[(int)$total['participant_id']]=(int)$total['attendance_minutes'];

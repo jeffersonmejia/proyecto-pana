@@ -56,6 +56,12 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .status.inactive { background: var(--pana-gray-soft); color: var(--pana-gray); }
 .enroll-button { min-height: 32px; padding: 5px 10px; font-size: .76rem; }
 .enroll-button:disabled { opacity: .55; cursor: not-allowed; }
+.enroll-button[aria-label^="Esperando habilitaci"] > svg { display: none; }
+.enroll-button[aria-label^="Esperando habilitaci"]::before { content: '◷'; display: inline-block; font-size: 1.05rem; line-height: 1; }
+.enroll-button[aria-label^="Esperando habilitaci"] { border: 0; background: var(--pana-primary-soft); color: var(--pana-primary-dark); opacity: 1; pointer-events: none; cursor: default; }
+:host-context(body.pana-learner-courses) .course-card .card-controls:empty { min-height: 32px; padding: 5px 10px; border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary-dark); font-size: .76rem; font-weight: 600; }
+:host-context(body.pana-learner-courses) .course-card .card-controls:empty::before { content: ''; width: 13px; height: 7px; margin-right: 7px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg) translateY(-1px); transform-origin: center; }
+:host-context(body.pana-learner-courses) .course-card .card-controls:empty::after { content: 'Inscrito'; display: inline-flex; align-items: center; }
 .course-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: var(--pana-primary); font: inherit; font-size: .8rem; cursor: pointer; }
 .toggle-label { width: 50px; text-align: left; }
 .course-toggle:disabled { opacity: .65; cursor: wait; }
@@ -247,3 +253,5 @@ h2 { font-size: 1.55rem; letter-spacing: -.025em; }
 .enrollment-success-modal h3 { margin: 0; color: var(--pana-text, #172033); font-size: 20px; }
 .enrollment-success-modal p { margin: 10px 0 22px; color: var(--pana-text-muted, #536985); }
 .enrollment-success-modal .primary { min-width: 120px; }
+.cover-warning-modal .enrollment-success-icon { color: var(--pana-danger, #c62828); background: var(--pana-danger-soft, #fde8e8); }
+.cover-warning-countdown { display: block; margin: 0 0 18px; color: var(--pana-text-muted, #536985); font-size: .82rem; font-weight: 600; }

@@ -316,6 +316,19 @@ export class RegistrationFacade {
   hasValidPassword(): boolean {
     return this.formService.hasValidPassword(this.data.password);
   }
+  sanitizePracticeHours(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.replace(/\D/g, '').slice(0, 3).replace(/^0+/, '');
+    this.data.practiceHours = value;
+    if (input.value !== value) input.value = value;
+  }
+
+  normalizePracticeHours(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.data.practiceHours || Number(this.data.practiceHours) < 1) this.data.practiceHours = '1';
+    input.value = this.data.practiceHours;
+  }
+
   changeRole(): void {
     if (this.data.role === "beneficiary") {
       this.data.institution = "";
@@ -326,6 +339,7 @@ export class RegistrationFacade {
       this.data.volunteerDetails = "";
     }
     if (this.data.role === "student" && !this.data.level) this.data.level = "1";
+    if (this.data.role === "student" && !this.data.practiceHours) this.data.practiceHours = "1";
   }
   citiesForProvince(): string[] {
     return (
@@ -372,6 +386,8 @@ export class RegistrationFacade {
       if (!this.data.role) this.data.role = "beneficiary";
       if (this.data.role === "student" && !this.data.level)
         this.data.level = "1";
+      if (this.data.role === "student" && !this.data.practiceHours)
+        this.data.practiceHours = "1";
       if (!this.data.volunteer) this.data.volunteer = "No";
       this.sanitizeEmail();
     } catch {

@@ -4,7 +4,7 @@ import { environment } from '../../../environments/environment';
 
 export interface Course {
   id: number; name: string; description: string | null; qr_link: string | null; start_date: string; end_date: string;
-  status: 'active' | 'inactive'; es_evento?: boolean; cover_available: boolean; enrolled?: boolean; max_participants: number | null; tecnico_user_ids: number[];
+  status: 'active' | 'inactive'; es_evento?: boolean; cover_available: boolean; enrolled?: boolean; enrollment_allowed?: boolean; participant_status?: 'active' | 'inactive' | null; max_participants: number | null; tecnico_user_ids: number[];
   tecnico_name: string; tutor_name?: string; participant_count: number; participant_names: string | null;
   participant_ids: number[]; is_event?: boolean;
 }
@@ -17,7 +17,7 @@ export interface CourseSections {
   course: Course;
   attendance_percentage?: number;
   attendance: { id: number; participant_id: number; attendance_date: string; status: 'present'|'absent'|'excused'; check_in: string | null; check_out: string | null; technician_name: string | null }[];
-  participants: { id: number; ci: string; phone: string | null; sector: string | null; self_identification: string | null; has_disability: string | null; disability_type: string | null; education: string | null; birth_city: string | null; first_name: string; last_name: string; birth_date: string | null; name: string; profile: string; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_id?: number | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_id: number|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
+  participants: { id: number; ci: string; phone: string | null; sector: string | null; self_identification: string | null; has_disability: string | null; disability_type: string | null; education: string | null; birth_city: string | null; first_name: string; last_name: string; birth_date: string | null; name: string; profile: string; hours_required: number | null; attendance_count: number; attendance_minutes: number; last_attendance: string | null; last_attendance_id?: number | null; last_attendance_status: 'present'|'absent'|'excused'|null; selected_attendance_id: number|null; selected_attendance_status: 'present'|'absent'|'excused'|null; selected_check_in: string|null; selected_check_out: string|null; task_count: number; evaluation_count: number }[];
   technicians: { id: number; ci: string | null; phone: string | null; first_name: string; last_name: string; email: string; status?: 'active'|'inactive' }[];
   activities: { id: number; title: string; description: string | null; start_at: string; end_at: string; status: string; responsible: string; participants: string | null }[];
   activity_logs: { id: number; activity_title: string; event_type: string; details: string; created_at: string; participant_id: number | null; participant_name: string | null; actor_email: string | null }[];

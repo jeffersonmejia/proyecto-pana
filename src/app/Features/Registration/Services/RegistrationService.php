@@ -69,6 +69,7 @@ final class RegistrationService
         $institution = $role === 'student' ? $this->text($input, 'institution', 150) : null;
         $career = $role === 'student' ? $this->text($input, 'career', 150) : null;
         $level = $role === 'student' ? $this->text($input, 'level', 100) : null;
+        $practiceHours = $role === 'student' ? $this->positiveHours($input['practiceHours'] ?? null) : null;
         $volunteer = $role === 'student' ? $this->option($input['volunteer'] ?? null, ['Si', 'No']) : 'No';
         $skills = $role === 'student' ? $this->text($input, 'skills', 5000) : null;
         $hasDisability = $this->option($input['hasDisability'] ?? null, ['Si', 'No']);
@@ -80,7 +81,7 @@ final class RegistrationService
             'has_disability' => $hasDisability, 'disability_type' => $disabilityType,
             'address' => $this->text($input, 'address', 255), 'sector' => $this->text($input, 'sector', 150), 'latitude' => $this->coordinate($input['latitude'] ?? null),
             'longitude' => $this->coordinate($input['longitude'] ?? null), 'institution' => $institution,
-            'career' => $career, 'education' => $this->text($input, 'education', 180), 'level' => $level,
+            'career' => $career, 'education' => $this->text($input, 'education', 180), 'level' => $level, 'practice_hours' => $practiceHours,
             'motivation' => $this->text($input, 'motivation', 5000), 'skills' => $skills,
             'volunteer' => $volunteer, 'volunteer_details' => $role === 'student' ? $this->optional($input, 'volunteerDetails', 5000) : null,
             'days' => $days, 'schedules' => $schedules, 'password' => $this->password($input['password'] ?? null)];
@@ -144,6 +145,12 @@ final class RegistrationService
         if (!is_string($value) || strlen($value) < 12 || strlen($value) > 4096
             || !preg_match('/\d/', $value) || !preg_match('/\p{L}/u', $value)) throw new ApiException(422, 'invalid_password');
         return $value;
+    }
+
+    private function positiveHours(mixed $value): int
+    {
+        if (!is_string($value) || !preg_match('/^[1-9][0-9]{0,2}$/', $value)) throw new ApiException(422, 'invalid_practice_hours');
+        return (int) $value;
     }
 
     private function coordinate(mixed $value): ?float

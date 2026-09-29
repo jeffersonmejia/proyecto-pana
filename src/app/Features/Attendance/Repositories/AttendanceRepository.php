@@ -32,8 +32,8 @@ final class AttendanceRepository
     public function isParticipant(int $id, array $actor = []): bool
     {
         $scope = \App\Support\AccessScope::person('p.id', $actor);
-        $query = $this->connection->prepare('SELECT 1 FROM participants t JOIN people p ON p.id=t.person_id '
-            . "WHERE t.person_id=? AND t.is_active=1 AND {$scope['sql']}");
+        $query = $this->connection->prepare('SELECT 1 FROM people p '
+            . "WHERE p.id=? AND (EXISTS (SELECT 1 FROM participants t WHERE t.person_id=p.id AND t.is_active=1) OR EXISTS (SELECT 1 FROM course_participants cp WHERE cp.person_id=p.id AND cp.status='active')) AND {$scope['sql']}");
         $query->execute([$id]);
         return (bool) $query->fetchColumn();
     }
@@ -132,8 +132,8 @@ final class AttendanceRepository
     {
         return 'SELECT a.*,p.first_name,p.last_name,technician.first_name technician_first_name,'
             . 'technician.last_name technician_last_name,TIMESTAMPDIFF(MINUTE,a.check_in,a.check_out) total_minutes '
-            . 'FROM attendance_records a JOIN participants t ON t.person_id=a.participant_id '
-            . 'JOIN people p ON p.id=a.participant_id LEFT JOIN users technician ON technician.id=a.created_by';
+            . 'FROM attendance_records a JOIN people p ON p.id=a.participant_id '
+            . 'LEFT JOIN users technician ON technician.id=a.created_by';
     }
 
     private function mapRecord(array $row): array

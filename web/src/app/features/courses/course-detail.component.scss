@@ -48,7 +48,7 @@ h1 { font-size: clamp(1.15rem, 1.8vw, 1.4rem); letter-spacing: -.03em; overflow-
 .attendance-action:hover, .attendance-edit-action:hover { border-color: transparent; background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); }
 .attendance-action:disabled { opacity: .6; cursor: default; }
 .attendance-time-select { min-height: 32px; padding: 5px 7px; border: 1px solid var(--pana-input-outline); border-radius: var(--pana-radius); background: var(--pana-surface); color: var(--pana-text); font: inherit; font-size: .78rem; }
-.attendance-edit-action { margin-left: 6px; background: var(--pana-surface); color: var(--pana-primary); }
+.attendance-edit-action { margin-top: 4px; margin-left: 6px; background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); }
 .attendance-pencil-action { display: inline-grid; width: 32px; min-width: 32px; min-height: 32px; margin-left: 6px; padding: 6px; place-items: center; border: 1px solid transparent; border-radius: var(--pana-radius); background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); cursor: pointer; }
 .attendance-pencil-action:hover { background: var(--pana-pastel-green-bg); color: var(--pana-pastel-green-icon); }
 .attendance-delete-action { display: inline-grid; width: 32px; min-width: 32px; min-height: 32px; margin-left: 5px; padding: 6px; place-items: center; border: 1px solid transparent; border-radius: var(--pana-radius); background: var(--pana-danger-soft); color: var(--pana-danger); cursor: pointer; }
@@ -339,7 +339,7 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .overview-metrics article, .overview-data-grid article { border: 0; background: var(--pana-primary-softer); }.overview-metrics .summary-label, .overview-metrics .summary-label svg, .overview-metrics strong, .overview-data-grid .summary-label, .overview-data-grid .summary-label svg, .overview-data-grid strong { color: var(--pana-primary-dark); font-weight: 400; }.overview-metrics .summary-label { font-size: .78rem; }.overview-metrics strong { font-size: .78rem; }
 .overview-metrics .summary-label, .overview-data-grid .summary-label { font-size: .72rem; font-weight: 700; }.overview-metrics strong, .overview-data-grid strong { font-size: .72rem; font-weight: 400; }.capacity-track { background: var(--pana-outline); }.capacity-bar { background: var(--pana-primary); }
 @media (prefers-reduced-motion: reduce) { .course-tabs button { transition: none; } .upload-spinner { animation: none; } }
-.beneficiary-course-context { display: grid; gap: 6px; margin: 0 0 18px; padding: 16px 18px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
+.beneficiary-course-context { display: none; }
 .beneficiary-course-context .context-label { color: var(--pana-muted); font-size: .76rem; }
 .beneficiary-course-context h1 { margin: 0; color: var(--pana-primary); font-size: 1.3rem; line-height: 1.25; }
 .beneficiary-course-context p { max-width: 760px; margin: 0; color: var(--pana-muted); font-size: .88rem; line-height: 1.5; }
@@ -357,6 +357,12 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .activity-content .activity-metrics strong { color: var(--pana-muted) !important; }
 @media (max-width: 560px) { .activity-content:has(.beneficiary-course-context) .activity-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .participant-link { padding: 0; border: 0; background: transparent; color: var(--pana-primary); font: inherit; text-align: left; cursor: pointer; }
+.course-detail.learner-attendance .beneficiary-attendance-log, .course-detail.learner-attendance .attendance-coordinator-view { display: none; }
+.course-detail.learner-attendance .section-content:has(.attendance-table:not(.attendance-technician-table)) { display: none; }
+.course-detail.learner-attendance .attendance-technician-table th:last-child, .course-detail.learner-attendance .attendance-technician-table td:last-child { display: none; }
+.course-detail.beneficiary-attendance .attendance-technician-table th:nth-child(7), .course-detail.beneficiary-attendance .attendance-technician-table td:nth-child(7) { display: none; }
+.course-detail.learner-attendance .attendance-technician-table .attendance-action, .course-detail.learner-attendance .attendance-technician-table .attendance-pencil-action, .course-detail.learner-attendance .attendance-technician-table .attendance-delete-action { display: none; }
+.course-detail.learner-attendance .attendance-technician-table td:has(> .attendance-action)::after { content: '—'; color: var(--pana-muted); }
 .participant-link:hover { text-decoration: underline; }
 .participant-link:disabled { color: inherit; cursor: default; text-decoration: none; }
 .view-person-button { padding: 6px 12px; border: 1px solid var(--pana-pastel-blue-bg); border-radius: var(--pana-radius); background: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }

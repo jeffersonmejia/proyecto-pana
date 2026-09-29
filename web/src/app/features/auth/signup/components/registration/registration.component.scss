@@ -187,3 +187,30 @@ fieldset[aria-label="Datos personales"] > label:has(select[name="disabilityType"
 .registration-backdrop { background: var(--pana-surface) !important; }
 :host { color: var(--pana-ink); } .registration-backdrop { background: var(--pana-primary-softer); } .registration-card { color: var(--pana-ink); } .registration-header h2, .section-title { color: var(--pana-ink); } .registration-copy, .login-link, label, .group-label, .field-label, .field-label svg, .phone-prefix, .password-toggle { color: var(--pana-muted); } .login-link button, .step-item.active .step-name, .step-item.completed .step-name, .registration-group-heading, .field-hint-list, .requirements-note svg, .map-section h3 svg, .location-header strong, .location-privacy, .review-table, .submit-status { color: var(--pana-primary); } .step-item.active .step-dot { border-color: var(--pana-primary); background: var(--pana-primary); } .step-item.completed .step-dot { border-color: var(--pana-primary); background: var(--pana-primary-soft); color: var(--pana-primary); } .step-line.completed, .progress-bar { background: var(--pana-primary); } input:focus-visible, select:focus-visible, textarea:focus-visible { outline-color: var(--pana-primary); border-color: var(--pana-primary); background: var(--pana-primary-softer); } .choice input, .terms input { accent-color: var(--pana-primary); } .form-actions button:last-child, :host ::ng-deep .registration-card button.mat-mdc-unelevated-button { background: var(--pana-primary); } .registration-button.mat-mdc-outlined-button { --mdc-outlined-button-outline-color: var(--pana-primary); --mdc-outlined-button-label-text-color: var(--pana-primary); border-color: var(--pana-primary) !important; color: var(--pana-primary); } .availability-group, .location-section, .review-summary { border-color: var(--pana-outline); background: var(--pana-primary-softer); } .course-period, .review-table th { background: var(--pana-primary-soft); color: var(--pana-primary); } .capacity-bar { background: var(--pana-primary-track); } .capacity-bar i { background: var(--pana-primary); } .directions-link { border-color: var(--pana-primary-track); background: var(--pana-primary-soft); color: var(--pana-primary); } .success-mark { background: var(--pana-primary-soft); color: var(--pana-primary); }
 :host .registration-backdrop { background: var(--pana-surface-subtle); } .registration-card .field-hint-list, .registration-card .field-hint-list li, .registration-card .birth-date-field .field-hint-list { color: var(--pana-primary) !important; } .registration-card label:has(input[required]) .field-label::after, .registration-card label:has(select[required]) .field-label::after { color: var(--pana-primary) !important; } .registration-card .login-link button, .registration-card .directions-link, .registration-card .step-item.active .step-name, .registration-card .step-item.completed .step-name, .registration-card .form-actions .footer-login button { color: var(--pana-primary) !important; } .registration-card .step-item.active .step-dot { background: var(--pana-primary) !important; border-color: var(--pana-primary) !important; } .registration-card .progress-bar { background: var(--pana-primary) !important; }
+:host .step-dot svg { display: block; }
+
+/* El regreso se diferencia únicamente por el texto, sin crear una caja al pasar el cursor. */
+:host ::ng-deep .registration-card .form-actions .cancel-action,
+:host ::ng-deep .registration-card .form-actions .cancel-action:hover,
+:host ::ng-deep .registration-card .form-actions .cancel-action:focus-visible,
+:host ::ng-deep .registration-card .form-actions .cancel-action:active {
+  background: transparent !important;
+  --mat-text-button-state-layer-color: transparent;
+  --mat-text-button-hover-state-layer-opacity: 0;
+  --mat-text-button-focus-state-layer-opacity: 0;
+  --mat-text-button-pressed-state-layer-opacity: 0;
+}
+
+:host ::ng-deep .registration-card .form-actions .cancel-action:hover,
+:host ::ng-deep .registration-card .form-actions .cancel-action:focus-visible {
+  color: var(--pana-primary) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:host ::ng-deep .registration-card .form-actions .cancel-action .mat-mdc-button-persistent-ripple::before,
+:host ::ng-deep .registration-card .form-actions .cancel-action .mat-mdc-button-persistent-ripple::after {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+:host .registration-card .field-hint-list.invalid li { color: var(--pana-danger) !important; }

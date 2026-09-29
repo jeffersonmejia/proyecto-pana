@@ -13,9 +13,15 @@ final class CourseRepository
     }
     public function available(array $actor,bool $isEvent=false): array
     {
-        $user=(int)($actor['id']??0); $person="(p2.user_id={$user} OR p2.ci=(SELECT ci FROM users WHERE id={$user}))"; $enrolled="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.course_id=c.id AND cp2.status='active' AND {$person})"; $hasAny="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.status='active' AND {$person})";
-        $select=str_replace(' FROM courses c', ",CASE WHEN {$enrolled} THEN 1 ELSE 0 END enrolled FROM courses c", $this->select());
-        $q=$this->db->query($select." WHERE c.es_evento=".(int)$isEvent." AND c.status='active' AND (NOT {$hasAny} OR {$enrolled}) GROUP BY c.id ORDER BY c.start_date,c.name");
+        $user=(int)($actor['id']??0); $role=$actor['roles'][0]??''; $person="(p2.user_id={$user} OR p2.ci=(SELECT ci FROM users WHERE id={$user}))"; $enrolled="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.course_id=c.id AND cp2.status='active' AND {$person})"; $assigned="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.course_id=c.id AND {$person})"; $hasAny="EXISTS (SELECT 1 FROM course_participants cp2 JOIN people p2 ON p2.id=cp2.person_id WHERE cp2.status='active' AND {$person})";
+        $isLearner=in_array($role,['student','beneficiary'],true);
+        $enrollmentAllowed=$isLearner ? "(NOT {$assigned} OR {$enrolled})" : "(NOT {$hasAny} OR {$enrolled})";
+        $studentEnrolled="CASE WHEN {$enrolled} THEN 1 ELSE 0 END";
+        $person3="(p3.user_id={$user} OR p3.ci=(SELECT ci FROM users WHERE id={$user}))";
+        $participantStatus=$isLearner ? "(SELECT cp3.status FROM course_participants cp3 JOIN people p3 ON p3.id=cp3.person_id WHERE cp3.course_id=c.id AND {$person3})" : 'NULL';
+        $select=str_replace(' FROM courses c', ",{$studentEnrolled} enrolled,CASE WHEN {$enrollmentAllowed} THEN 1 ELSE 0 END enrollment_allowed,{$participantStatus} participant_status FROM courses c", $this->select());
+        $visibility=$isLearner ? '1=1' : "(NOT {$hasAny} OR {$enrolled})";
+        $q=$this->db->query($select." WHERE c.es_evento=".(int)$isEvent." AND c.status='active' AND {$visibility} GROUP BY c.id ORDER BY c.start_date,c.name");
         return array_map([$this,'mapCourse'],$q->fetchAll());
     }
     public function find(int $id,array $actor): ?array
@@ -114,10 +120,13 @@ final class CourseRepository
             $q->execute([$course]); $row=$q->fetch(); if(!$row) throw new \RuntimeException('course_unavailable');
             $person=$this->db->prepare("SELECT p.id FROM people p WHERE p.user_id=? AND p.status='active' AND (EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) OR EXISTS (SELECT 1 FROM students s WHERE s.user_id=? AND s.is_active=1))");
             $person->execute([$user,$user]); $personId=(int)$person->fetchColumn(); if(!$personId) throw new \RuntimeException('participant_not_found');
-            $active=$this->db->prepare("SELECT 1 FROM course_participants WHERE person_id=? AND status='active' LIMIT 1");
-            $active->execute([$personId]); if($active->fetchColumn()) throw new \RuntimeException('already_enrolled');
+            $student=$this->db->prepare('SELECT 1 FROM students WHERE user_id=? AND is_active=1 LIMIT 1'); $student->execute([$user]);
             $exists=$this->db->prepare("SELECT status FROM course_participants WHERE course_id=? AND person_id=?"); $exists->execute([$course,$personId]);
-            if($exists->fetchColumn()==='active') return;
+            $existingStatus=$exists->fetchColumn(); $isStudent=(bool)$student->fetchColumn();
+            if($isStudent && $existingStatus==='active') return;
+            if($isStudent && $existingStatus===false){ $this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'inactive')")->execute([$course,$personId]); return; }
+            if($isStudent && $existingStatus!=='active') throw new \RuntimeException('participant_not_enabled');
+            if($existingStatus==='active') return;
             if((int)$row['max_participants']>0 && (int)$row['enrolled'] >= (int)$row['max_participants']) throw new \RuntimeException('course_full');
             $insert=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'active') ON DUPLICATE KEY UPDATE status='active',enrolled_at=CURRENT_TIMESTAMP"); $insert->execute([$course,$personId]);
         });
@@ -132,9 +141,16 @@ final class CourseRepository
     }
     private function syncParticipants(int $course,array $ids): void
     {
-        $q=$this->db->prepare("UPDATE course_participants SET status='inactive' WHERE course_id=?"); $q->execute([$course]);
-        $q=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'active') ON DUPLICATE KEY UPDATE status='active'");
-        foreach($ids as $id) $q->execute([$course,$id]);
+        if ($ids) {
+            $placeholders=implode(',',array_fill(0,count($ids),'?'));
+            $q=$this->db->prepare("UPDATE course_participants SET status='inactive' WHERE course_id=? AND person_id NOT IN ({$placeholders})");
+            $q->execute(array_merge([$course],$ids));
+        } else {
+            $this->db->prepare("UPDATE course_participants SET status='inactive' WHERE course_id=?")->execute([$course]);
+        }
+        $student=$this->db->prepare("SELECT 1 FROM people p JOIN students s ON (p.user_id=s.user_id OR p.ci=(SELECT ci FROM users WHERE id=s.user_id)) WHERE p.id=? AND s.is_active=1 LIMIT 1");
+        $insert=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,?) ON DUPLICATE KEY UPDATE status=course_participants.status");
+        foreach($ids as $id){ $student->execute([$id]); $insert->execute([$course,$id,$student->fetchColumn()?'inactive':'active']); }
     }
     private function syncTecnicos(int $course,array $ids): void
     {

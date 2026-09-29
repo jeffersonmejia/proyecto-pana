@@ -15,6 +15,10 @@ footer { gap: 22px; }
 .profile-card { padding: 28px; border-radius: var(--pana-radius); overflow: hidden; }
 @media (max-width: 620px) { .profile-card { padding: 20px 16px; } }
 
+:host.profile-limited .profile-card .profile-section:nth-of-type(3) {
+  display: none;
+}
+
 /* Perfil: neutros y azul de acción compartido. */
 .profile-page .profile-avatar {
   background: var(--pana-pastel-blue-bg) !important;

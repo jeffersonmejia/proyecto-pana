@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostBinding, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideArrowLeft, LucideBuilding2, LucideCalendarDays, LucideGraduationCap, LucideIdCard, LucideMail, LucideMapPin, LucidePhone, LucideSave, LucideUserRound } from '@lucide/angular';
@@ -11,6 +11,7 @@ export class ProfileComponent {
   readonly auth = inject(AuthService); private readonly api = inject(ProfileApiService); private readonly router = inject(Router);
   readonly locations = ECUADOR_LOCATIONS;
   readonly loading = signal(true); readonly saving = signal(false); readonly feedback = signal(''); readonly error = signal('');
+  @HostBinding('class.profile-limited') get profileLimited(): boolean { const roles = this.auth.user()?.roles ?? []; return roles.includes('student') || roles.includes('beneficiary') || roles.includes('tecnico'); }
   profile: ProfileData = { id: 0, ci: '', first_name: '', last_name: '', phone: '', email: '', birth_date: null, birth_province: '', birth_city: '', gender: '', self_identification: '', has_disability: '', disability_type: '', address: '', sector: '', education: '', observations: '' };
   constructor() { this.api.get().subscribe({ next: response => { this.profile = { ...this.profile, ...response.profile }; this.loading.set(false); }, error: () => { this.error.set('No se pudo cargar tu perfil.'); this.loading.set(false); } }); }
   emailLocked(): boolean { return this.auth.user()?.roles.some(role => ['admin', 'coordinator', 'tecnico'].includes(role)) ?? false; }

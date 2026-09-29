@@ -7,7 +7,7 @@ export interface RegistrationPayload {
   name: string; id: string; birthDate: string; gender: string; birthProvince: string; birthCity: string;
   selfIdentification: string; hasDisability: string; disabilityType: string; role: string;
   phone: string; email: string; address: string; sector: string; latitude: number | null; longitude: number | null; institution: string; career: string;
-  education: string; level: string; motivation: string; skills: string; volunteer: string;
+  education: string; level: string; practiceHours: string; motivation: string; skills: string; volunteer: string;
   volunteerDetails: string; password: string; days: string[]; schedules: string[]; terms: boolean;
 }
 
