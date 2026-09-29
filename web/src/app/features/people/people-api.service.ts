@@ -10,6 +10,8 @@ export interface PersonRecord {
   email: string | null;
   phone: string | null;
   birth_date: string | null;
+  sector: string | null;
+  birth_city: string | null;
   address: string | null;
   observations: string | null;
   latitude?: number | null;
@@ -47,8 +49,10 @@ export class PeopleApiService {
     return this.http.get<{ people: PersonRecord[]; pagination: PeoplePage }>(this.url, { params });
   }
 
-  detail(id: number) {
-    return this.http.get<PersonDetail>(`${this.url}/detail`, { params: { id } });
+  detail(id: number, courseId?: number) {
+    let params = new HttpParams().set('id', id);
+    if (courseId) params = params.set('course_id', courseId);
+    return this.http.get<PersonDetail>(`${this.url}/detail`, { params });
   }
 
   create(person: PersonInput) {

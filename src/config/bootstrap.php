@@ -14,7 +14,7 @@ if (is_file($environmentFile)) {
         [$name, $value] = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value);
-        if ($name === '' || getenv($name) !== false) {
+        if ($name === '') {
             continue;
         }
 
@@ -29,6 +29,10 @@ if (is_file($environmentFile)) {
 
 function env_value(string $name, ?string $default = null): ?string
 {
+    if (array_key_exists($name, $_ENV)) {
+        return (string) $_ENV[$name];
+    }
+
     $value = getenv($name);
     return $value === false ? $default : $value;
 }

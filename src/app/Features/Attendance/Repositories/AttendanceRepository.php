@@ -71,6 +71,18 @@ final class AttendanceRepository
     public function create(array $data, int $actor): int
     {
         return $this->transaction(function () use ($data, $actor): int {
+            $existingQuery=$this->connection->prepare('SELECT * FROM attendance_records WHERE participant_id=? AND attendance_date=? FOR UPDATE');
+            $existingQuery->execute([$data['participant_id'],$data['attendance_date']]);
+            $existing=$existingQuery->fetch();
+            if($existing){
+                if($existing['check_in']===null && !empty($data['check_in'])){
+                    $update=$this->connection->prepare('UPDATE attendance_records SET status=?,check_in=?,updated_by=? WHERE id=?');
+                    $update->execute([$data['status'],$data['check_in'],$actor,$existing['id']]);
+                    $new=$existing; $new['status']=$data['status']; $new['check_in']=$data['check_in']; $new['updated_by']=$actor;
+                    $this->log((int)$existing['id'],$actor,'corrected',$existing,$new,'Registro de hora de llegada');
+                }
+                return (int)$existing['id'];
+            }
             $statement = $this->connection->prepare('INSERT INTO attendance_records '
                 . '(participant_id,attendance_date,status,check_in,check_out,note,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?)');
             $statement->execute([$data['participant_id'], $data['attendance_date'], $data['status'], $data['check_in'],
@@ -102,7 +114,6 @@ final class AttendanceRepository
             if(!$old) throw new RuntimeException('attendance_entry_required');
             if($old['check_out']!==null) throw new RuntimeException('attendance_exit_exists');
             if($old['check_in']===null) throw new RuntimeException('attendance_entry_required');
-            if($time<=$old['check_in']) throw new RuntimeException('invalid_attendance_range');
             $statement=$this->connection->prepare('UPDATE attendance_records SET check_out=?,updated_by=? WHERE id=? AND check_out IS NULL');
             $statement->execute([$time,$actor,$old['id']]); $new=$old; $new['check_out']=$time; $new['updated_by']=$actor;
             $this->log((int)$old['id'],$actor,'check_out',$old,$new,null);

@@ -6,16 +6,18 @@ import { DocumentsApiService } from '../reports/documents-api.service';
 import { AttendanceApiService } from '../attendance/attendance-api.service';
 import { PaginatorComponent } from '../../shared/paginator.component';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog.component';
 import { CourseSectionSkeletonComponent } from '../../shared/course-section-skeleton.component';
+import { CourseNavItem, CourseSectionNavComponent } from '../../shared/course-section-nav.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { Observable } from 'rxjs';
-import { LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload } from '@lucide/angular';
+import { LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload, LucideHouse } from '@lucide/angular';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Course, CourseSections, CoursesApiService } from './courses-api.service';
 
 type CourseTab = 'overview' | 'participants' | 'attendance' | 'activities' | 'evaluations';
-  @Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, CourseSectionSkeletonComponent, SkeletonLoaderComponent, LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
+  @Component({ selector: 'pana-course-detail', standalone: true, imports: [FormsModule, PaginatorComponent, StepDialogComponent, ConfirmationDialogComponent, CourseSectionSkeletonComponent, CourseSectionNavComponent, SkeletonLoaderComponent, LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload, LucideHouse], templateUrl: './course-detail.component.html', styleUrl: './course-detail.component.scss' })
 export class CourseDetailComponent implements OnInit {
   private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   private readonly api=inject(CoursesApiService);
@@ -26,7 +28,8 @@ export class CourseDetailComponent implements OnInit {
   readonly data=signal<CourseSections|null>(null); readonly loading=signal(true); readonly sectionLoading=signal(false); readonly error=signal('');
   private loadingStartedAt=0;
   readonly active=signal<CourseTab>('participants');
-  readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
+    readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
+    readonly attendanceRowErrors=signal<Record<number,{message:string;field:'in'|'out'}>>({});
   readonly maxAttendanceDate=this.today(); readonly attendanceDate=signal(this.maxAttendanceDate);
   readonly attendancePage=signal(1); readonly attendancePageSize=10;
   readonly participantPage=signal(1); readonly participantPageSize=10;
@@ -34,6 +37,7 @@ export class CourseDetailComponent implements OnInit {
     {id:'attendance',label:'Asistencia'},
     {id:'activities',label:'Actividades'},{id:'evaluations',label:'Evaluaciones'}];
   readonly visibleTabs = computed(() => this.isBeneficiary() ? this.tabs.filter(tab => tab.id === 'activities' || tab.id === 'attendance') : this.tabs);
+  readonly navigationItems = computed<CourseNavItem[]>(() => this.visibleTabs().map(tab => ({ id: tab.id, label: tab.label, count: !this.loading() && this.data() && (tab.id !== 'attendance' || this.isStudent()) ? `(${tab.id === 'attendance' ? this.attendanceHours() : this.tabCount(tab.id)})` : undefined })));
   readonly attendanceHours=computed(()=>{const hours=(this.data()?.participants??[]).reduce((sum,row)=>sum+Number(row.attendance_minutes??0),0)/60;return Number.isInteger(hours)?String(hours):hours.toFixed(1);});
   readonly completedTasks=computed(()=>((this.data()?.activities??[]).filter(task=>task.status==='completed').length));
   capacityPercent(): number { const limit=Number(this.course().max_participants??0); return limit>0 ? Math.min(100,Math.round(Number(this.course().participant_count??0)*100/limit)) : 0; }
@@ -41,17 +45,22 @@ export class CourseDetailComponent implements OnInit {
   readonly participantRows=computed(()=>{const q=this.participantQuery().trim().toLocaleLowerCase(); return (this.data()?.participants??[]).filter(p=>!q||p.name.toLocaleLowerCase().includes(q));});
   readonly participantPageRows=computed(()=>{const rows=this.participantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
   readonly attendanceSort=signal<'participant'|'technician'>('participant'); readonly attendanceSortDirection=signal<'asc'|'desc'>('asc');
-  readonly attendancePageRows=computed(()=>{const people=[...(this.data()?.participants??[])];const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?`${a.last_name} ${a.first_name}`:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?`${b.last_name} ${b.first_name}`:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
+  readonly attendanceEditing=signal<{personId:number;field:'in'|'out'}|null>(null); readonly attendanceEditTime=signal('');
+  readonly attendanceDeleteTarget=signal<{personId:number;attendanceId:number;field:'in'|'out';checkIn:string|null;checkOut:string|null}|null>(null);
+  readonly attendanceTimes=Array.from({length: 8 * 60 + 1}, (_, index) => { const minutes=8 * 60 + 30 + index; return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`; });
+  readonly attendancePageRows=computed(()=>{const records=this.data()?.attendance??[];const selectedDate=this.attendanceDate();const people=[...(this.data()?.participants??[])].map(person=>{const record=records.find(row=>Number(row.participant_id)===Number(person.id)&&String(row.attendance_date).slice(0,10)===selectedDate);return record?{...person,selected_attendance_id:Number(record.id),selected_attendance_status:record.status,selected_check_in:record.check_in,selected_check_out:record.check_out}:person;});const field=this.attendanceSort();const direction=this.attendanceSortDirection()==='asc'?1:-1;people.sort((a,b)=>{const first=(field==='participant'?`${a.last_name} ${a.first_name}`:this.technicianFor(a.id)||'').trim();const second=(field==='participant'?`${b.last_name} ${b.first_name}`:this.technicianFor(b.id)||'').trim();return first.localeCompare(second,'es',{sensitivity:'base'})*direction;});const start=(this.attendancePage()-1)*this.attendancePageSize;return people.slice(start,start+this.attendancePageSize);});
   readonly taskError=signal(''); readonly taskSaving=signal(false); readonly uploadingTask=signal<number|null>(null); readonly taskAttachmentDragging=signal(false); taskAttachment: File|null=null;
   readonly evidenceFeedback=signal<{task:number;type:'success'|'error';text:string}|null>(null);
   readonly taskDialog=signal(false); readonly taskStep=signal(0); readonly taskEditing=signal<number|null>(null); readonly taskEditingStatus=signal('planned'); readonly taskExistingAttachment=signal<CourseSections['documents'][number]|null>(null); readonly taskToDelete=signal<CourseSections['activities'][number]|null>(null); readonly taskActionSaving=signal(false); readonly taskStatusFilter=signal<'active'|'inactive'|'all'>('active');
   readonly expandedTask=signal<number|null>(null); readonly draggingTask=signal<number|null>(null);
   readonly activityPage=signal(false);
   taskForm={title:'',description:'',responsible:'',start_at:'',end_at:'',participant_ids:[] as number[]};
-  ngOnInit(): void { const activityId=Number(this.route.snapshot.paramMap.get('activityId')); if(this.route.snapshot.queryParamMap.get('tab')==='participants')this.active.set('participants'); if(this.isBeneficiary())this.active.set('activities'); if(activityId>0){this.activityPage.set(true);this.active.set('activities');this.expandedTask.set(activityId);} this.reload(); }
+  ngOnInit(): void { const activityId=Number(this.route.snapshot.paramMap.get('activityId')); const today=this.today(); const start=this.course().start_date; const end=this.attendanceMaxDate(); this.attendanceDate.set(today<start?start:today>end?end:today); if(this.route.snapshot.queryParamMap.get('tab')==='participants')this.active.set('participants'); if(this.isBeneficiary())this.active.set('activities'); if(activityId>0){this.activityPage.set(true);this.active.set('activities');this.expandedTask.set(activityId);} this.reload(); }
   reload(afterLoad?:()=>void): void { this.loadingStartedAt=Date.now();this.loading.set(true);this.api.sections(this.course().id,this.attendanceDate()).subscribe({next:value=>this.finishLoad(value,afterLoad),error:()=>{this.error.set('No se pudo cargar la información de este curso.');this.finishLoad(null);}}); }
+  private reloadAttendance(afterLoad?:()=>void): void { this.api.sections(this.course().id,this.attendanceDate()).subscribe({next:value=>{this.data.set(value);afterLoad?.();},error:()=>{this.attendanceError.set('No se pudo actualizar la asistencia.');}}); }
   private finishLoad(value:CourseSections|null,afterLoad?:()=>void): void { const wait=Math.max(0,700-(Date.now()-this.loadingStartedAt));setTimeout(()=>{if(value)this.data.set(value);this.loading.set(false);afterLoad?.();},wait); }
-  setAttendanceDate(date:string): void { if(!date)return; this.attendanceDate.set(date);this.attendancePage.set(1);this.attendanceError.set('');this.reload(); }
+    attendanceMaxDate(): string { const today=this.today(); const end=this.course().end_date; return end<today?end:today; }
+    setAttendanceDate(date:string): void { if(!date||date<this.course().start_date||date>this.attendanceMaxDate())return; this.attendanceDate.set(date);this.attendancePage.set(1);this.attendanceError.set('');this.attendanceRowErrors.set({});this.reload(); }
   changeAttendancePage(page:number): void { this.attendancePage.set(page); }
   sortAttendance(field:'participant'|'technician'): void { if(this.attendanceSort()===field)this.attendanceSortDirection.update(value=>value==='asc'?'desc':'asc'); else { this.attendanceSort.set(field); this.attendanceSortDirection.set('asc'); } this.attendancePage.set(1); }
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
@@ -78,7 +87,9 @@ export class CourseDetailComponent implements OnInit {
   private fileName(value:string): string { return value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'curso'; }
   private pdfTimestamp(): string { const now=new Date(); const pad=(value:number)=>String(value).padStart(2,'0'); return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`; }
   participantAttendanceHours(person: CourseSections['participants'][number]): string { const hours=Number(person.attendance_minutes ?? 0)/60; return Number.isInteger(hours)?String(hours):hours.toFixed(1); }
+  attendanceTotalDuration(minutes:number|null|undefined): string { const total=Math.max(0,Number(minutes??0)); return `${Math.floor(total/60)}h ${total%60}m`; }
   ageFromBirthDate(value: string | null): string { if (!value) return '—'; const birth = new Date(`${value}T00:00:00`), today = new Date(); let age = today.getFullYear() - birth.getFullYear(); const beforeBirthday = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()); return String(age - (beforeBirthday ? 1 : 0)); }
+  isTechnician(): boolean { return this.auth.user()?.roles.includes('tecnico') ?? false; }
   canMarkAttendance(): boolean { return this.auth.hasPermission('attendance.manage'); }
   isBeneficiary(): boolean { return this.auth.user()?.roles.includes('beneficiary') ?? false; }
   isStudent(): boolean { return this.auth.user()?.roles.includes('student') ?? false; }
@@ -88,19 +99,77 @@ export class CourseDetailComponent implements OnInit {
     return person.selected_attendance_status==='present'&&this.isLate(person.selected_check_in)?'Atraso':this.attendanceLabel(person.selected_attendance_status);
   }
   isLate(time:string|null): boolean { return !!time&&time.slice(0,5)>'08:00'; }
-  markAttendance(person:{id:number;selected_attendance_status:'present'|'absent'|'excused'|null;selected_check_out:string|null}): void {
-    if(this.markingAttendance()!==null)return;
-    const isExit=person.selected_attendance_status==='present';
-    if(person.selected_attendance_status&&(!isExit||person.selected_check_out)){this.attendanceError.set('La asistencia ya está completa para esta fecha.');return;}
-    this.markingAttendance.set(person.id);this.attendanceError.set('');
-    const request:Observable<unknown>=isExit?this.attendanceApi.checkout({participant_id:person.id,attendance_date:this.attendanceDate(),check_out:this.currentTime()}):this.attendanceApi.create({participant_id:person.id,attendance_date:this.attendanceDate(),status:'present',check_in:this.currentTime(),check_out:'',note:''});
-    request.subscribe({
-      next:()=>{this.markingAttendance.set(null);this.reload(()=>this.active.set('attendance'));},
-      error:()=>{this.markingAttendance.set(null);this.attendanceError.set(isExit?'No se pudo registrar la hora de salida.':'No se pudo marcar la hora de llegada. Revisa si ya existe un registro en esa fecha.');}
-    });
+  editAttendanceTime(person:{id:number;selected_check_in:string|null;selected_check_out:string|null}, field:'in'|'out'): void {
+    this.attendanceEditing.set({personId:person.id,field});
+    this.attendanceEditTime.set((field==='in'?person.selected_check_in:person.selected_check_out)?.slice(0,5) ?? this.currentTime());
+  }
+    cancelAttendanceEdit(): void { this.attendanceEditing.set(null); this.attendanceEditTime.set(''); }
+    requestDeleteAttendance(person:{id:number;selected_attendance_id:number|null;selected_check_in:string|null;selected_check_out:string|null},field:'in'|'out'): void {
+      if(!person.selected_attendance_id||field==='in'&&!!person.selected_check_out)return;
+      if(field==='out'&&!person.selected_check_out)return;
+      this.attendanceDeleteTarget.set({personId:person.id,attendanceId:Number(person.selected_attendance_id),field,checkIn:person.selected_check_in,checkOut:person.selected_check_out});
+    }
+    closeDeleteAttendance(): void { if(this.markingAttendance()===null)this.attendanceDeleteTarget.set(null); }
+    confirmDeleteAttendance(): void {
+      const target=this.attendanceDeleteTarget();
+      if(!target||this.markingAttendance()!==null)return;
+      this.markingAttendance.set(target.personId);
+      const checkIn=target.field==='in'?'':target.checkIn?.slice(0,5)??'';
+      const checkOut=target.field==='out'?'':target.checkOut?.slice(0,5)??'';
+      this.attendanceApi.correct({id:target.attendanceId,participant_id:target.personId,attendance_date:this.attendanceDate(),status:'present',check_in:checkIn,check_out:checkOut,note:'',correction_reason:target.field==='in'?'Eliminación de hora de llegada':'Eliminación de hora de salida'}).subscribe({
+        next:()=>{this.markingAttendance.set(null);this.attendanceDeleteTarget.set(null);this.reloadAttendance(()=>this.active.set('attendance'));},
+        error:()=>{this.markingAttendance.set(null);this.attendanceDeleteTarget.set(null);this.setAttendanceError(target.personId,'No se pudo eliminar la hora.',target.field);}
+      });
+    }
+    attendanceTimeChanged(person:{selected_check_in:string|null;selected_check_out:string|null}): boolean {
+      const editing=this.attendanceEditing();
+      if(!editing) return false;
+      const original=(editing.field==='in'?person.selected_check_in:person.selected_check_out)?.slice(0,5) ?? '';
+      return this.attendanceEditTime()!==original;
+    }
+    saveAttendanceTime(person:{id:number;selected_attendance_id:number|null;selected_check_in:string|null;selected_check_out:string|null}): void {
+      const recordId=person.selected_attendance_id;
+      const editing=this.attendanceEditing();
+      if (!recordId || !editing || !this.attendanceEditTime()) return;
+      if (!this.attendanceTimeChanged(person)) { this.cancelAttendanceEdit(); return; }
+    const checkIn=editing.field==='in'?this.attendanceEditTime():(person.selected_check_in?.slice(0,5) ?? '');
+    const checkOut=editing.field==='out'?this.attendanceEditTime():(person.selected_check_out?.slice(0,5) ?? '');
+    this.markingAttendance.set(person.id);
+    this.attendanceApi.correct({id:recordId,participant_id:person.id,attendance_date:this.attendanceDate(),status:'present',check_in:checkIn,check_out:checkOut,note:'',correction_reason:'Edición de hora de asistencia'}).subscribe({
+        next:()=>{ this.markingAttendance.set(null); this.cancelAttendanceEdit(); this.reloadAttendance(()=>this.active.set('attendance')); },
+        error:()=>{ this.markingAttendance.set(null); this.setAttendanceError(person.id,'No se pudo actualizar la hora de asistencia.',editing.field); }
+      });
+    }
+    attendanceRowError(id:number,field:'in'|'out'='in'): string { const error=this.attendanceRowErrors()[id]; return error?.field===field?error.message:''; }
+    private setAttendanceError(id:number,message:string,field:'in'|'out'='in'): void {
+      if(this.isTechnician()) this.attendanceRowErrors.update(errors=>({...errors,[id]:{message,field}}));
+      else this.attendanceError.set(message);
+    }
+    private clearAttendanceError(id:number): void {
+      this.attendanceRowErrors.update(errors=>{const next={...errors};delete next[id];return next;});
+      if(!this.isTechnician()) this.attendanceError.set('');
+    }
+    markAttendance(person:{id:number;selected_attendance_id:number|null;selected_attendance_status:'present'|'absent'|'excused'|null;selected_check_in:string|null;selected_check_out:string|null}): void {
+      if(this.markingAttendance()!==null)return;
+      this.clearAttendanceError(person.id);
+      const isExit=person.selected_attendance_status==='present'&&!!person.selected_check_in&&!person.selected_check_out;
+      if(person.selected_check_in&&person.selected_check_out){this.setAttendanceError(person.id,'La asistencia ya está completa para esta fecha.','out');return;}
+      this.markingAttendance.set(person.id);this.attendanceError.set('');
+      const currentTime=isExit?this.attendanceExitTime():this.attendanceEntryTime();
+      const request:Observable<unknown>=isExit
+        ? this.attendanceApi.checkout({participant_id:person.id,attendance_date:this.attendanceDate(),check_out:currentTime})
+        : person.selected_attendance_id
+          ? this.attendanceApi.correct({id:person.selected_attendance_id,participant_id:person.id,attendance_date:this.attendanceDate(),status:'present',check_in:currentTime,check_out:person.selected_check_out ?? '',note:'',correction_reason:'Registro de hora de llegada'})
+          : this.attendanceApi.create({participant_id:person.id,attendance_date:this.attendanceDate(),status:'present',check_in:currentTime,check_out:'',note:''});
+      request.subscribe({
+        next:()=>{this.markingAttendance.set(null);this.clearAttendanceError(person.id);this.reloadAttendance(()=>this.active.set('attendance'));},
+        error:()=>{this.markingAttendance.set(null);this.setAttendanceError(person.id,isExit?'No se pudo registrar la hora de salida.':'No se pudo marcar la hora de llegada. Revisa si ya existe un registro en esa fecha.',isExit?'out':'in');}
+      });
   }
   private today():string { const date=new Date();date.setMinutes(date.getMinutes()-date.getTimezoneOffset());return date.toISOString().slice(0,10); }
-  private currentTime():string { const now=new Date();return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; }
+    private currentTime():string { const now=new Date();return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; }
+    private attendanceEntryTime(): string { const current=this.currentTime(); return current<='08:30'?'08:29':current>'16:29'?'16:29':current; }
+    private attendanceExitTime(): string { const current=this.currentTime(); return current<='08:30'?'08:30':current>'16:30'?'16:30':current; }
   canManageTasks(): boolean { return this.auth.hasPermission('courses.manage.all')||this.auth.hasPermission('courses.manage'); }
   canSubmitEvidence(): boolean { return this.auth.hasPermission('activities.submit_evidence')||this.auth.hasPermission('documents.manage'); }
   toggleTaskParticipant(id:number,checked:boolean): void { this.taskForm.participant_ids=checked?[...new Set([...this.taskForm.participant_ids,id])]:this.taskForm.participant_ids.filter(v=>v!==id); }
@@ -166,10 +235,11 @@ export class CourseDetailComponent implements OnInit {
   private isEvidenceFile(file:File): boolean { return ['application/pdf','image/jpeg','image/png','video/mp4','video/webm'].includes(file.type); }
   documentsForTask(task:number) { return (this.data()?.documents??[]).filter(file=>file.entity_type==='activity'&&file.entity_id===task); }
   downloadDocument(id:number,name:string): void { this.documentsApi.download(id).subscribe(blob=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}); }
+  selectCourseTab(tab: string): void { if (['participants', 'attendance', 'activities', 'evaluations'].includes(tab)) this.select(tab as CourseTab); }
   select(tab: CourseTab): void { if(tab===this.active())return;this.active.set(tab);if(!this.data())return;this.sectionLoading.set(true);setTimeout(()=>this.sectionLoading.set(false),500); }
   private coursePeriodDays(): number { const start=new Date(`${this.course().start_date}T00:00:00`); const end=new Date(`${this.course().end_date}T00:00:00`); const days=Math.floor((end.getTime()-start.getTime())/86400000)+1; return Number.isFinite(days)&&days>0?days:0; }
   attendancePercent(): number { const data=this.data(); if(this.isBeneficiary())return Number(data?.attendance_percentage??0); const people=data?.participants??[]; const expected=this.coursePeriodDays()*people.length; const attended=people.reduce((total,person)=>total+Number(person.attendance_count??0),0); return expected>0?Math.min(100,Math.round(attended*100/expected)):0; }
   attendanceDuration(checkIn:string|null,checkOut:string|null): string { if(!checkIn||!checkOut)return '—'; const start=new Date(`1970-01-01T${checkIn}`),end=new Date(`1970-01-01T${checkOut}`); const minutes=Math.max(0,Math.round((end.getTime()-start.getTime())/60000)); return `${Math.floor(minutes/60)}h ${minutes%60}m`; }
-  technicianFor(participantId:number): string|null { const date=this.attendanceDate(); return this.data()?.attendance.find(row=>row.participant_id===participantId&&row.attendance_date===date)?.technician_name ?? null; }
+    technicianFor(participantId:number): string|null { const date=this.attendanceDate(); return this.data()?.attendance.find(row=>Number(row.participant_id)===Number(participantId)&&String(row.attendance_date).slice(0,10)===date)?.technician_name ?? null; }
   tabCount(tab: CourseTab): number { const data=this.data(); if(!data)return 0; if(tab==='participants')return data.participants.length; if(tab==='attendance')return this.attendancePercent(); if(tab==='activities')return data.activities.length; if(tab==='evaluations')return data.evaluations.length; return 0; }
 }

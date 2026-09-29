@@ -90,6 +90,6 @@ export class PeopleComponent implements OnInit {
 
   private emptyForm(): PersonInput {
     return { ci: '', first_name: '', last_name: '', email: '', phone: '', birth_date: '',
-      address: '', observations: '', status: 'active', types: ['participant'] };
+      sector: '', birth_city: '', address: '', observations: '', status: 'active', types: ['participant'] };
   }
 }

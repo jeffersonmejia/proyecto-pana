@@ -34,6 +34,8 @@ return static function (callable $buildAuth, callable $authorize, callable $auth
         'GET /api/people/detail' => static function () use ($build, $authorizeAny, $id): void {
             $components = $build();
             $actor = $authorizeAny($components, ['people.read', 'people.manage']);
+            $courseId = filter_var($_GET['course_id'] ?? null, FILTER_VALIDATE_INT);
+            if ($courseId !== false && $courseId !== null && $courseId > 0) $actor['course_id'] = (int) $courseId;
             if (!in_array($actor['roles'][0] ?? '', ['admin', 'coordinator', 'tecnico'], true)) {
                 throw new ApiException(403, 'forbidden');
             }

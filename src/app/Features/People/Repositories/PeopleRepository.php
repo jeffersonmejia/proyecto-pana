@@ -40,7 +40,7 @@ final class PeopleRepository
             $params['id'] = $filters['id'];
         }
         $sql = 'SELECT p.id,p.ci,p.first_name,p.last_name,p.email,p.phone,p.status,p.created_at,p.user_id, '
-            . 'COALESCE(b.birth_date,br.birth_date) birth_date,COALESCE(b.address,br.address) address,b.observations,br.latitude,br.longitude, '
+            . 'COALESCE(b.birth_date,br.birth_date) birth_date,COALESCE(b.address,br.address) address,b.observations,br.latitude,br.longitude,br.sector,br.birth_city, '
             . "GROUP_CONCAT(DISTINCT CASE WHEN pa.is_active=1 THEN 'participant' END) AS participant, "
             . "GROUP_CONCAT(DISTINCT CASE WHEN b.is_active=1 THEN 'beneficiary' END) AS beneficiary "
             . 'FROM people p LEFT JOIN participants pa ON pa.person_id = p.id '

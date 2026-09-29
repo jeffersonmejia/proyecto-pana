@@ -16,8 +16,33 @@ final class CourseDetailsRepository
     }
     private function participants(int $id,string $scope,string $attendanceDate): array
     {
-        $sql="SELECT p.id,p.ci,p.phone,(SELECT sector FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) sector,(SELECT self_identification FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) self_identification,(SELECT has_disability FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) has_disability,(SELECT disability_type FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) disability_type,(SELECT education FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) education,(SELECT birth_city FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) birth_city,p.first_name,p.last_name,COALESCE((SELECT birth_date FROM beneficiaries WHERE person_id=p.id AND is_active=1 LIMIT 1),(SELECT birth_date FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1)) birth_date,CONCAT(p.first_name,' ',p.last_name) name,CASE WHEN EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) THEN 'Estudiante' WHEN EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) THEN 'Beneficiario' ELSE 'Participante' END profile,(SELECT COUNT(*) FROM attendance_records ar WHERE ar.participant_id=p.id) attendance_count,(SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE,ar.check_in,ar.check_out)),0) FROM attendance_records ar WHERE ar.participant_id=p.id) attendance_minutes,(SELECT MAX(ar.attendance_date) FROM attendance_records ar WHERE ar.participant_id=p.id) last_attendance,(SELECT ar.status FROM attendance_records ar WHERE ar.participant_id=p.id ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 1) last_attendance_status,(SELECT ar.status FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_attendance_status,(SELECT ar.check_in FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_check_in,(SELECT ar.check_out FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_check_out,(SELECT COUNT(*) FROM activity_participants ap JOIN course_activities ca ON ca.activity_id=ap.activity_id AND ca.course_id=cp.course_id WHERE ap.participant_id=p.id) task_count,(SELECT COUNT(*) FROM evaluation_records e WHERE e.person_id=p.id) evaluation_count FROM course_participants cp JOIN people p ON p.id=cp.person_id WHERE cp.course_id=? AND cp.status='active' AND {$scope} ORDER BY p.last_name,p.first_name LIMIT 200";
-        return $this->query($sql,[$attendanceDate,$attendanceDate,$attendanceDate,$id]);
+        $sql="SELECT p.id,p.ci,p.phone,(SELECT sector FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) sector,(SELECT self_identification FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) self_identification,(SELECT has_disability FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) has_disability,(SELECT disability_type FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) disability_type,(SELECT education FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) education,(SELECT birth_city FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1) birth_city,p.first_name,p.last_name,COALESCE((SELECT birth_date FROM beneficiaries WHERE person_id=p.id AND is_active=1 LIMIT 1),(SELECT birth_date FROM beneficiary_registrations WHERE person_id=p.id ORDER BY id DESC LIMIT 1)) birth_date,CONCAT(p.first_name,' ',p.last_name) name,CASE WHEN EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1) THEN 'Estudiante' WHEN EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) THEN 'Beneficiario' ELSE 'Participante' END profile,(SELECT COUNT(*) FROM attendance_records ar WHERE ar.participant_id=p.id) attendance_count,(SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE,ar.check_in,ar.check_out)),0) FROM attendance_records ar WHERE ar.participant_id=p.id) attendance_minutes,(SELECT MAX(ar.attendance_date) FROM attendance_records ar WHERE ar.participant_id=p.id) last_attendance,(SELECT ar.status FROM attendance_records ar WHERE ar.participant_id=p.id ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 1) last_attendance_status,(SELECT ar.id FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_attendance_id,(SELECT ar.status FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_attendance_status,(SELECT ar.check_in FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_check_in,(SELECT ar.check_out FROM attendance_records ar WHERE ar.participant_id=p.id AND ar.attendance_date=? ORDER BY ar.id DESC LIMIT 1) selected_check_out,(SELECT COUNT(*) FROM activity_participants ap JOIN course_activities ca ON ca.activity_id=ap.activity_id AND ca.course_id=cp.course_id WHERE ap.participant_id=p.id) task_count,(SELECT COUNT(*) FROM evaluation_records e WHERE e.person_id=p.id) evaluation_count FROM course_participants cp JOIN people p ON p.id=cp.person_id WHERE cp.course_id=? AND cp.status='active' AND {$scope} ORDER BY p.last_name,p.first_name LIMIT 200";
+        $rows=$this->query($sql,[$attendanceDate,$attendanceDate,$attendanceDate,$attendanceDate,$id]);
+        $ids=array_values(array_filter(array_map(static fn(array $row): int => (int)$row['id'],$rows)));
+        if(!$ids) return $rows;
+        $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $totals=$this->query("SELECT ar.participant_id,COALESCE(SUM(TIMESTAMPDIFF(MINUTE,ar.check_in,ar.check_out)),0) attendance_minutes FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' JOIN courses c ON c.id=cp.course_id WHERE ar.participant_id IN ({$placeholders}) AND ar.attendance_date BETWEEN c.start_date AND c.end_date GROUP BY ar.participant_id",array_merge([$id],$ids));
+        $totalByParticipant=[];
+        foreach($totals as $total) $totalByParticipant[(int)$total['participant_id']]=(int)$total['attendance_minutes'];
+        foreach($rows as &$row) $row['attendance_minutes']=$totalByParticipant[(int)$row['id']]??0;
+        unset($row);
+        $records=$this->query("SELECT id,participant_id,status,check_in,check_out FROM attendance_records WHERE attendance_date=? AND participant_id IN ({$placeholders}) ORDER BY id DESC",array_merge([$attendanceDate],$ids));
+        $selected=[];
+        foreach($records as $record){
+            $participant=(int)$record['participant_id'];
+            if(!isset($selected[$participant])) $selected[$participant]=$record;
+        }
+        foreach($rows as &$row){
+            $record=$selected[(int)$row['id']]??null;
+            if($record){
+                $row['selected_attendance_id']=(int)$record['id'];
+                $row['selected_attendance_status']=$record['status'];
+                $row['selected_check_in']=$record['check_in'];
+                $row['selected_check_out']=$record['check_out'];
+            }
+        }
+        unset($row);
+        return $rows;
     }
     private function activities(int $id,string $scope): array
     {
@@ -26,7 +51,7 @@ final class CourseDetailsRepository
     }
     private function attendance(int $id,string $scope): array
     {
-        $sql="SELECT ar.id,ar.participant_id,ar.attendance_date,ar.check_in,ar.check_out,COALESCE(NULLIF(TRIM(CONCAT(technician.first_name,' ',technician.last_name)),' '),technician.email) technician_name FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' LEFT JOIN users technician ON technician.id=ar.created_by WHERE {$scope} ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 200";
+        $sql="SELECT ar.id,ar.participant_id,ar.attendance_date,ar.status,ar.check_in,ar.check_out,COALESCE(NULLIF(TRIM(CONCAT(technician.first_name,' ',technician.last_name)),' '),technician.email) technician_name FROM attendance_records ar JOIN course_participants cp ON cp.person_id=ar.participant_id AND cp.course_id=? AND cp.status='active' LEFT JOIN users technician ON technician.id=ar.created_by WHERE {$scope} ORDER BY ar.attendance_date DESC,ar.id DESC LIMIT 200";
         return $this->query($sql,[$id]);
     }
     private function evaluations(int $id,string $scope,array $actor): array

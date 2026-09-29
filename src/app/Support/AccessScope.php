@@ -11,10 +11,13 @@ final class AccessScope
         if (in_array($role, ['admin', 'coordinator'], true)) return ['sql' => '1=1', 'params' => []];
         if ($role === 'student') return ['sql' => '1=1', 'params' => []];
         $userId = (int) ($actor['id'] ?? 0);
-        if ($role === 'tecnico') return [
-            'sql' => "EXISTS (SELECT 1 FROM tecnico_student_assignments tsa JOIN tecnicos tr ON tr.user_id=tsa.tecnico_user_id AND tr.is_active=1 JOIN people tp ON tp.id=tsa.student_person_id JOIN users tu ON (tu.id=tp.user_id OR tu.ci=tp.ci) AND tu.is_active=1 JOIN roles trol ON trol.id=tu.role_id AND trol.code='student' AND trol.is_active=1 JOIN students ts ON ts.user_id=tu.id AND ts.is_active=1 WHERE tsa.tecnico_user_id={$userId} AND tsa.student_person_id={$idExpression})",
-            'params' => [],
-        ];
+        if ($role === 'tecnico') {
+            $courseScope = "EXISTS (SELECT 1 FROM course_participants cp JOIN courses c ON c.id=cp.course_id WHERE cp.person_id={$idExpression} AND cp.status='active' AND (c.tecnico_user_id={$userId} OR EXISTS (SELECT 1 FROM course_tecnicos ct WHERE ct.course_id=cp.course_id AND ct.tecnico_user_id={$userId})))";
+            return [
+                'sql' => "(EXISTS (SELECT 1 FROM tecnico_student_assignments tsa JOIN tecnicos tr ON tr.user_id=tsa.tecnico_user_id AND tr.is_active=1 JOIN people tp ON tp.id=tsa.student_person_id JOIN users tu ON (tu.id=tp.user_id OR tu.ci=tp.ci) AND tu.is_active=1 JOIN roles trol ON trol.id=tu.role_id AND trol.code='student' AND trol.is_active=1 JOIN students ts ON ts.user_id=tu.id AND ts.is_active=1 WHERE tsa.tecnico_user_id={$userId} AND tsa.student_person_id={$idExpression}) OR {$courseScope})",
+                'params' => [],
+            ];
+        }
         $profile = ['student' => "EXISTS (SELECT 1 FROM students ps WHERE ps.user_id={$userId} AND ps.is_active=1)",
             'beneficiary' => "EXISTS (SELECT 1 FROM beneficiaries pb WHERE pb.person_id=sp.id AND pb.is_active=1)"][$role] ?? '1=0';
         return [
