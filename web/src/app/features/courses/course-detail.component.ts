@@ -84,7 +84,12 @@ export class CourseDetailComponent implements OnInit, AfterViewChecked {
   setParticipantQuery(query:string): void { this.participantQuery.set(query);this.participantPage.set(1); }
   setParticipantProfileFilter(profile:'all'|'beneficiary'|'student'|'technician'): void { this.participantProfileFilter.set(profile);this.participantPage.set(1); }
   changeParticipantPage(page:number): void { this.participantPage.set(page); }
-  openPerson(id:number): void { const personId=id<0?Math.abs(id):id; void this.router.navigate(['/cursos', this.course().id, 'participantes', personId]); }
+  openPerson(id:number): void {
+    const personId=id<0?Math.abs(id):id;
+    const person=this.participantRows().find(row=>Math.abs(Number(row.id))===personId);
+    const preview=person ? { first_name: person.first_name, last_name: person.last_name, types: [person.isTechnicianRow ? 'technician' : person.profile] } : undefined;
+    void this.router.navigate(['/cursos', this.course().id, 'participantes', personId], {state: {person: preview}});
+  }
   @HostListener('click', ['$event'])
   openParticipantWhatsApp(event: MouseEvent): void { const target=event.target as HTMLElement; const cell=target.closest('td') as HTMLTableCellElement|null; const table=target.closest('table') as HTMLTableElement|null; if(!cell||!table||!table.matches('.participant-table-technician,.participant-table-phone,.participant-table-profile')||cell.cellIndex!==3)return; const row=cell.parentElement; const rows=table.tBodies[0]?.rows; const rowIndex=row&&rows?Array.from(rows).indexOf(row as HTMLTableRowElement):-1; const person=rowIndex>=0?this.participantPageRows()[rowIndex]:null; if(!person||!person.phone)return; const phone=String(person.phone).replace(/\D/g,''); if(!phone)return; const normalized=phone.startsWith('593')?phone:phone.startsWith('0')?'593'+phone.slice(1):'593'+phone; const role=person.isTechnicianRow||person.profile==='Responsable'?'técnico':person.profile==='Estudiante'?'estudiante voluntario':'beneficiario'; const text=`Hola, eres ${role} del curso ${this.course().name} en fecha ${this.course().start_date} al ${this.course().end_date}.`; const encoded=encodeURIComponent(text); const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); const url=mobile?`whatsapp://send?phone=${normalized}&text=${encoded}`:`https://web.whatsapp.com/send?phone=${normalized}&text=${encoded}`; if(mobile)window.location.href=url; else window.open(url,'_blank','noopener,noreferrer'); }
   @HostListener('mouseover', ['$event'])

@@ -1,4 +1,5 @@
 .detail-page { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 1220px; margin: 0 auto; color: var(--pana-text); }
+.detail-notice { margin: 0; padding: 10px 12px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-primary-soft); color: var(--pana-primary-dark); font-size: .82rem; }
 .detail-heading,.section-card:nth-of-type(1),.section-card:nth-of-type(2) { grid-column: 1 / -1; }
 .summary-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .summary-metrics article { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); } .summary-metrics strong { color: var(--pana-primary-dark); font-size: 1.15rem; } .summary-metrics span,.summary-metrics small { color: var(--pana-muted); font-size: .74rem; }
 .section-card:nth-of-type(3) { grid-column: 1 / -1; }
