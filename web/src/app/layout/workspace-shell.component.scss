@@ -308,3 +308,74 @@
 .topbar-link.admin-link.active,
 .topbar-link.admin-link:focus-visible { border-color: transparent !important; outline: none !important; background: var(--pana-surface-subtle) !important; color: var(--pana-muted-strong) !important; }
 .topbar-link.admin-link svg { color: var(--pana-muted-strong) !important; }
+@media (max-width: 760px) {
+  .topbar {
+    position: fixed;
+    top: auto !important;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    min-height: 58px;
+    padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--pana-outline) !important;
+    border-bottom: 0 !important;
+  }
+  .brand { display: none; }
+  .topbar-actions { width: 100%; min-width: 0; justify-content: space-around; gap: 0; margin: 0; }
+  .topbar-link,
+  .topbar-actions .courses-link,
+  .topbar-actions .events-link,
+  .topbar-actions .courses-link.active,
+  .topbar-actions .events-link.active,
+  .notification-menu .notification-trigger,
+  .account-menu .account-trigger { width: 56px !important; min-width: 56px !important; height: 50px; min-height: 50px !important; padding: 3px 2px !important; border-radius: 0 !important; flex-direction: column; gap: 1px; }
+  .topbar-link,
+  .topbar-actions .courses-link,
+  .topbar-actions .events-link,
+  .topbar-actions .courses-link.active,
+  .topbar-actions .events-link.active,
+  .notification-menu .notification-trigger { width: 56px !important; min-width: 56px !important; height: 50px; min-height: 50px !important; padding: 3px 2px !important; border-radius: 0 !important; flex-direction: column; gap: 1px; }
+  .topbar-link > span:not(.account-avatar),
+  .account-trigger > span:not(.account-avatar),
+  .topbar-actions .courses-link span,
+  .topbar-actions .events-link span { display: none !important; max-width: 0 !important; opacity: 0 !important; }
+  .account-trigger .chevron { display: none; }
+  .account-trigger { justify-content: center; }
+  .topbar-link,
+  .topbar-link:hover,
+  .topbar-link.active,
+  .notification-menu .notification-trigger,
+  .notification-menu .notification-trigger:hover,
+  .notification-menu .notification-trigger[aria-expanded="true"],
+  .account-menu .account-trigger,
+  .account-menu .account-trigger:hover,
+  .account-menu .account-trigger[aria-expanded="true"] { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+  .topbar-actions .courses-link span,
+  .topbar-actions .events-link span,
+  .topbar-actions .admin-link span { display: inline-block !important; max-width: none !important; opacity: 1 !important; transform: none !important; font-size: .64rem; line-height: 1.1; }
+  .notification-menu .notification-trigger::after { content: 'Notificaciones'; font-size: .64rem; line-height: 1.1; }
+  .account-menu .account-trigger::after { content: 'Cuenta'; font-size: .64rem; line-height: 1.1; }
+  .events-link,
+  .events-link:hover,
+  .events-link.active,
+  .events-link svg,
+  .events-link span { color: var(--pana-muted-strong) !important; }
+  .courses-link,
+  .courses-link:hover,
+  .courses-link.active,
+  .courses-link svg,
+  .courses-link span { border: 0 !important; background: transparent !important; background-color: transparent !important; background-image: none !important; box-shadow: none !important; color: var(--pana-muted-strong) !important; outline: none !important; -webkit-tap-highlight-color: transparent; }
+  .topbar-actions .courses-link,
+  .topbar-actions .courses-link:hover,
+  .topbar-actions .courses-link.active { background: transparent !important; background-color: transparent !important; background-image: none !important; box-shadow: none !important; outline: none !important; }
+  .topbar-actions .events-link,
+  .topbar-actions .events-link:hover,
+  .topbar-actions .events-link.active { background: transparent !important; background-color: transparent !important; background-image: none !important; box-shadow: none !important; outline: none !important; }
+  .topbar-actions .courses-link,
+  .topbar-actions .events-link,
+  .topbar-actions .courses-link span,
+  .topbar-actions .events-link span { transition: none !important; transform: none !important; }
+  .main-content { min-height: 100vh; padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .main-content:has(.profile-page) { padding: 0 0 calc(92px + env(safe-area-inset-bottom)); }
+}

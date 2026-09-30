@@ -67,8 +67,15 @@ export class WorkspaceShellComponent {
   closeAccountMenu(event: Event, menu: HTMLElement): void {
     if (event.target instanceof Node && !menu.contains(event.target)) this.accountMenuOpen.set(false);
   }
-  toggleAccount(event: Event): void { event.stopPropagation(); this.accountMenuOpen.update(open => !open); }
-  toggleNotifications(): void { this.notificationOpen.update(open => !open); if (!this.notificationOpen()) return; this.notifications.load(); }
+  toggleAccount(event: Event): void {
+    event.stopPropagation();
+    if (window.matchMedia('(max-width: 760px)').matches) { this.openProfile(); return; }
+    this.accountMenuOpen.update(open => !open);
+  }
+  toggleNotifications(): void {
+    if (window.matchMedia('(max-width: 760px)').matches) { void this.router.navigateByUrl('/notificaciones'); return; }
+    this.notificationOpen.update(open => !open); if (!this.notificationOpen()) return; this.notifications.load();
+  }
 
   stopPreview(): void {
     this.auth.stopRolePreview();

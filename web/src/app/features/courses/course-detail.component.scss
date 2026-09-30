@@ -36,6 +36,52 @@ h1 { font-size: clamp(1.15rem, 1.8vw, 1.4rem); letter-spacing: -.03em; overflow-
   .course-detail:not(.activity-page) { grid-template-columns: 1fr; }
   .course-detail:not(.activity-page) > .course-navigation,
   .course-detail:not(.activity-page) > :not(.course-navigation) { grid-column: 1; grid-row: auto; }
+  .course-detail:not(.activity-page).navigation-collapsed { grid-template-columns: 1fr; }
+  .course-navigation-toggle { display: none; }
+  .navigation-collapsed .course-navigation-header { justify-content: space-between; padding: 0 2px 5px 5px; }
+  .navigation-collapsed .course-navigation-header strong,
+  .navigation-collapsed .back-button > span:first-of-type { display: block; }
+  .navigation-collapsed .back-button { justify-content: flex-start; padding-inline: 11px; }
+  :host ::ng-deep pana-course-section-nav .course-section-nav.collapsed button { justify-content: flex-start; padding-inline: 11px; }
+  :host ::ng-deep pana-course-section-nav .course-section-nav.collapsed button span.nav-label { display: flex; }
+
+  .participant-table-technician th:last-child,
+  .participant-table-technician td:last-child,
+  .participant-table-profile th:last-child,
+  .participant-table-profile td:last-child,
+  .participant-table-phone th:last-child,
+  .participant-table-phone td:last-child,
+  .participant-table-compact th:last-child,
+  .participant-table-compact td:last-child {
+    width: 92px;
+    min-width: 92px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .participant-table-technician th:last-child::after,
+  .participant-table-profile th:last-child::after,
+  .participant-table-phone th:last-child::after,
+  .participant-table-compact th:last-child::after {
+    white-space: nowrap;
+  }
+
+  .participants-filter-area .participant-search {
+    width: 100%;
+    justify-self: stretch;
+  }
+  .participant-profile-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .participant-profile-filters button {
+    min-width: 0;
+    justify-content: flex-start;
+    padding-inline: 8px;
+  }
 }
 @media (min-width: 761px) {
   .course-detail:not(.activity-page) { margin-left: -32px; width: calc(100% + 32px); }
@@ -624,3 +670,24 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .participant-table-technician th:nth-child(2), .participant-table-technician td:nth-child(2), .participant-table-phone th:nth-child(2), .participant-table-phone td:nth-child(2), .participant-table-profile th:nth-child(2), .participant-table-profile td:nth-child(2), .participant-table-compact th:nth-child(2), .participant-table-compact td:nth-child(2) { width: 220px; min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .participant-table-technician td:nth-child(2) .participant-link, .participant-table-phone td:nth-child(2) .participant-link, .participant-table-profile td:nth-child(2) .participant-link, .participant-table-compact td:nth-child(2) .participant-link { display: block; width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.35; text-align: left; }
 .participant-table-scroll { container-type: inline-size; }
+
+/* Filtros de participantes en dos filas en pantallas móviles. */
+@media (max-width: 760px) {
+  .participants-filter-area .participant-search {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .participant-profile-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    flex-wrap: initial !important;
+    width: 100% !important;
+    gap: 4px !important;
+  }
+  .participant-profile-filters button {
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+    white-space: nowrap !important;
+  }
+}

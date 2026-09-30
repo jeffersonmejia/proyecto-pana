@@ -92,3 +92,18 @@ footer { gap: 22px; }
   flex: 0 0 auto;
   color: var(--pana-muted-strong);
 }
+.profile-page .logout-button { display: none; }
+
+/* El perfil no muestra la sección de información adicional. */
+.profile-page form > .profile-section:nth-of-type(3) { display: none; }
+
+@media (max-width: 760px) {
+  .profile-page { min-height: 100vh; padding: 0 0 calc(96px + env(safe-area-inset-bottom)); }
+  .profile-page .profile-card { width: 100%; max-width: none; margin: 0; padding: 20px 16px; border: 0; border-radius: 0; }
+  .profile-page footer { flex-direction: row; align-items: stretch; gap: 10px; }
+  .profile-page footer .save-button,
+  .profile-page footer .logout-button { flex: 1 1 0; min-width: 0; padding-inline: 10px; }
+  .profile-page footer .logout-button { order: -1; }
+  .profile-page footer .save-button { order: 1; justify-content: center; }
+  .profile-page .logout-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 18px; border: 0; border-radius: var(--pana-radius); background: var(--pana-gray-soft); color: var(--pana-muted-strong); font: inherit; font-weight: 600; cursor: pointer; }
+}

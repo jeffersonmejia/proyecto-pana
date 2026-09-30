@@ -15,4 +15,11 @@
 .notification-card small, .notification-card time { color: var(--pana-muted); font-size: .8rem; line-height: 1.4; }
 .notification-card time { color: var(--pana-muted); font-size: .72rem; }
 .notifications-empty { margin: 0; padding: 28px 0 8px; color: var(--pana-muted); text-align: center; }
-@media (max-width: 600px) { .notifications-page { margin: 18px auto; padding: 16px; } .notifications-heading { grid-template-columns: auto 1fr auto; } .notifications-heading h2 { justify-self: start; } }
+@media (max-width: 600px) {
+  .notifications-page { margin: 8px auto; padding: 12px; }
+  .notifications-heading { grid-template-columns: auto 1fr auto; gap: 8px; padding-bottom: 2px; }
+  .notifications-heading button { display: none; }
+  .notifications-heading h2 { justify-self: start; gap: 6px; font-size: 1.15rem; }
+  .notifications-heading h2 svg { color: inherit; }
+  .notifications-empty { padding: 16px 0 4px; }
+}

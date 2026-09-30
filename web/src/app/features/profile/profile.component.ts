@@ -1,12 +1,12 @@
 import { Component, HostBinding, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideArrowLeft, LucideBuilding2, LucideCalendarDays, LucideGraduationCap, LucideIdCard, LucideMail, LucideMapPin, LucidePhone, LucideSave, LucideUserRound } from '@lucide/angular';
+import { LucideArrowLeft, LucideBuilding2, LucideCalendarDays, LucideGraduationCap, LucideIdCard, LucideLogOut, LucideMail, LucideMapPin, LucidePhone, LucideSave, LucideUserRound } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfileApiService, ProfileData } from './profile-api.service';
 import { ECUADOR_LOCATIONS } from '../auth/signup/data/ecuador-locations';
 
-@Component({ selector: 'pana-profile', standalone: true, imports: [FormsModule, LucideArrowLeft, LucideBuilding2, LucideCalendarDays, LucideGraduationCap, LucideIdCard, LucideMail, LucideMapPin, LucidePhone, LucideSave, LucideUserRound], templateUrl: './profile-form.component.html', styleUrl: './profile.component.scss' })
+@Component({ selector: 'pana-profile', standalone: true, imports: [FormsModule, LucideArrowLeft, LucideBuilding2, LucideCalendarDays, LucideGraduationCap, LucideIdCard, LucideLogOut, LucideMail, LucideMapPin, LucidePhone, LucideSave, LucideUserRound], templateUrl: './profile-form.component.html', styleUrl: './profile.component.scss' })
 export class ProfileComponent {
   readonly auth = inject(AuthService); private readonly api = inject(ProfileApiService); private readonly router = inject(Router);
   readonly locations = ECUADOR_LOCATIONS;
@@ -19,4 +19,5 @@ export class ProfileComponent {
   onProvinceChange(): void { if (!this.cities().includes(this.profile.birth_city ?? '')) this.profile.birth_city = ''; }
   save(): void { this.saving.set(true); this.feedback.set(''); this.error.set(''); const { id, ci, ...input } = this.profile; this.api.update(input).subscribe({ next: response => { this.profile = { ...this.profile, ...response.profile }; this.auth.user.update(user => user ? { ...user, ...response.profile } : user); this.feedback.set('Perfil actualizado correctamente.'); this.saving.set(false); }, error: response => { const code = response.error?.error; this.error.set(code === 'phone_already_exists' ? 'El tel&eacute;fono ya est&aacute; registrado.' : 'No se pudo guardar el perfil. Revisa los datos ingresados.'); this.saving.set(false); } }); }
   back(): void { void this.router.navigateByUrl('/cursos'); }
+  logout(): void { this.auth.logout().subscribe(() => void this.router.navigateByUrl('/login')); }
 }
