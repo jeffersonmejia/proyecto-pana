@@ -92,7 +92,7 @@ final class RegistrationRepository
         $query = $this->connection->prepare(
             'INSERT INTO beneficiary_registrations (user_id,person_id,course,birth_date,birth_province,birth_city,gender,self_identification,has_disability,disability_type,address,sector,latitude,longitude,institution,career,education,level,motivation,skills,volunteer_experience,volunteer_details,available_days,available_schedules,terms_accepted) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?,1)'
         );
-        $query->execute([$userId, $personId, $data['course'], $data['birth_date'], $data['birth_province'], $data['birth_city'], $data['gender'], $data['self_identification'], $data['has_disability'], $data['disability_type'], $data['address'], $data['sector'], $data['latitude'], $data['longitude'], $data['institution'], $data['career'], $data['education'], $data['level'], $data['motivation'], $data['skills'], $data['volunteer'], $data['volunteer_details'], json_encode($data['days']), json_encode($data['schedules'])]);
+        $query->execute([$userId, $personId, $data['course'], $data['birth_date'], $data['birth_province'], $data['birth_city'], $data['gender'], $data['self_identification'], $data['has_disability'], $data['disability_type'], $data['address'], $data['sector'], $data['latitude'], $data['longitude'], $data['institution'], $data['career'], $data['education'], $data['level'], $data['motivation'], $data['skills'] ?? '', $data['volunteer'], $data['volunteer_details'], json_encode($data['days']), json_encode($data['schedules'])]);
     }
 
     private function saveStudent(int $userId, array $data): void

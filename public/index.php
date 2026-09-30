@@ -20,18 +20,22 @@ register_shutdown_function(static function (): void {
     ]);
 });
 
-$allowedOrigin = env_value('FRONTEND_URL', 'http://localhost:4200');
+$allowedOrigins = array_values(array_filter(array_map(
+    static fn (string $origin): string => trim($origin),
+    explode(',', env_value('FRONTEND_URL', 'http://localhost:4200')),
+)));
+$allowAnyOrigin = in_array('*', $allowedOrigins, true);
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 header('Content-Type: application/json; charset=utf-8');
 
-if ($requestOrigin !== '' && !hash_equals($allowedOrigin, $requestOrigin)) {
+if ($requestOrigin !== '' && !$allowAnyOrigin && !in_array($requestOrigin, $allowedOrigins, true)) {
     http_response_code(403);
     echo json_encode(['error' => 'origin_not_allowed']);
     exit;
 }
 
 if ($requestOrigin !== '') {
-    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Origin: ' . $requestOrigin);
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 }

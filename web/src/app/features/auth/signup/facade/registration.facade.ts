@@ -7,6 +7,7 @@ import {
   inject,
   output,
   signal,
+  computed,
 } from "@angular/core";
 import { SafeResourceUrl } from "@angular/platform-browser";
 import { ActivatedRoute, Router } from "@angular/router";
@@ -31,6 +32,11 @@ import { RegistrationInputService } from "../services/registration-input.service
 
 @Directive()
 export class RegistrationFacade {
+  @HostListener("window:resize")
+  updateViewportWidth(): void {
+    this.viewportWidth.set(window.innerWidth);
+  }
+
   firstNames = "";
   private readonly resetBirthDateDefaults = (() => {
     queueMicrotask(() => {
@@ -115,6 +121,18 @@ export class RegistrationFacade {
   readonly closed = output<void>();
   readonly step = this.flow.step;
   readonly steps = this.flow.steps;
+  private readonly viewportWidth = signal(typeof window === "undefined" ? 1200 : window.innerWidth);
+  readonly visibleStepIndices = computed(() => {
+    const active = this.step();
+    const width = this.viewportWidth();
+    if (width <= 760) return [active];
+    if (width < 1200) {
+      const visibleCount = Math.min(3, this.steps.length);
+      const start = Math.min(Math.max(active - 1, 0), this.steps.length - visibleCount);
+      return Array.from({ length: visibleCount }, (_, offset) => start + offset);
+    }
+    return this.steps.map((_, index) => index);
+  });
   readonly submitted = signal(false);
   readonly busy = signal(false);
   readonly passwordVisible = signal(false);
@@ -150,7 +168,6 @@ export class RegistrationFacade {
     "Miércoles",
     "Jueves",
     "Viernes",
-    "Sábado",
   ];
   readonly availableSchedules = ["Mañana", "Tarde"];
   birthYear = "";
@@ -586,8 +603,19 @@ export class RegistrationFacade {
   submit(): void {
     if (this.busy()) return;
     console.log("[PANA registration] submit clicked", { terms: this.data.terms, days: this.data.days, schedules: this.data.schedules });
+    this.data.id = String(this.data.id ?? "").replace(/\D/g, "").slice(0, 10);
+    this.data.phone = this.formService.normalizePhone(String(this.data.phone ?? ""));
     this.updateAge();
     this.errorField.set("");
+    for (let index = 0; index < this.steps.length - 1; index++) {
+      const validation = this.stepRegistry.error(index, this.stepContext());
+      if (validation) {
+        this.setStep(index);
+        this.errorField.set(validation.field);
+        this.error.set(validation.message);
+        return;
+      }
+    }
     const validation = this.submitValidator.validate(this.data, this.hasValidFullName());
     console.log("[PANA registration] submit validation", { validation, age: this.data.age, validFullName: this.hasValidFullName(), days: this.data.days, schedules: this.data.schedules, terms: this.data.terms });
     if (validation) { this.errorField.set(validation.field); this.error.set(validation.message); return; }
@@ -616,21 +644,23 @@ export class RegistrationFacade {
             this.setStep(0);
             this.errorField.set("password");
           }
-          if (
-            code === "registration_duplicate_ci" ||
-            code === "registration_duplicate_email" ||
-            code === "registration_duplicate_ci_email"
-          ) {
-            this.setStep(0);
-            this.errorField.set(
-              code === "registration_duplicate_email"
-                ? "email"
-                : code === "registration_duplicate_ci_email"
-                  ? ""
-                  : "id",
+            if (
+              code === "registration_duplicate_ci" ||
+              code === "registration_duplicate_email" ||
+              code === "registration_duplicate_ci_email" ||
+              code === "registration_duplicate_phone"
+            ) {
+              this.setStep(0);
+              this.errorField.set(
+                code === "registration_duplicate_email"
+                  ? "email"
+                  : code === "registration_duplicate_phone"
+                    ? "phone"
+                  : code === "registration_duplicate_ci_email"
+                    ? ""
+                    : "id",
             );
           }
-          if (!this.errorField() && this.step() < this.steps.length - 1) this.errorField.set("id");
           this.error.set(this.messageFor(failure));
           this.busy.set(false);
         }, 500);

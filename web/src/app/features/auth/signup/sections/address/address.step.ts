@@ -9,6 +9,7 @@ export class AddressStep implements RegistrationStep {
   error(context: RegistrationStepContext): { field: string; message: string } | null {
     if (!context.data.education.trim()) return { field: 'education', message: 'Ingresa tu instruccion.' };
     if (!context.data.address.trim()) return { field: 'address', message: 'Ingresa tu direccion de domicilio.' };
+    if (!context.data.sector.trim()) return { field: 'sector', message: 'Ingresa tu sector o barrio.' };
     return null;
   }
 }
