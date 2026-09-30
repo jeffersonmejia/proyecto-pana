@@ -365,7 +365,12 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .course-detail.learner-attendance .attendance-technician-table td:has(> .attendance-action)::after { content: '—'; color: var(--pana-muted); }
 .participant-link:hover { text-decoration: underline; }
 .participant-link:disabled { color: inherit; cursor: default; text-decoration: none; }
-.view-person-button { padding: 6px 12px; border: 1px solid var(--pana-pastel-blue-bg); border-radius: var(--pana-radius); background: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+.view-person-button { width: 34px; height: 34px; padding: 6px; border: 1px solid var(--pana-pastel-blue-bg); border-radius: var(--pana-radius); background: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+.view-person-button span { display: none; }
+.participant-table-technician th:last-child::after, .participant-table th:last-child::after, .participant-table-compact th:last-child::after, .participant-table-phone th:last-child::after, .participant-table-profile th:last-child::after { content: 'Ver perfil'; font-size: .8rem; }
+.participant-table-technician th:last-child, .participant-table th:last-child, .participant-table-compact th:last-child, .participant-table-phone th:last-child, .participant-table-profile th:last-child { font-size: 0; }
+.participant-table-technician th:nth-child(5), .participant-table-phone th:nth-child(5), .participant-table-profile th:nth-child(5), .participant-table th:nth-child(4), .participant-table-compact th:nth-child(4) { font-size: 0; }
+.participant-table-technician th:nth-child(5)::after, .participant-table-phone th:nth-child(5)::after, .participant-table-profile th:nth-child(5)::after, .participant-table th:nth-child(4)::after, .participant-table-compact th:nth-child(4)::after { content: 'Rol'; font-size: .8rem; }
 .participants-print-area { position: relative; }
 .participants-top-pagination { position: absolute; top: 58px; right: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin: 0; }
 .participants-top-pagination pana-paginator { display: block; }
@@ -553,6 +558,16 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .activity-page .evidence-list .file-link::after { width: 42px; height: 42px; font-size: 1.4rem; }
 .print-button { min-height: 34px !important; padding: 6px 12px !important; border-color: var(--pana-pastel-blue-bg) !important; border-radius: var(--pana-radius) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; font-size: .8rem !important; font-weight: 600 !important; }
 .print-button:hover { border-color: var(--pana-pastel-blue-bg) !important; background: var(--pana-pastel-blue-bg) !important; color: var(--pana-pastel-blue-icon) !important; }
+.participant-bulk-actions { position: absolute; top: 38px; right: 0; z-index: 2; display: flex; align-items: center; justify-content: flex-end; margin: 0; }
+.activate-all-participants-button { display: inline-flex; align-items: center; gap: 8px; min-height: 19px; padding: 4px 8px; border: 0; border-radius: 999px; background: transparent; color: var(--pana-primary-dark); font: inherit; font-size: .8rem; font-weight: 650; cursor: pointer; }
+.activate-all-participants-button:hover:not(:disabled) { border-color: transparent; background: transparent; }
+.activate-all-participants-button:disabled { cursor: default; opacity: .62; }
+.activate-all-participants-button.deactivate-all { border-color: transparent; }
+.activate-all-participants-button .toggle-track { display: flex; align-items: center; width: 34px; height: 19px; flex: 0 0 34px; padding: 2px; border-radius: 999px; background: var(--pana-outline); transition: background-color 160ms ease; }
+.activate-all-participants-button .toggle-track span { display: block; width: 15px; height: 15px; border-radius: 50%; background: var(--pana-surface); transition: transform 160ms ease; }
+.activate-all-participants-button .toggle-track.on { background: var(--pana-primary); }
+.activate-all-participants-button .toggle-track.on span { transform: translateX(15px); }
+@media (max-width: 1050px) { .participant-bulk-actions { position: static; margin: 0 0 8px; } }
 
 .weekly-evidence-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .weekly-evidence-heading p { margin: 4px 0 0; color: var(--pana-muted); font-size: .84rem; }
@@ -598,16 +613,14 @@ table.participant-table-technician tr:has(.technician-chip) td:last-child > span
 .task-status-filter button.selected span { color: var(--pana-pastel-blue-icon) !important; }
 .task-dialog .primary, :host ::ng-deep pana-step-dialog .dialog footer .primary { border-color: var(--pana-pastel-blue-icon) !important; background: var(--pana-pastel-blue-icon) !important; color: var(--pana-surface) !important; }
 .task-dialog .secondary, :host ::ng-deep pana-step-dialog .task-attachment button { border-color: var(--pana-pastel-blue-icon) !important; background: var(--pana-surface) !important; color: var(--pana-pastel-blue-icon) !important; }
-.participant-status-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 92px; min-height: 30px; border: 1px solid var(--pana-outline); padding: 5px 10px; border-radius: 999px; color: var(--pana-muted-strong); background: var(--pana-surface-subtle); font: inherit; font-size: .78rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.participant-status-toggle.on { border-color: var(--pana-pastel-blue-bg); color: var(--pana-pastel-blue-icon); background: var(--pana-pastel-blue-bg); }
-.participant-status-toggle.on svg { color: var(--pana-pastel-blue-icon); }
-.participant-status-toggle:not(.on) svg { color: var(--pana-muted-strong); }
-.participant-status-toggle:disabled { cursor: not-allowed; opacity: 1; border-color: var(--pana-outline); color: var(--pana-muted-strong); background: var(--pana-surface-subtle); }
-.participant-status-toggle:disabled svg { color: var(--pana-muted-strong); }
-.participant-status-toggle .toggle-track { width: 28px; height: 16px; padding: 2px; border-radius: 999px; background: #c9d2dc; }
-.participant-status-toggle .toggle-track span { display: block; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .18s ease; }
-.participant-status-toggle.on .toggle-track { background: var(--pana-primary, #1957b8); }
-.participant-status-toggle.on .toggle-track span { transform: translateX(12px); }
+.participant-status-toggle { display: inline-flex; align-items: center; justify-content: center; width: 34px; min-width: 34px; min-height: 19px; padding: 0; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
+.participant-status-toggle.on { border-color: transparent; background: transparent; }
+.participant-status-toggle > span:not(.toggle-track) { display: none; }
+.participant-status-toggle:disabled { cursor: not-allowed; opacity: .72; }
+.participant-status-toggle .toggle-track { display: flex; align-items: center; width: 34px; height: 19px; flex: 0 0 34px; padding: 2px; border-radius: 999px; background: var(--pana-outline); transition: background-color 160ms ease; }
+.participant-status-toggle .toggle-track span { display: block; width: 15px; height: 15px; border-radius: 50%; background: var(--pana-surface); transition: transform 160ms ease; }
+.participant-status-toggle .toggle-track.on { background: var(--pana-primary); }
+.participant-status-toggle .toggle-track.on span { transform: translateX(15px); }
 .participant-table-technician th:nth-child(2), .participant-table-technician td:nth-child(2), .participant-table-phone th:nth-child(2), .participant-table-phone td:nth-child(2), .participant-table-profile th:nth-child(2), .participant-table-profile td:nth-child(2), .participant-table-compact th:nth-child(2), .participant-table-compact td:nth-child(2) { width: 220px; min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .participant-table-technician td:nth-child(2) .participant-link, .participant-table-phone td:nth-child(2) .participant-link, .participant-table-profile td:nth-child(2) .participant-link, .participant-table-compact td:nth-child(2) .participant-link { display: block; width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.35; text-align: left; }
 .participant-table-scroll { container-type: inline-size; }

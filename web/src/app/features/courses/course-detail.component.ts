@@ -11,7 +11,7 @@ import { CourseSectionSkeletonComponent } from '../../shared/course-section-skel
 import { CourseNavItem, CourseSectionNavComponent } from '../../shared/course-section-nav.component';
 import { SkeletonLoaderComponent } from '../../shared/skeleton-loader.component';
 import { ViewPersonButtonComponent } from '../../shared/view-person-button.component';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { LucideBan, LucideBookOpen, LucideCheck, LucideClipboardCheck, LucideUsersRound, LucideClock3, LucidePlus, LucideFileText, LucideUpload, LucideEye, LucideArrowDownUp, LucideList, LucidePencil, LucideTrash, LucidePower, LucideArrowLeft, LucidePaperclip, LucideDownload, LucideHouse, LucidePanelLeftClose, LucidePanelLeftOpen } from '@lucide/angular';
 import { LucideGraduationCap, LucideUserRound, LucideWrench } from '@lucide/angular';
 import { jsPDF } from 'jspdf';
@@ -31,7 +31,8 @@ export class CourseDetailComponent implements OnInit, AfterViewChecked {
   readonly data=signal<CourseSections|null>(null); readonly loading=signal(true); readonly sectionLoading=signal(false); readonly error=signal('');
   private loadingStartedAt=0;
   readonly active=signal<CourseTab>('participants');
-    readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
+  readonly markingAttendance=signal<number|null>(null); readonly attendanceError=signal('');
+  readonly participantBulkActivating=signal(false);
     readonly attendanceRowErrors=signal<Record<number,{message:string;field:'in'|'out'}>>({});
   readonly maxAttendanceDate=this.today(); readonly attendanceDate=signal(this.maxAttendanceDate);
   readonly attendancePage=signal(1); readonly attendancePageSize=10;
@@ -47,6 +48,7 @@ export class CourseDetailComponent implements OnInit, AfterViewChecked {
   readonly participantQuery=signal('');
   readonly participantProfileFilter=signal<'all'|'beneficiary'|'student'|'technician'>('all');
   readonly participantProfileCounts=computed(()=>{const participants=this.data()?.participants??[];const technicians=this.data()?.technicians??[];return {all:participants.length+technicians.length,beneficiary:participants.filter(person=>person.profile==='Beneficiario').length,student:participants.filter(person=>person.profile==='Estudiante').length,technician:technicians.length};});
+  readonly allParticipantsActive=computed(()=>{const participants=this.data()?.participants??[];return participants.length>0&&participants.every(person=>person.participant_status!=='inactive');});
   readonly participantRows=computed<ParticipantTableRow[]>(()=>{const q=this.participantQuery().trim().toLocaleLowerCase();const participants=(this.data()?.participants??[]).map(person=>({...person,participant_active:true})) as ParticipantTableRow[];const technicians=(this.data()?.technicians??[]).map((technician,index)=>({id:-Number(technician.id||index+1),ci:technician.ci??'—',phone:technician.phone,sector:null,self_identification:null,has_disability:null,disability_type:null,education:null,birth_city:null,first_name:technician.first_name,last_name:technician.last_name,birth_date:null,name:`${technician.first_name} ${technician.last_name}`.trim(),profile:'Responsable',attendance_count:0,attendance_minutes:0,last_attendance:null,last_attendance_status:null,selected_attendance_id:null,selected_attendance_status:null,selected_check_in:null,selected_check_out:null,task_count:0,evaluation_count:0,technician_active:technician.status!=='inactive',isTechnicianRow:true} as ParticipantTableRow));return [...participants,...technicians].filter(p=>!q||p.name.toLocaleLowerCase().includes(q));});
   readonly filteredParticipantRows=computed(()=>{const profile=this.participantProfileFilter();return this.participantRows().filter(person=>profile==='all'||(profile==='technician'&&person.isTechnicianRow)||(profile==='beneficiary'&&!person.isTechnicianRow&&person.profile==='Beneficiario')||(profile==='student'&&!person.isTechnicianRow&&person.profile==='Estudiante'));});
   readonly participantPageRows=computed(()=>{const rows=this.filteredParticipantRows();const start=(this.participantPage()-1)*this.participantPageSize;return rows.slice(start,start+this.participantPageSize).map(person=>({...person,phone:person.phone??'',first_name:`${person.last_name}\n${person.first_name.replace(new RegExp('^'+person.last_name+'\\s*','i'),'').trim()}`,last_name:this.ageFromBirthDate(person.birth_date),evaluation_count:person.phone as unknown as number}));});
@@ -126,11 +128,22 @@ export class CourseDetailComponent implements OnInit, AfterViewChecked {
   profileChipClass(person:{profile:string;isTechnicianRow?:boolean}): string { if(person.isTechnicianRow&&!this.isTechnician()){ person.isTechnicianRow=false; return 'profile-chip technician-chip'; } if(person.profile==='Responsable')return 'profile-chip technician-chip'; if(person.profile==='Beneficiario')return 'profile-chip beneficiary-chip'; if(person.profile==='Estudiante')return 'profile-chip student-chip'; return 'profile-chip'; }
   attendanceTotalDuration(minutes:number|null|undefined): string { const total=Math.max(0,Number(minutes??0)); return `${Math.floor(total/60)}h ${total%60}m`; }
   ageFromBirthDate(value: string | null): string { if (!value) return '—'; const birth = new Date(`${value}T00:00:00`), today = new Date(); let age = today.getFullYear() - birth.getFullYear(); const beforeBirthday = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()); return String(age - (beforeBirthday ? 1 : 0)); }
-  isTechnician(): boolean { return this.auth.user()?.roles.includes('tecnico') ?? false; }
+  isTechnician(): boolean { const roles=this.auth.user()?.roles??[]; return roles.some(role=>['tecnico','technician','tutor'].includes(role.toLowerCase())); }
   isCoordinator(): boolean { return this.auth.user()?.roles.includes('coordinator') ?? false; }
   canManageTechnicianStatus(): boolean { return this.auth.hasPermission('courses.manage') || this.auth.hasPermission('courses.manage.all'); }
   canToggleParticipantStatus(person: ParticipantTableRow): boolean { return !person.isTechnicianRow && (this.isTechnician() || this.canManageTechnicianStatus()); }
   toggleParticipantStatus(person: ParticipantTableRow): void { if (!this.canToggleParticipantStatus(person)) return; const status=person.participant_status==='inactive'?'active':'inactive'; this.api.setParticipantStatus(this.course().id,person.id,status).subscribe({next:()=>this.data.update(value=>value?{...value,participants:value.participants.map(row=>row.id===person.id?{...row,participant_status:status}:row)}:value),error:()=>this.error.set('No se pudo cambiar el estado del participante.')}); }
+  toggleAllParticipants(): void {
+    if(!this.isTechnician()||this.participantBulkActivating())return;
+    const participants=this.data()?.participants??[];
+    if(!participants.length)return;
+    const status=this.allParticipantsActive()?'inactive':'active';
+    this.participantBulkActivating.set(true); this.error.set('');
+    forkJoin(participants.map(person=>this.api.setParticipantStatus(this.course().id,person.id,status))).subscribe({
+      next:()=>{this.data.update(value=>value?{...value,participants:value.participants.map(person=>({...person,participant_status:status}))}:value);this.participantBulkActivating.set(false);},
+      error:()=>{this.participantBulkActivating.set(false);this.error.set('No se pudo cambiar el estado de todos los participantes. Se actualizará el estado real.');this.reload();},
+    });
+  }
   toggleTechnicianStatus(person: ParticipantTableRow): void { if (!person.isTechnicianRow || !this.canManageTechnicianStatus()) return; const technicianId=Math.abs(person.id); const status=person.technician_active===false?'active':'inactive'; this.api.setTecnicoStatus(this.course().id,technicianId,status).subscribe({next:()=>this.data.update(value=>value?{...value,technicians:value.technicians.map(row=>row.id===technicianId?{...row,status}:row)}:value),error:()=>this.error.set('No se pudo cambiar el estado del técnico.')}); }
   canMarkAttendance(): boolean { return this.auth.hasPermission('attendance.manage') && !this.isLearner(); }
   isBeneficiary(): boolean { return this.auth.user()?.roles.includes('beneficiary') ?? false; }
