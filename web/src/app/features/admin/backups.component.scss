@@ -28,6 +28,17 @@ progress::-webkit-progress-value { border-radius: var(--pana-radius); background
 .summary article { display: grid; gap: 7px; padding: 17px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
 .summary article > span, .summary small { color: var(--pana-muted); font-size: .78rem; }
 .summary strong { color: var(--pana-ink); font-size: 1rem; font-weight: 600; }
+.storage-usage { display: grid; gap: 12px; padding: 17px; border: 1px solid var(--pana-outline); border-radius: var(--pana-radius); background: var(--pana-surface); }
+.storage-usage header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.storage-usage header span { color: var(--pana-muted); font-size: .78rem; }
+.storage-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--pana-muted-strong); font-size: .78rem; }
+.storage-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.storage-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.storage-legend .backups i, .storage-segments .backups { background: var(--pana-pastel-blue-bg); }
+.storage-legend .files i, .storage-segments .files { background: var(--pana-pastel-purple-bg); }
+.storage-legend .available i, .storage-segments .available { background: var(--pana-pastel-green-bg); }
+.storage-segments { display: flex; height: 13px; overflow: hidden; border-radius: 999px; background: var(--pana-surface-subtle); }
+.storage-segments span { display: block; min-width: 0; transition: width 140ms ease; }
 .history { display: grid; gap: 12px; }
 .history header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 h3 { font-size: 1.05rem; }
@@ -45,5 +56,5 @@ tbody tr:last-child td { border-bottom: 0; }
 .icon-button.restore { background: var(--pana-primary-soft); }
 .icon-button:disabled { opacity: .6; cursor: wait; }
 .empty { padding: 22px; color: var(--pana-muted); text-align: center; }
-@media (max-width: 620px) { .backups-heading, .history header { align-items: flex-start; flex-direction: column; } .summary { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .backups-heading, .history header, .storage-usage header { align-items: flex-start; flex-direction: column; } .summary { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .spinner, .restore-spinner { animation: none; } }

@@ -12,7 +12,7 @@ return static function (
         $backup = new \App\Services\DatabaseBackupService($connection);
         return new \App\Controllers\DatabaseBackupController($backup, new \App\Services\DatabaseRestoreService(
             $connection, $backup, new \App\Services\BackupSqlParser()
-        ), new \App\Services\NextcloudStorageService());
+        ), new \App\Services\NextcloudStorageService(), new \App\Services\NextcloudStorageUsageService());
     };
     return [
         'GET /api/admin/users' => static function () use ($buildAdmin, $authorizeAny): void {

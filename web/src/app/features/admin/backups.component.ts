@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { BackupApiService } from './backup-api.service';
 
 interface BackupEntry { name: string; date: string; time: number; bytes: number; }
+interface StorageUsage { quota_total_bytes: number | null; quota_used_bytes: number; backups_bytes: number; files_bytes: number; }
 
 @Component({ selector: 'pana-backups', standalone: true, imports: [LucideDownload, LucidePlus, LucideRotateCcw, LucideUpload], templateUrl: './backups.component.html', styleUrl: './backups.component.scss' })
 export class BackupsComponent implements OnInit {
@@ -14,13 +15,18 @@ export class BackupsComponent implements OnInit {
   readonly operation = signal<'create' | 'download' | 'restore' | null>(null);
   readonly selectedBackup = signal('');
   readonly entries = signal<BackupEntry[]>([]);
+  readonly usage = signal<StorageUsage | null>(null);
   readonly rows = computed(() => [...this.entries()].sort((a, b) => b.time - a.time).slice(0, 10));
   readonly latest = computed(() => this.rows()[0] ?? null);
 
   ngOnInit(): void { this.refresh(); }
 
   refresh(): void {
-    this.api.list().subscribe({ next: result => { this.entries.set(result.backups); this.error.set(''); },
+    this.api.list().subscribe({ next: result => {
+      this.entries.set(result.backups);
+      this.usage.set(result.usage ?? { quota_total_bytes: null, quota_used_bytes: 0, backups_bytes: 0, files_bytes: 0 });
+      this.error.set('');
+    },
       error: failure => this.error.set(failure.error?.error === 'nextcloud_storage_not_configured'
         ? 'Configura Nextcloud en el archivo .env del backend.' : 'No se pudo consultar Nextcloud.') });
   }
@@ -78,6 +84,9 @@ export class BackupsComponent implements OnInit {
   }
 
   formatSize(bytes: number): string { return bytes < 1048576 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1048576).toFixed(2)} MB`; }
+  usagePercent(bytes: number, total: number | null): number { return total && total > 0 ? Math.min(100, Math.round(bytes * 100 / total)) : 0; }
+  availableBytes(usage: StorageUsage): number { return usage.quota_total_bytes === null ? 0 : Math.max(0, usage.quota_total_bytes - usage.quota_used_bytes); }
+  availablePercent(usage: StorageUsage): number { return this.usagePercent(this.availableBytes(usage), usage.quota_total_bytes); }
 
   private finish(response: HttpResponse<Blob>): void {
     const blob = response.body;

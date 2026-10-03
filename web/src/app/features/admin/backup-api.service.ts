@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class BackupApiService {
   private readonly http = inject(HttpClient);
-  list() { return this.http.get<{ backups: { name: string; date: string; time: number; bytes: number }[] }>(`${environment.apiBaseUrl}/admin/backups`); }
+  list() { return this.http.get<{ backups: { name: string; date: string; time: number; bytes: number }[]; usage?: { quota_total_bytes: number|null; quota_used_bytes: number; backups_bytes: number; files_bytes: number } }>(`${environment.apiBaseUrl}/admin/backups`); }
   create(): Observable<HttpEvent<{ status: string; name: string; bytes: number; date: string }>> {
     return this.http.post<{ status: string; name: string; bytes: number; date: string }>(`${environment.apiBaseUrl}/admin/backups`, null, {
       observe: 'events' as const, reportProgress: true,

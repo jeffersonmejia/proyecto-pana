@@ -7,11 +7,12 @@ use App\Exceptions\ApiException;
 use App\Services\DatabaseBackupService;
 use App\Services\DatabaseRestoreService;
 use App\Services\NextcloudStorageService;
+use App\Services\NextcloudStorageUsageService;
 
 final class DatabaseBackupController
 {
     public function __construct(private DatabaseBackupService $service, private DatabaseRestoreService $restore,
-        private NextcloudStorageService $storage)
+        private NextcloudStorageService $storage, private NextcloudStorageUsageService $usage)
     {
     }
 
@@ -52,7 +53,11 @@ final class DatabaseBackupController
     public function index(array $user): void
     {
         if (!in_array('admin', $user['roles'] ?? [], true)) throw new ApiException(403, 'permission_denied');
-        echo json_encode(['backups' => $this->storage->listSqlFiles('Respaldos')]);
+        $backups = $this->storage->listSqlFiles('Respaldos');
+        $backupBytes = array_sum(array_column($backups, 'bytes'));
+        try { $usage = $this->usage->summary(); }
+        catch (ApiException) { $usage = ['quota_total_bytes' => null, 'quota_used_bytes' => 0, 'backups_bytes' => $backupBytes, 'files_bytes' => 0]; }
+        echo json_encode(['backups' => $backups, 'usage' => $usage]);
     }
 
     public function restore(array $user, array $file): void
