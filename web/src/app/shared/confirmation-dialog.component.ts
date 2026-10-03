@@ -17,7 +17,7 @@ import { LucideX } from '@lucide/angular';
     .confirmation-close:hover { background: var(--pana-surface-subtle); color: var(--pana-text); }
     footer { display: flex; justify-content: flex-end; gap: 14px; }
     footer button { min-width: 126px; min-height: 52px; padding: 10px 20px; border: 1px solid var(--pana-outline); border-radius: 18px; background: var(--pana-surface); color: var(--pana-muted-strong); font: inherit; font-size: .98rem; font-weight: 650; cursor: pointer; }
-    footer .confirmation-confirm { border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface); }
+    footer .confirmation-confirm, footer .confirmation-confirm:hover, footer .confirmation-confirm:focus-visible { border-color: var(--pana-primary); background: var(--pana-primary); color: var(--pana-surface) !important; }
     footer button:disabled { opacity: .55; cursor: default; }
     @media (max-width: 520px) { .confirmation-dialog { padding: 22px; border-radius: var(--pana-radius); } footer { gap: 8px; } footer button { min-width: 0; flex: 1; } }
   `],

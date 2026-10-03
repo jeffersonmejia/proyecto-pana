@@ -1,12 +1,12 @@
 import { HttpErrorResponse, HttpEventType, HttpResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { LucideDownload, LucideEllipsis, LucidePlus, LucideRotateCcw, LucideTriangleAlert, LucideUpload } from '@lucide/angular';
+import { LucideDownload, LucidePlus, LucideRotateCcw, LucideUpload } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { BackupApiService } from './backup-api.service';
 
 interface BackupEntry { name: string; date: string; time: number; bytes: number; }
 
-@Component({ selector: 'pana-backups', standalone: true, imports: [LucideDownload, LucideEllipsis, LucidePlus, LucideRotateCcw, LucideTriangleAlert, LucideUpload], templateUrl: './backups.component.html', styleUrl: './backups.component.scss' })
+@Component({ selector: 'pana-backups', standalone: true, imports: [LucideDownload, LucidePlus, LucideRotateCcw, LucideUpload], templateUrl: './backups.component.html', styleUrl: './backups.component.scss' })
 export class BackupsComponent implements OnInit {
   private readonly api = inject(BackupApiService);
   private readonly auth = inject(AuthService);
