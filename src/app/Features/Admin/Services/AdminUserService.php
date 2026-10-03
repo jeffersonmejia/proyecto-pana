@@ -17,9 +17,12 @@ final class AdminUserService
     {
     }
 
-    public function all(mixed $requestedPage = 1): array
+    public function all(mixed $requestedPage = 1, mixed $requestedRole = null): array
     {
-        return $this->users->all(\App\Support\Pagination::page($requestedPage));
+        if ($requestedRole !== null && (!is_string($requestedRole) || !in_array($requestedRole, ['beneficiary', 'student', 'tecnico'], true))) {
+            throw new ApiException(422, 'invalid_role_filter');
+        }
+        return $this->users->all(\App\Support\Pagination::page($requestedPage), $requestedRole === '' ? null : $requestedRole);
     }
 
     public function create(array $input): array

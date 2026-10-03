@@ -12,10 +12,10 @@ final class AdminUserController
     {
     }
 
-    public function index(mixed $page): void
+    public function index(mixed $page, mixed $role): void
     {
-        $result = $this->users->all($page);
-        echo json_encode(['users' => $result['items'], 'pagination' => $result['pagination']]);
+        $result = $this->users->all($page, $role);
+        echo json_encode(['users' => $result['items'], 'pagination' => $result['pagination'], 'role_counts' => $result['role_counts']]);
     }
 
     public function beneficiaries(mixed $query, mixed $personId): void

@@ -113,22 +113,19 @@ final class CourseRepository
         $q=$this->db->prepare("SELECT 1 FROM people p WHERE p.id=? AND p.status='active' AND EXISTS (SELECT 1 FROM students s JOIN users u ON u.id=s.user_id AND u.is_active=1 WHERE (p.user_id=u.id OR p.ci=u.ci) AND s.is_active=1)");
         $q->execute([$id]); return (bool)$q->fetchColumn();
     }
-    public function enroll(int $course,int $user): void
+    public function enroll(int $course,int $user): string
     {
-        $this->transaction(function() use($course,$user): void {
+        return $this->transaction(function() use($course,$user): string {
             $q=$this->db->prepare("SELECT c.max_participants,COUNT(cp.person_id) enrolled FROM courses c LEFT JOIN course_participants cp ON cp.course_id=c.id AND cp.status='active' WHERE c.id=? AND c.status='active' GROUP BY c.id FOR UPDATE");
             $q->execute([$course]); $row=$q->fetch(); if(!$row) throw new \RuntimeException('course_unavailable');
             $person=$this->db->prepare("SELECT p.id FROM people p WHERE p.user_id=? AND p.status='active' AND (EXISTS (SELECT 1 FROM beneficiaries b WHERE b.person_id=p.id AND b.is_active=1) OR EXISTS (SELECT 1 FROM students s WHERE s.user_id=? AND s.is_active=1))");
             $person->execute([$user,$user]); $personId=(int)$person->fetchColumn(); if(!$personId) throw new \RuntimeException('participant_not_found');
-            $student=$this->db->prepare('SELECT 1 FROM students WHERE user_id=? AND is_active=1 LIMIT 1'); $student->execute([$user]);
             $exists=$this->db->prepare("SELECT status FROM course_participants WHERE course_id=? AND person_id=?"); $exists->execute([$course,$personId]);
-            $existingStatus=$exists->fetchColumn(); $isStudent=(bool)$student->fetchColumn();
-            if($isStudent && $existingStatus==='active') return;
-            if($isStudent && $existingStatus===false){ $this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'inactive')")->execute([$course,$personId]); return; }
-            if($isStudent && $existingStatus!=='active') throw new \RuntimeException('participant_not_enabled');
-            if($existingStatus==='active') return;
-            if((int)$row['max_participants']>0 && (int)$row['enrolled'] >= (int)$row['max_participants']) throw new \RuntimeException('course_full');
-            $insert=$this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'active') ON DUPLICATE KEY UPDATE status='active',enrolled_at=CURRENT_TIMESTAMP"); $insert->execute([$course,$personId]);
+            $existingStatus=$exists->fetchColumn();
+            if($existingStatus==='active') return 'active';
+            if($existingStatus==='inactive') return 'pending';
+            $this->db->prepare("INSERT INTO course_participants (course_id,person_id,status) VALUES (?,?,'inactive')")->execute([$course,$personId]);
+            return 'pending';
         });
     }
     private function select(): string

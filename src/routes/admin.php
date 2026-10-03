@@ -18,7 +18,7 @@ return static function (
         'GET /api/admin/users' => static function () use ($buildAdmin, $authorizeAny): void {
             $components = $buildAdmin();
             $authorizeAny($components, ['users.read', 'users.manage']);
-            $components['users']->index($_GET['page'] ?? 1);
+            $components['users']->index($_GET['page'] ?? 1, $_GET['role'] ?? null);
         },
         'GET /api/admin/users/beneficiaries' => static function () use ($buildAdmin, $authorize): void {
             $components = $buildAdmin();

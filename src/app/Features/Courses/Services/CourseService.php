@@ -12,10 +12,10 @@ final class CourseService
     public function __construct(private CourseRepository $courses,private CourseDetailsRepository $details,private CourseInputValidator $validator,private ActivityService $activities,private CourseCoverService $covers,private NextcloudStorageService $storage) {}
     public function all(array $actor,bool $isEvent=false): array { return $this->courses->all($actor,$isEvent); }
     public function available(array $actor,bool $isEvent=false): array { return $this->courses->available($actor,$isEvent); }
-    public function enroll(int $id,array $actor): void
+    public function enroll(int $id,array $actor): string
     {
         if (!in_array($actor['roles'][0] ?? '', ['beneficiary','student'], true)) throw new ApiException(403,'permission_denied');
-        try { $this->courses->enroll($id,(int)$actor['id']); }
+        try { return $this->courses->enroll($id,(int)$actor['id']); }
         catch(\RuntimeException $error) {
             $map=['course_unavailable'=>[404,'course_not_available'],'participant_not_found'=>[422,'participant_not_found'],'participant_not_enabled'=>[403,'participant_not_enabled'],'already_enrolled'=>[409,'already_enrolled'],'course_full'=>[409,'course_full']];
             [$status,$code]=$map[$error->getMessage()]??[500,'course_enrollment_failed']; throw new ApiException($status,$code);

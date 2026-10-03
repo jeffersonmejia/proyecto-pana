@@ -1,5 +1,5 @@
 <section class="administration" aria-label="Administración">
-  <div class="admin-layout">
+  <div class="admin-layout" [class.sidebar-collapsed]="navigationCollapsed()">
     @if (!sectionReady()) {
       <aside class="admin-sidebar-skeleton" aria-label="Cargando navegación" aria-busy="true">
         <pana-skeleton variant="title" width="72%"></pana-skeleton>
@@ -7,11 +7,11 @@
       </aside>
     } @else {
       <aside class="admin-sidebar" aria-label="Secciones de administración">
-        <header><strong>Administración</strong></header>
-        @if (canUsers()) { <button type="button" [class.active]="active()==='users'" [attr.aria-current]="active()==='users' ? 'page' : null" (click)="select('users')"><svg lucideUsersRound [size]="19"></svg><span>Usuarios</span><small>{{ usersCount() }}</small></button> }
-        @if (canPeople()) { <button type="button" [class.active]="active()==='people'" [attr.aria-current]="active()==='people' ? 'page' : null" (click)="select('people')"><svg lucideUserRound [size]="19"></svg><span>Personas</span></button> }
-        @if (canRoles()) { <button type="button" [class.active]="active()==='roles'" [attr.aria-current]="active()==='roles' ? 'page' : null" (click)="select('roles')"><svg lucideShieldCheck [size]="19"></svg><span>Roles y permisos</span></button> }
-        @if (canBackups()) { <button type="button" [class.active]="active()==='backups'" [attr.aria-current]="active()==='backups' ? 'page' : null" (click)="select('backups')"><svg lucideDownload [size]="19"></svg><span>Respaldos</span><small>{{ backupsCount() }}</small></button> }
+        <header><strong>Administración</strong><button class="admin-sidebar-toggle" type="button" (click)="toggleNavigation()" [attr.aria-label]="navigationCollapsed() ? 'Mostrar navegación de administración' : 'Ocultar navegación de administración'" [attr.aria-expanded]="!navigationCollapsed()">@if (navigationCollapsed()) { <svg lucidePanelLeftOpen [size]="18" aria-hidden="true"></svg> } @else { <svg lucidePanelLeftClose [size]="18" aria-hidden="true"></svg> }</button></header>
+        @if (canUsers()) { <button type="button" [class.active]="active()==='users'" [attr.aria-current]="active()==='users' ? 'page' : null" (click)="select('users')"><svg lucideUsersRound [size]="19"></svg><span>Usuarios</span><small>{{ usersCount() }}</small><span class="admin-sidebar-tooltip" aria-hidden="true">Usuarios</span></button> }
+        @if (canPeople()) { <button type="button" [class.active]="active()==='people'" [attr.aria-current]="active()==='people' ? 'page' : null" (click)="select('people')"><svg lucideUserRound [size]="19"></svg><span>Personas</span><span class="admin-sidebar-tooltip" aria-hidden="true">Personas</span></button> }
+        @if (canRoles()) { <button type="button" [class.active]="active()==='roles'" [attr.aria-current]="active()==='roles' ? 'page' : null" (click)="select('roles')"><svg lucideShieldCheck [size]="19"></svg><span>Roles y permisos</span><span class="admin-sidebar-tooltip" aria-hidden="true">Roles y permisos</span></button> }
+        @if (canBackups()) { <button type="button" [class.active]="active()==='backups'" [attr.aria-current]="active()==='backups' ? 'page' : null" (click)="select('backups')"><svg lucideDownload [size]="19"></svg><span>Respaldos</span><small>{{ backupsCount() }}</small><span class="admin-sidebar-tooltip" aria-hidden="true">Respaldos</span></button> }
       </aside>
     }
     <section class="admin-content">

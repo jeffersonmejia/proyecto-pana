@@ -2,7 +2,8 @@ import { Component, OnInit, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginatorComponent, PageInfo } from '../../shared/paginator.component';
 import { StepDialogComponent } from '../../shared/step-dialog.component';
-import { LucideEllipsis, LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight } from '@lucide/angular';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog.component';
+import { LucideGraduationCap, LucidePencil, LucidePlus, LucideTrash, LucideUserRound, LucideUsersRound, LucideWrench } from '@lucide/angular';
 import { AdminApiService, BeneficiaryOption, ManagedUser, RoleOption } from './admin-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BeneficiaryPickerComponent } from './beneficiary-picker.component';
@@ -12,7 +13,7 @@ import { emptyProfile, validIdentity, validProfile } from './admin-user-form.val
 @Component({
   selector: 'pana-admin-users',
   standalone: true,
-  imports: [FormsModule, PaginatorComponent, StepDialogComponent, BeneficiaryPickerComponent, TutorStudentPickerComponent, LucideEllipsis, LucidePlus, LucidePencil, LucideToggleLeft, LucideToggleRight],
+  imports: [FormsModule, PaginatorComponent, StepDialogComponent, ConfirmationDialogComponent, BeneficiaryPickerComponent, TutorStudentPickerComponent, LucideGraduationCap, LucidePencil, LucidePlus, LucideTrash, LucideUserRound, LucideUsersRound, LucideWrench],
   templateUrl: './access-admin.component.html',
   styleUrl: './access-admin.component.scss',
 })
@@ -21,12 +22,15 @@ export class AdminUsersComponent implements OnInit {
   readonly auth = inject(AuthService);
   readonly close = output<void>();
   readonly users = signal<ManagedUser[]>([]);
+  readonly userRoleFilter = signal<'all'|'beneficiary'|'student'|'tecnico'>('all');
+  readonly roleCounts = signal<Record<string, number>>({});
   readonly roleOptions = signal<RoleOption[]>([]);
   readonly usersPage = signal<PageInfo>({ page: 1, page_size: 5, total: 0, pages: 1 });
   readonly message = signal('');
   readonly error = signal('');
   readonly busy = signal(false);
   readonly userDialog = signal(false); readonly step = signal(0);
+  readonly deleteTarget = signal<ManagedUser | null>(null);
   userForm = { id: null as number | null, person_id: null as number | null, ci: '', first_name: '', last_name: '', phone: '',
     email: '', password: '', is_active: true, roles: [] as string[], profile: emptyProfile() };
 
@@ -34,7 +38,7 @@ export class AdminUsersComponent implements OnInit {
 
   load(): void {
     if (this.auth.hasPermission('users.read') || this.auth.hasPermission('users.manage')) {
-      this.api.users(this.usersPage().page).subscribe({ next: (result) => { this.users.set(result.users); this.usersPage.set(result.pagination); }, error: (e) => this.fail(e) });
+      this.api.users(this.usersPage().page, this.userRoleFilter()).subscribe({ next: (result) => { this.users.set(result.users); this.usersPage.set(result.pagination); this.roleCounts.set(result.role_counts); }, error: (e) => this.fail(e) });
     }
     if (this.auth.hasPermission('users.manage') || this.auth.hasPermission('roles.manage'))
       this.api.roleOptions().subscribe({ next: (items) => this.roleOptions.set(items), error: (e) => this.fail(e) });
@@ -53,11 +57,9 @@ export class AdminUsersComponent implements OnInit {
     this.run(this.api.saveUser(this.userForm, this.userForm.id), 'Usuario guardado.');
   }
 
-  removeUser(id: number): void {
-    if (confirm('¿Eliminar esta cuenta y cerrar sus sesiones?')) {
-      this.run(this.api.deleteUser(id), 'Usuario eliminado.');
-    }
-  }
+  removeUser(user: ManagedUser): void { this.deleteTarget.set(user); }
+  cancelDelete(): void { if(!this.busy())this.deleteTarget.set(null); }
+  confirmDelete(): void { const user=this.deleteTarget(); if(!user)return; this.deleteTarget.set(null); this.run(this.api.deleteUser(user.id), 'Usuario eliminado.'); }
 
   toggleUserRole(event: Event, code: string): void {
     if ((event.target as HTMLInputElement).checked) {
@@ -80,6 +82,8 @@ export class AdminUsersComponent implements OnInit {
   }
 
   resetUser(): void { this.userForm = { id: null, person_id: null, ci: '', first_name: '', last_name: '', phone: '', email: '', password: '', is_active: true, roles: [], profile: emptyProfile() }; }
+  setUserRoleFilter(role: 'all'|'beneficiary'|'student'|'tecnico'): void { this.userRoleFilter.set(role); this.usersPage.update(value => ({ ...value, page: 1 })); this.load(); }
+  roleCount(role: 'all'|'beneficiary'|'student'|'tecnico'): number { return role === 'all' ? this.usersPage().total : this.roleCounts()[role] ?? 0; }
   changeUsersPage(page: number): void { this.usersPage.update((value) => ({ ...value, page })); this.load(); }
   canContinue(): boolean {
     if (this.step() > 0) return this.userForm.roles.length === 1 && validIdentity(this.userForm)

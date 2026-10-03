@@ -21,6 +21,7 @@ export class WelcomeComponent {
   readonly checkingSession = signal(true);
   readonly hasSession = signal(false);
   readonly enrolling = signal(false);
+  readonly enrollmentSubmitted = signal(false);
   readonly error = signal('');
 
   constructor() {
@@ -43,6 +44,6 @@ export class WelcomeComponent {
     const id = this.courseId();
     if (!id || this.enrolling()) { this.error.set('Este código QR no incluye un curso válido.'); return; }
     this.enrolling.set(true); this.error.set('');
-    this.courses.enroll(id).subscribe({next:()=>void this.router.navigateByUrl('/cursos'),error:()=>{this.enrolling.set(false);this.error.set('No fue posible inscribirte. Revisa los cupos o tu perfil.');}});
+    this.courses.enroll(id).subscribe({next:result=>{this.enrolling.set(false);if(result.status==='pending'){this.enrollmentSubmitted.set(true);return;}void this.router.navigateByUrl('/cursos');},error:()=>{this.enrolling.set(false);this.error.set('No fue posible inscribirte. Revisa los cupos o tu perfil.');}});
   }
 }

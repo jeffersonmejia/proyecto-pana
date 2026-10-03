@@ -32,7 +32,7 @@ export class CoursesApiService {
   private readonly url = `${environment.apiBaseUrl}/courses`;
   list(isEvent=false) { return this.http.get<{ courses: Course[] }>(this.url, { params: { type: isEvent ? 'event' : 'course' } }); }
   available(isEvent=false) { return this.http.get<{ courses: Course[] }>(`${this.url}/available`, { params: { type: isEvent ? 'event' : 'course' } }); }
-  enroll(id:number) { return this.http.post(`${this.url}/enroll?id=${id}`,{}); }
+  enroll(id:number) { return this.http.post<{ status: 'active'|'pending' }>(`${this.url}/enroll?id=${id}`,{}); }
   uploadCover(id: number, file: File) { const form = new FormData(); form.append('file', file); return this.http.post(`${this.url}/cover?id=${id}`, form); }
   publicWelcome(id: number) { return this.http.get<{ course: PublicCourse }>(`${environment.apiBaseUrl}/public/courses/welcome`, { params: { id } }); }
   publicCoverUrl(id: number) { return `${environment.apiBaseUrl}/public/courses/cover?id=${id}`; }

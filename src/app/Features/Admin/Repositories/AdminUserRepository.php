@@ -17,13 +17,16 @@ final class AdminUserRepository
         $this->profiles = new UserProfileRepository($connection);
     }
 
-    public function all(int $page = 1): array
+    public function all(int $page = 1, ?string $role = null): array
     {
+        $where = 'u.is_active=1';
+        $params = [];
+        if ($role !== null) { $where .= ' AND r.code=?'; $params[] = $role; }
         $result = Pagination::fetch($this->connection,
             'SELECT u.id,u.ci,u.first_name,u.last_name,u.phone,u.email,u.is_active,u.last_login_at,'
             . 'r.code role_code,p.id person_id FROM users u INNER JOIN roles r ON r.id=u.role_id '
-            . 'LEFT JOIN people p ON p.user_id=u.id WHERE u.is_active=1 ORDER BY u.email',
-            'SELECT COUNT(*) FROM users WHERE is_active=1', [], $page);
+            . "LEFT JOIN people p ON p.user_id=u.id WHERE {$where} ORDER BY u.email",
+            "SELECT COUNT(*) FROM users u INNER JOIN roles r ON r.id=u.role_id WHERE {$where}", $params, $page);
         $result['items'] = array_map(static function (array $row): array {
             $row['roles'] = [$row['role_code']];
             unset($row['role_code']);
@@ -34,6 +37,8 @@ final class AdminUserRepository
             $user['profile'] = $this->profiles->get((int) $user['id'], $user['roles'][0] ?? '');
         }
         unset($user);
+        $counts = $this->connection->query("SELECT r.code,COUNT(*) total FROM users u JOIN roles r ON r.id=u.role_id WHERE u.is_active=1 GROUP BY r.code")->fetchAll();
+        $result['role_counts'] = array_reduce($counts, static function (array $values, array $row): array { $values[$row['code']] = (int) $row['total']; return $values; }, []);
         return $result;
     }
 

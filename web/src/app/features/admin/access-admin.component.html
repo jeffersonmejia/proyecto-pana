@@ -5,23 +5,19 @@
   @if (message()) { <p class="notice" role="status">{{ message() }}</p> }
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (auth.hasPermission('users.read') || auth.hasPermission('users.manage')) {
-    <section class="admin-section"><pana-paginator [page]="usersPage().page" [total]="usersPage().total" [pageSize]="usersPage().page_size" (pageChange)="changeUsersPage($event)" /><div class="table-wrap"><table><thead><tr><th>Persona</th><th>CI</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr></thead>
+    <section class="admin-section"><div class="users-list-toolbar"><div class="user-role-filters" role="group" aria-label="Filtrar usuarios por rol"><button type="button" [class.active]="userRoleFilter()==='all'" (click)="setUserRoleFilter('all')"><svg lucideUsersRound [size]="15"></svg><span>Todos ({{ roleCount('all') }})</span></button><button type="button" [class.active]="userRoleFilter()==='beneficiary'" (click)="setUserRoleFilter('beneficiary')"><svg lucideUserRound [size]="15"></svg><span>Beneficiario ({{ roleCount('beneficiary') }})</span></button><button type="button" [class.active]="userRoleFilter()==='student'" (click)="setUserRoleFilter('student')"><svg lucideGraduationCap [size]="15"></svg><span>Estudiante ({{ roleCount('student') }})</span></button><button type="button" [class.active]="userRoleFilter()==='tecnico'" (click)="setUserRoleFilter('tecnico')"><svg lucideWrench [size]="15"></svg><span>Técnico ({{ roleCount('tecnico') }})</span></button></div><pana-paginator [page]="usersPage().page" [total]="usersPage().total" [pageSize]="usersPage().page_size" (pageChange)="changeUsersPage($event)" /></div><div class="table-wrap"><table><thead><tr><th>Persona</th><th>CI</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
       <tbody>@for (user of users(); track user.id) { <tr><td><strong>{{ user.first_name }} {{ user.last_name }}</strong></td><td>{{ user.ci }}</td><td>{{ user.email }}</td><td>{{ roleNames(user.roles) || 'Sin rol' }}</td>
-        <td><span class="state" [class.inactive]="!user.is_active">{{ user.is_active ? 'Activa' : 'Inactiva' }}</span></td><td>{{ user.last_login_at || 'Sin registros' }}</td><td class="actions">
-          @if (auth.hasPermission('users.manage')) {
-            <details class="actions-menu"><summary class="icon-button" aria-label="Más acciones"><svg lucideEllipsis [size]="18"></svg></summary><div class="actions-popover"><button type="button" (click)="editUser(user)"><svg lucidePencil [size]="16"></svg>Editar</button><button type="button" (click)="toggleUser(user)">@if (user.is_active) { <svg lucideToggleRight [size]="17"></svg>Desactivar } @else { <svg lucideToggleLeft [size]="17"></svg>Activar }</button></div></details>
-          }
-        </td></tr> } @empty { <tr><td colspan="7" class="empty">No hay cuentas registradas.</td></tr> }</tbody>
+        <td><button class="user-status-toggle" type="button" role="switch" [class.on]="user.is_active" [attr.aria-checked]="user.is_active" [attr.aria-label]="user.is_active ? 'Desactivar usuario' : 'Activar usuario'" [disabled]="!auth.hasPermission('users.manage') || busy()" (click)="toggleUser(user)"><span></span></button></td><td><div class="user-actions">@if (auth.hasPermission('users.manage')) { <button class="user-action" type="button" aria-label="Editar usuario" (click)="editUser(user)"><svg lucidePencil [size]="17"></svg></button><button class="user-action danger" type="button" aria-label="Eliminar usuario" (click)="removeUser(user)"><svg lucideTrash [size]="17"></svg></button> }</div></td></tr> } @empty { <tr><td colspan="6" class="empty">No hay cuentas registradas.</td></tr> }</tbody>
     </table></div><pana-paginator [page]="usersPage().page" [total]="usersPage().total" [pageSize]="usersPage().page_size" (pageChange)="changeUsersPage($event)" /></section>
   }
   @if (userDialog()) {
     <pana-step-dialog [title]="userForm.id ? 'Editar usuario' : 'Crear usuario'" [steps]="['Datos personales', 'Acceso y rol']" [step]="step()" [saving]="busy()"
       [canContinue]="canContinue()" [canSave]="canContinue()" (close)="userDialog.set(false)" (previous)="step.set(0)" (next)="next()" (save)="saveUser()">
       <div class="form-step" [hidden]="step() !== 0">
-        <label>CI<input name="ci" [(ngModel)]="userForm.ci" required maxlength="20" autocomplete="off"></label>
+        <label>CI<input name="ci" [(ngModel)]="userForm.ci" required maxlength="10" inputmode="numeric" autocomplete="off"></label>
         <label>Nombres<input name="first_name" [(ngModel)]="userForm.first_name" required maxlength="100" autocomplete="given-name"></label>
         <label>Apellidos<input name="last_name" [(ngModel)]="userForm.last_name" required maxlength="100" autocomplete="family-name"></label>
-        <label>Teléfono<input name="phone" type="tel" [(ngModel)]="userForm.phone" maxlength="40" autocomplete="tel"></label>
+        <label>Teléfono<input name="phone" type="tel" [(ngModel)]="userForm.phone" maxlength="10" inputmode="numeric" autocomplete="tel"></label>
         <label>Correo<input name="email" type="email" [(ngModel)]="userForm.email" required maxlength="254" autocomplete="email"></label>
         <label>Contraseña<input name="password" type="password" [(ngModel)]="userForm.password" [required]="!userForm.id" minlength="12" autocomplete="new-password"></label></div>
       <div class="form-step" [hidden]="step() !== 1">
@@ -65,4 +61,5 @@
       </div>
     </pana-step-dialog>
   }
+  @if (deleteTarget(); as user) { <pana-confirmation-dialog title="¿Estás seguro que deseas eliminar esta cuenta?" [message]="'La cuenta de “' + user.first_name + ' ' + user.last_name + '” se eliminará y se cerrarán sus sesiones.'" confirmLabel="Eliminar" savingLabel="Eliminando…" [saving]="busy()" (closed)="cancelDelete()" (confirmed)="confirmDelete()" /> }
 </section>

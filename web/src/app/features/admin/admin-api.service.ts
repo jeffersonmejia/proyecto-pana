@@ -64,8 +64,8 @@ export class AdminApiService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/admin`;
 
-  users(page = 1): Observable<{ users: ManagedUser[]; pagination: PageInfo }> {
-    return this.http.get<{ users: ManagedUser[]; pagination: PageInfo }>(`${this.url}/users`, { params: { page } });
+  users(page = 1, role: 'all'|'beneficiary'|'student'|'tecnico' = 'all'): Observable<{ users: ManagedUser[]; pagination: PageInfo; role_counts: Record<string, number> }> {
+    return this.http.get<{ users: ManagedUser[]; pagination: PageInfo; role_counts: Record<string, number> }>(`${this.url}/users`, { params: { page, ...(role === 'all' ? {} : { role }) } });
   }
 
   beneficiaryPeople(query: string, personId: number | null) {
